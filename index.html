@@ -480,6 +480,8 @@ header.top .mb-me { margin-left: auto; }
 .mb-row { display: flex; flex-direction: column; gap: 3px; text-decoration: none; background: var(--panel); border: 1px solid rgba(201,164,106,.25); border-radius: 14px; padding: 15px 16px; }
 .mb-row b { font-size: 16px; color: var(--text); } .mb-row span { font-size: 13.5px; color: var(--sub); }
 .mb-home-row { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--brass); background: rgba(201,164,106,.12); color: var(--brass-hi); font-size: 15px; font-weight: 700; cursor: pointer; }
+.beta-was { opacity: .6; font-weight: 500; margin-left: 4px; }
+.beta-zero { font-weight: 800; margin-left: 2px; }
 
 </style>
 <script src="config.js" onerror="void 0"></script>
@@ -2625,7 +2627,11 @@ const TP = (() => {
 
 const ORDINAL = ['첫', '두', '세', '네', '다섯'];
 
-function scrollDown() { requestAnimationFrame(() => { app.scrollTop = app.scrollHeight; }); }
+let READ_HOLD = false, READ_ANCHOR = null; // 읽는 중: 새 메시지가 붙어도 제목을 화면 맨 위에 붙잡아 둠
+function anchorTop() { if (!READ_ANCHOR) return; const top = READ_ANCHOR.getBoundingClientRect().top - app.getBoundingClientRect().top + app.scrollTop - 8; app.scrollTo({ top, behavior: 'smooth' }); }
+function scrollDown() { if (READ_HOLD) { requestAnimationFrame(anchorTop); return; } requestAnimationFrame(() => { app.scrollTop = app.scrollHeight; }); }
+function readFrom() { READ_ANCHOR = stream.lastElementChild; READ_HOLD = true; requestAnimationFrame(anchorTop); }
+function readDone() { READ_HOLD = false; READ_ANCHOR = null; }
 
 const AVATAR_BOT = 'w-9 h-9 rounded-full bg-gradient-to-br from-purple-800 to-indigo-950 border border-amber-400/40 flex items-center justify-center text-sm shrink-0 shadow-lg';
 const AVATAR_USER = 'w-9 h-9 rounded-full bg-gradient-to-br from-amber-600 to-amber-800 border border-amber-300 flex items-center justify-center text-sm shrink-0 shadow-lg';
@@ -3000,10 +3006,10 @@ function showFreeReading() {
   let t = 500;
   for (let i = 0; i < L.free; i++) { const k = i; setTimeout(() => flip(k), t); t += 700; }
   t += 300;
-  setTimeout(() => botMsg(`<b class="gold-text">[무료 리딩] ${esc(L.freeTitle)}</b>`), t); t += 400;
+  setTimeout(() => { botMsg(`<b class="gold-text">[무료 리딩] ${esc(L.freeTitle)}</b>`); readFrom(); }, t); t += 400;
   for (let i = 0; i < L.free; i++) { const k = i; setTimeout(() => botMsg(cardBubble(chosen[k], k)), t); t += 700; }
   L.pairs.filter(p => p.free).forEach(p => { setTimeout(() => botMsg(pairBubble(chosen[p.a], chosen[p.b], p.title)), t); t += 700; });
-  setTimeout(renderPaywall, t);
+  setTimeout(() => { renderPaywall(); readDone(); }, t);
 }
 
 function renderPaywall() {
@@ -3016,7 +3022,7 @@ function renderPaywall() {
       </div>
       <p class="text-xs text-gray-300 leading-relaxed">잠긴 카드 ${layout.count - layout.free}장과 카드 사이 조합, ${layout.count}장 종합 해석을 볼 수 있어요.</p>
       <div class="flex gap-2 pt-1">
-        <button type="button" id="btn-pay" class="flex-1 bg-gradient-to-r from-amber-400 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-black text-xs font-bold py-3 rounded-xl shadow-lg transition transform active:scale-95 cursor-pointer">⚡ 2,500원으로 열기</button>
+        <button type="button" id="btn-pay" class="flex-1 bg-gradient-to-r from-amber-400 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-black text-xs font-bold py-3 rounded-xl shadow-lg transition transform active:scale-95 cursor-pointer">${!(window.RODEO_CONFIG && window.RODEO_CONFIG.BETA === false) ? '🎁 무료로 열기 <s class="beta-was">2,500원</s> <span class="beta-zero">0원</span>' : '⚡ 2,500원으로 열기'}</button>
         ${MONETIZE.adEnabled || FREEBIE.available() ? `<button type="button" id="btn-ad" class="px-3.5 bg-[#1F153A] hover:bg-[#2A1D4E] border border-amber-400/30 text-xs py-3 rounded-xl text-purple-200 transition cursor-pointer whitespace-nowrap">${MONETIZE.adEnabled ? '📺 광고 보고 무료' : FREEBIE.label}</button>` : ''}
       </div>
       <p class="text-[10px] text-purple-300/50">베타 기간에는 모든 풀이가 무료예요.</p>
@@ -3049,11 +3055,11 @@ function unlockFinal() {
   let t = 200;
   for (let i = L.free; i < L.count; i++) { const k = i; setTimeout(() => flip(k), t); t += 500; }
   t += 300;
-  setTimeout(() => botMsg(`<b class="gold-text">[심층 리딩] ${esc(L.lockTitle)}</b>`), t); t += 500;
+  setTimeout(() => { botMsg(`<b class="gold-text">[심층 리딩] ${esc(L.lockTitle)}</b>`); readFrom(); }, t); t += 500;
   for (let i = L.free; i < L.count; i++) { const k = i; setTimeout(() => botMsg(cardBubble(chosen[k], k)), t); t += 700; }
   L.pairs.filter(p => !p.free).forEach(p => { setTimeout(() => botMsg(pairBubble(chosen[p.a], chosen[p.b], p.title)), t); t += 700; });
   setTimeout(() => botMsg(`${renderSummary()}`), t); t += 500;
-  setTimeout(() => { busy = false; renderEnd(); }, t);
+  setTimeout(() => { busy = false; renderEnd(); readDone(); }, t);
 }
 
 function renderEnd() {
@@ -3133,14 +3139,15 @@ showChips('✨ 가장 깊이 고민하고 있는 주제를 골라주세요:');
   };
   const UNLOCK = { saju: false, tojeong: false, astro: false }; // TODO: 실제 결제·광고 완료 콜백에서만 true
   const won = n => n.toLocaleString('ko-KR') + '원';
+  const IS_BETA = () => !(window.RODEO_CONFIG && window.RODEO_CONFIG.BETA === false); // 베타: 가격에 줄 긋고 0원
   function lockable(key, html, teaser) {
     if (UNLOCK[key]) return html;
     const b = PRICING.bundle, inBundle = b.keys.includes(key), other = b.keys.find(k => k !== key);
     return `<div class="lockbox"><div class="lk-teaser">${teaser}</div>
       <div class="lk-title">${PRICING[key].label}</div>
-      <div class="lk-btns"><button type="button" class="lk-pay" data-unlock="${key}">⚡ ${won(PRICING[key].price)} 열기</button>
+      <div class="lk-btns"><button type="button" class="lk-pay" data-unlock="${key}">${IS_BETA() ? `🎁 무료로 열기 <s class="beta-was">${won(PRICING[key].price)}</s> <span class="beta-zero">0원</span>` : `⚡ ${won(PRICING[key].price)} 열기`}</button>
         ${MONETIZE.adEnabled ? `<button type="button" class="lk-ad" data-ad="${key}">📺 광고 보고 무료</button>` : FREEBIE.available() ? `<button type="button" class="lk-ad" data-kakao="${key}">${FREEBIE.label}</button>` : ''}</div>
-      ${inBundle && !UNLOCK[other] ? `<button type="button" class="lk-bundle" data-unlock="bundle">${b.label} ${won(b.price)}</button>` : ''}
+      ${inBundle && !UNLOCK[other] && !IS_BETA() ? `<button type="button" class="lk-bundle" data-unlock="bundle">${b.label} ${won(b.price)}</button>` : ''}
       <p class="muted" style="text-align:center;margin:6px 0 0">${FREEBIE.available() ? '채널 무료 열기는 한 번만 쓸 수 있어요. ' : ''}베타 기간에는 모든 풀이가 무료예요.</p></div>`;
   }
   function bindLocks(rerender, root = '#sj-result') {

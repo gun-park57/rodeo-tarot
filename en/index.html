@@ -633,7 +633,7 @@ const EN = {
       ${cur ? `<p style="margin-top:12px">You are now in a <b>${esc(EN.GOD[cur.stemGod].en)}</b> decade (from age ${cur.startAge}). The theme is ${esc(EN.GOD[cur.stemGod].chart)}, turning toward ${esc(EN.GOD[cur.branchGod].chart)} in the second half.</p>` : `<p style="margin-top:12px">Your first luck cycle begins at age ${du.num}.</p>`}`;
     h += `<section class="sec"><h2>Deep Reading</h2>${unlocked ? deep : `<div class="lock"><div class="peek">${deep}</div>
       <div class="cta"><h3>Love, work, money &amp; your ${now.getFullYear()}</h3><p class="note">Plus your ten-year luck cycles, decoded.</p>
-      <button class="go" type="button" id="unlock" style="width:100%;margin-top:10px">Unlock full reading · $2.99</button>
+      <button class="go" type="button" id="unlock" style="width:100%;margin-top:10px">${CFG.BETA ? '🎁 Unlock for free <s style="opacity:.6;font-weight:500">$2.99</s> $0' : 'Unlock full reading · $2.99'}</button>
       <p class="note" style="margin-top:8px">${CFG.BETA ? 'Free during our beta. No payment is taken.' : ''}</p></div></div>`}</section>
       <div class="actions"><button class="btn2 solid" type="button" id="save">Save my Saju card</button><button class="btn2" type="button" id="share">Share</button></div>`;
     $('result').innerHTML = h;
