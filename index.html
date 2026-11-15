@@ -531,6 +531,10 @@ details.deep p b { color: var(--text); margin-right: 4px; font-weight: 700; }
 .rp-tease { border: 1px dashed var(--brass); border-radius: 12px; padding: 12px; background: rgba(201,164,106,.06); }
 .rp-tlock { font-size: 13.5px; color: var(--sub); }
 .rp-tbtn { margin-top: 4px; width: 100%; padding: 11px; border-radius: 10px; border: 1px solid var(--brass); background: transparent; color: var(--brass-hi); font-weight: 800; font-size: 14.5px; cursor: pointer; }
+.sj-term { font-size: 13.5px; color: var(--sub); margin: 2px 0 4px; }
+.sj-term b { color: var(--brass-hi); }
+.sj-rp { margin-bottom: 8px; }
+.sj-term.blur { filter: blur(4px); }
 
 </style>
 <script src="config.js" onerror="void 0"></script>
@@ -3232,10 +3236,10 @@ function teaserHtml(tk) {
   return `<div class="rp-tease">
       <p class="rp-tline">🔮 <b>사주로 보면</b> · ${saju}</p>
       <p class="rp-tlock">🔒 ${esc(T[0])}${eun(T[0])} 사주 리포트에서 자세히 알려드려요.</p>
-      <button type="button" class="rp-tbtn" data-quick="saju">사주 리포트 보기</button>
+      <button type="button" class="rp-tbtn" data-quick="saju" data-topic="${tk}">사주 리포트 보기</button>
       <p class="rp-tline" style="margin-top:12px">✨ <b>별자리로 보면</b> · ${esc(sign)}자리예요.</p>
       <p class="rp-tlock">🔒 ${esc(T[1])}${eun(T[1])} 별자리 리포트에서 자세히 알려드려요.</p>
-      <button type="button" class="rp-tbtn" data-quick="astro">별자리 리포트 보기</button>
+      <button type="button" class="rp-tbtn" data-quick="astro" data-topic="${tk}">별자리 리포트 보기</button>
     </div>`;
 }
 function renderReport() {
@@ -3277,6 +3281,131 @@ function renderReport() {
     <p class="rp-h">7. 다른 눈으로 보면 (맛보기)</p>
     ${teaserHtml(tk)}
     <p class="rp-muted" style="margin-top:8px">원문은 A.E. 웨이트 『The Pictorial Key to the Tarot』(1910)의 점술 의미예요. 오락과 참고용이에요.</p>
+  </div>`;
+}
+
+/* =========================================================
+ * 사주 리포트 (2026-11-15): 무당처럼 "전문용어 먼저 → 말로 풀기"
+ *  - 사주를 물으면 사주는 자세히, 타로·별자리는 맛보기
+ *  - 타로 리포트의 맛보기 버튼으로 오면 그 질문 주제(연애·돈·일·시험)에 맞춘 시기를 보여줌
+ * ========================================================= */
+const SAJU_PLAIN = {
+  비견: '내 힘으로 밀고 나가고, 친구·동료와 어깨를 나란히 해요. 고집이 세질 수 있어요.',
+  겁재: '경쟁이 붙고 돈이 새기 쉬워요. 동업·보증·돈 빌려주기는 조심해요.',
+  식신: '좋아하는 일을 하며 실력이 쌓여요. 먹고 즐기는 복이 있어요.',
+  상관: '말솜씨와 재주가 튀어요. 새로운 걸 만들기 좋지만 윗사람과 부딪히기 쉬워요.',
+  편재: '큰돈과 바깥 활동이 커져요. 크게 벌 수 있지만 크게 쓰기도 해요.',
+  정재: '월급처럼 꾸준한 돈이 들어와요. 아끼고 모으면 확실히 쌓여요.',
+  편관: '부담과 책임이 커져요. 버티면 큰 자리를 얻어요.',
+  정관: '직장·직함·평판이 자리 잡아요. 규칙을 지키면 인정받아요.',
+  편인: '남다른 공부나 기술에 빠져요. 생각이 많아져 혼자 있는 시간이 늘어요.',
+  정인: '공부·자격증·계약서 운이 좋아요. 도와주는 어른이 생겨요.'
+};
+const SAJU_ACT = {
+  비견: ['혼자 하던 일을 함께할 동료를 찾으세요.', '고집 때문에 좋은 제안을 거절하지 마세요.'],
+  겁재: ['돈 관리는 통장을 나눠서 하세요.', '보증·동업·큰돈 빌려주기는 하지 마세요.'],
+  식신: ['좋아하는 일을 꾸준히 기록하고 보여주세요.', '편한 것만 찾다 기회를 놓치지 마세요.'],
+  상관: ['아이디어를 글이나 작업물로 남기세요.', '윗사람 앞에서 말을 세게 하지 마세요.'],
+  편재: ['새 수입원을 하나 시험해 보세요.', '들어온 만큼 바로 쓰지 마세요.'],
+  정재: ['매달 정해진 금액을 먼저 모으세요.', '한 방을 노리는 투자는 하지 마세요.'],
+  편관: ['맡은 책임을 끝까지 해내세요. 그게 다음 자리가 돼요.', '무리해서 몸을 혹사하지 마세요.'],
+  정관: ['규칙과 약속을 지키며 평판을 쌓으세요.', '편법이나 지름길을 쓰지 마세요.'],
+  편인: ['관심 가는 공부나 기술을 하나 깊게 파세요.', '혼자 생각만 하다 결정을 미루지 마세요.'],
+  정인: ['자격증·계약·서류 일을 올해 처리하세요.', '도움을 받기만 하고 고마움을 미루지 마세요.']
+};
+// 질문 주제 → 볼 글자(십신)
+const SAJU_TOPIC = {
+  love: { name: '연애·인연', star: g => g === 'm' ? ['정재', '편재'] : ['정관', '편관'], term: g => g === 'm' ? '재성(財星)' : '관성(官星)', what: '이성 인연을 뜻하는 글자', plain: '인연이 들어오거나 관계가 깊어질 가능성이 커요' },
+  money: { name: '돈', star: () => ['정재', '편재'], term: () => '재성(財星)', what: '돈과 재물을 뜻하는 글자', plain: '돈이 들어올 기회가 커요' },
+  work: { name: '일·자리', star: () => ['정관', '편관'], term: () => '관성(官星)', what: '직장과 자리를 뜻하는 글자', plain: '자리를 잡거나 옮기기 좋은 때예요' },
+  study: { name: '시험·합격', star: () => ['정인', '편인'], term: () => '인성(印星)', what: '공부와 문서를 뜻하는 글자', plain: '합격·자격증·계약 운이 강해요' }
+};
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-topic]'); if (!b) return;
+  const changed = window.RODEO_TOPIC !== b.dataset.topic; window.RODEO_TOPIC = b.dataset.topic;
+  // 이미 사주를 본 적이 있으면 이 질문 주제로 다시 계산
+  if (changed && b.dataset.quick === 'saju') setTimeout(() => { const r = document.getElementById('sj-result'), g = document.getElementById('sj-go'); if (r && g && r.style.display === 'block') g.click(); }, 80);
+}, true);
+const sjEun = w => { const c = String(w).trim().slice(-1).charCodeAt(0) - 0xAC00; return c >= 0 && c < 11172 && c % 28 ? '은' : '는'; };
+const sjPlain = s => `<p class="plain">👉 <b>쉽게 말하면,</b> ${s}</p>`;
+const sjTerm = s => `<p class="sj-term">📖 ${s}</p>`;
+
+function sajuReport({ P, r, du, gender, name, dateStr, city, curDu, lock }) {
+  const tk = window.RODEO_TOPIC && SAJU_TOPIC[window.RODEO_TOPIC] ? window.RODEO_TOPIC : null;
+  const T = tk ? SAJU_TOPIC[tk] : null;
+  const dayStem = P.day.stem, ST = SAJU.stems[dayStem], EI = SAJU.elements.info;
+  const now = new Date(), Y = now.getFullYear();
+  const yearP = y => pillarName(((y - 4) % 60 + 60) % 60);
+  const godOf = stem => tenGod(dayStem, stem);
+  const who = name === '나' ? '당신' : name + '님';
+  const out = [];
+
+  // 1. 나는 어떤 사람
+  out.push(`<p class="rp-h">1. 나는 어떤 사람인가요?</p>
+    ${sjTerm(`일간(日干) <b>${STEMS_H[dayStem]}${EL_H[STEM_EL[dayStem]]} · ${STEMS[dayStem]}${EL[STEM_EL[dayStem]]}</b> — ${esc(ST.image)}`)}
+    ${sjPlain(`태어난 날의 글자가 '나'예요. ${esc(who)}은 ${esc(ST.image)} 같은 사람이에요. ${esc(ST.trait)}`)}`);
+
+  // 2. 오행
+  const cnt = r.counts.map((c, i) => `${EL[i]}${c}`).join(' · ');
+  const lackEx = r.lack.concat(r.excess);
+  out.push(`<p class="rp-h">2. 타고난 기운의 균형</p>
+    ${sjTerm(`오행(五行) 분포 ${cnt}${r.excess.length ? ` · ${r.excess.join('·')} 과다` : ''}${r.lack.length ? ` · ${r.lack.join('·')} 부족` : ''}`)}
+    ${sjPlain(lackEx.length ? [...r.excess.map(e => `${e} 기운이 많아요. ${esc(EI[e].excess)}`), ...r.lack.map(e => `${e} 기운이 모자라요. ${esc(EI[e].lack)}`)].join(' ') : '다섯 가지 기운이 고르게 있어요. 크게 치우친 데가 없어요.')}`);
+
+  // 3. 올해
+  const yp = yearP(Y), yg = godOf(yp.stem);
+  out.push(`<p class="rp-h">3. 올해(${Y}년) 운</p>
+    ${sjTerm(`${Y}년 ${yp.ko}(${yp.han})년 · 세운(歲運) 천간 ${STEMS[yp.stem]}${EL[STEM_EL[yp.stem]]} = <b>${esc(yg)}</b>`)}
+    ${sjPlain(`올해는 ${esc(SAJU_PLAIN[yg] || '')}`)}`);
+
+  // 4. 지금 10년
+  if (curDu) {
+    out.push(`<p class="rp-h">4. 지금 10년의 흐름</p>
+      ${sjTerm(`${esc(curDu.ko)} 대운(大運) ${curDu.startAge}세~ · ${esc(curDu.stemGod)}·${esc(curDu.branchGod)}`)}
+      ${sjPlain(`<br><b>앞 5년 (${curDu.startAge}~${curDu.startAge + 4}세)</b> ${esc(SAJU_PLAIN[curDu.stemGod] || '')}<br><b>뒤 5년 (${curDu.startAge + 5}~${curDu.startAge + 9}세)</b> ${esc(SAJU_PLAIN[curDu.branchGod] || '')}`)}`);
+  }
+
+  // 5. 주제별 시기 (또는 앞으로 3년)
+  if (T) {
+    const stars = T.star(gender), term = T.term(gender);
+    const yrs = [];
+    for (let y = Y; y < Y + 10; y++) { const p = yearP(y), g = godOf(p.stem); if (stars.includes(g)) yrs.push({ y, p, g }); }
+    const mons = [];
+    for (let k = 0; k < 12; k++) {
+      const d = new Date(Y, now.getMonth() + k, 15), ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-15`;
+      try { const mp = sajuPillars({ dateStr: ds, timeStr: '12:00' }).pillars.month, g = godOf(mp.stem); if (stars.includes(g)) mons.push({ label: `${d.getFullYear() !== Y ? d.getFullYear() + '년 ' : ''}${d.getMonth() + 1}월`, mp, g }); } catch (e) { /* 무시 */ }
+    }
+    const body = `${sjTerm(`${term} = ${T.what}. 앞으로 10년 중 ${term}이 들어오는 해: ${yrs.map(x => `<b>${x.y} ${x.p.ko}년</b>(${x.g})`).join(', ')}`)}
+      ${mons.length ? sjTerm(`앞으로 12달 중 ${term}이 들어오는 달(월건 기준): ${mons.map(x => `<b>${x.label}</b>(${x.mp.ko}·${x.g})`).join(', ')}`) : ''}
+      ${sjPlain(`${yrs.map(x => x.y + '년').join('과 ')}에 ${T.plain}. ${mons.length ? `가까이는 <b>${mons.map(x => x.label).join(', ')}</b>${sjEun(mons[mons.length - 1].label)} 기회의 달이에요. 이때 움직이세요.` : ''}`)}`;
+    out.push(`<p class="rp-h">5. ${esc(T.name)} 시기</p>${lock ? lock(body) : body}`);
+  } else {
+    const rows = [1, 2].map(k => { const y = Y + k, p = yearP(y), g = godOf(p.stem); return { y, p, g }; });
+    out.push(`<p class="rp-h">5. 앞으로 2년</p>
+      ${rows.map(x => `${sjTerm(`${x.y}년 ${x.p.ko}(${x.p.han})년 · 세운 ${esc(x.g)}`)}${sjPlain(`${x.y}년은 ${esc(SAJU_PLAIN[x.g] || '')}`)}`).join('')}`);
+  }
+
+  // 6. 이렇게 하세요
+  const act = SAJU_ACT[yg] || ['', ''];
+  out.push(`<p class="rp-h">6. 그래서 올해는 이렇게 하세요</p>
+    <p class="rp-do">✅ ${esc(act[0])}</p><p class="rp-dont">⛔ ${esc(act[1])}</p>`);
+
+  // 7. 맛보기: 타로·별자리
+  const sign = typeof sunSignKo === 'function' ? sunSignKo(dateStr) : '';
+  out.push(`<p class="rp-h">7. 다른 눈으로 보면 (맛보기)</p>
+    <div class="rp-tease">
+      <p class="rp-tline">🃏 <b>타로로 보면</b> · 지금 마음이 어느 쪽인지 카드 한 장으로 바로 볼 수 있어요.</p>
+      <button type="button" class="rp-tbtn" data-quick="daily">오늘의 카드 뽑기</button>
+      ${sign ? `<p class="rp-tline" style="margin-top:12px">✨ <b>별자리로 보면</b> · ${esc(sign)}자리예요.</p>
+      <p class="rp-tlock">🔒 태어난 날 하늘로 본 성향과 잘 맞는 일은 별자리 리포트에서 자세히 알려드려요.</p>
+      <button type="button" class="rp-tbtn" data-quick="astro">별자리 리포트 보기</button>` : ''}
+    </div>`);
+
+  return `<div class="rp sj-rp">
+    <p class="rp-title">📜 ${name === '나' ? '내' : esc(name) + '님의'} 사주 리포트${T ? ` · ${esc(T.name)}` : ''}</p>
+    <p class="rp-muted">전문용어를 먼저 쓰고, 바로 아래 👉 쉬운 말로 풀어드려요. 맨 아래에 원국표와 자세한 근거가 있어요.</p>
+    ${out.join('')}
+    <p class="rp-h">📊 자세한 근거 (원국·십신·합충·신살·대운·토정비결)</p>
   </div>`;
 }
 
@@ -3546,6 +3675,7 @@ showChips('✨ 가장 깊이 고민하고 있는 주제를 골라주세요:');
       ? r.shinsal.map(x => `<p>• <b>${esc(x.name)}</b> (${esc(x.at)}주) — ${esc(SAJU.shinsal.meaning[x.name])}</p>`).join('')
       : '<p>• 역마·도화·화개·천을귀인이 원국에 드러나지 않아요.</p>';
     const html = `
+      ${typeof sajuReport === 'function' ? sajuReport({ P, r, du, gender, name, dateStr, city, curDu, lock: body => lockable('saju', body, '<p class="sj-term blur">📖 앞으로 10년 중 기회의 해와 앞으로 12달 중 기회의 달</p>') }) : ''}
       <div class="result-title">${esc(name)}님의 사주 원국</div>
       <div class="pillars">${cell('hour', '시주')}${cell('day', '일주 (나)')}${cell('month', '월주')}${cell('year', '연주')}</div>
       <p class="muted" style="text-align:center;margin:-6px 0 4px">가운데 = 십신 · 맨 아래 = 12운성</p>
