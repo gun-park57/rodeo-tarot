@@ -498,6 +498,14 @@ details.deep summary::before { content: '＋ '; } details.deep[open] summary::be
 details.deep p { font-size: 13px; color: var(--sub); margin: 4px 0; line-height: 1.55; }
 details.deep p b { color: var(--text); margin-right: 4px; font-weight: 700; }
 
+/* 처음으로: 결과를 보는 동안 항상 화면 아래에 떠 있음 */
+.mb-home-btn { position: fixed; right: 14px; bottom: calc(76px + env(safe-area-inset-bottom)); z-index: 79; background: var(--brass); color: #1B1014; border: 0; border-radius: 999px; padding: 11px 16px; font-size: 15px; font-weight: 800; box-shadow: 0 6px 18px rgba(0,0,0,.45); cursor: pointer; }
+.mb-home-btn:focus-visible { outline: 2px solid var(--brass-hi); outline-offset: 3px; }
+#app-screen { padding-bottom: 70px; }
+@media (min-width: 640px) { .mb-home-btn { right: calc(50% - 250px); } }
+.easy-hint { margin: 4px 0 0; font-size: 12.5px; color: var(--ill); }
+.easy-hint:empty { display: none; }
+
 </style>
 <script src="config.js" onerror="void 0"></script>
 </head>
@@ -3617,6 +3625,35 @@ const MB = (() => {
   ];
   let fateSub = 'saju';
 
+
+  /* ---------- 생년월일 쉽게 넣기: 달력 대신 숫자 8자리 (19900315) ---------- */
+  const _val = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+  function fmtDigits(d) { d = d.replace(/\D/g, '').slice(0, 8); return d.length > 6 ? `${d.slice(0, 4)}.${d.slice(4, 6)}.${d.slice(6)}` : d.length > 4 ? `${d.slice(0, 4)}.${d.slice(4)}` : d; }
+  function isoOf(s) {
+    const d = String(s || '').replace(/\D/g, ''); if (d.length !== 8) return '';
+    const y = +d.slice(0, 4), m = +d.slice(4, 6), dd = +d.slice(6);
+    const dt = new Date(y, m - 1, dd);
+    if (y < 1930 || y > 2030 || dt.getMonth() !== m - 1 || dt.getDate() !== dd) return '';
+    return `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6)}`;
+  }
+  function easyDate(el) {
+    if (!el || el.dataset.easy) return;
+    const cur = _val.get.call(el);
+    el.type = 'text'; el.dataset.easy = '1';
+    el.setAttribute('inputmode', 'numeric'); el.setAttribute('autocomplete', 'bday'); el.maxLength = 10;
+    el.placeholder = '예: 19900315';
+    Object.defineProperty(el, 'value', { configurable: true, get() { return isoOf(_val.get.call(el)); }, set(v) { _val.set.call(el, fmtDigits(String(v || ''))); } });
+    el.value = cur;
+    let hint = el.parentElement.querySelector('.easy-hint');
+    if (!hint) { el.insertAdjacentHTML('afterend', '<p class="easy-hint" aria-live="polite"></p>'); hint = el.nextElementSibling; }
+    el.addEventListener('input', () => {
+      const raw = _val.get.call(el), f = fmtDigits(raw);
+      if (f !== raw) _val.set.call(el, f);
+      const n = f.replace(/\D/g, '').length;
+      hint.textContent = n === 8 && !el.value ? '날짜를 다시 확인해 주세요 (1930~2030년)' : '';
+    });
+  }
+
   /* ---------- 화면 뼈대 ---------- */
   function build() {
     const wrap = document.querySelector('.wrap');
@@ -3675,6 +3712,7 @@ const MB = (() => {
     else $('tab-' + tab).classList.add('active');
     if (tab === 'records') renderRecords();
     if (tab !== 'vision' && typeof clearPhoto === 'function') { try { clearPhoto(); } catch (e) { /* 무시 */ } }
+    if (tab !== 'home') inApp();
     window.scrollTo(0, 0);
   }
   function subShow(k) {
@@ -3708,9 +3746,17 @@ const MB = (() => {
   }
   function toChat(fn) {
     show('home'); $('mb-hero').hidden = true; $('app-screen').classList.remove('mb-chat-off');
-    if (!document.querySelector('.mb-home-btn')) $('app-screen').insertAdjacentHTML('beforebegin', '<button type="button" class="mb-back mb-home-btn" data-go="home">← 새 질문</button>');
+    if (!document.querySelector('.mb-home-btn')) $('app-screen').insertAdjacentHTML('beforebegin', '<button type="button" class="mb-home-btn" data-go="home">🏠 처음으로</button>');
+    inApp();
     fn();
   }
+  // 폰 뒤로가기: 앱을 나가지 않고 처음 화면으로 (열린 창은 닫기)
+  function inApp() { try { if (!(history.state && history.state.rodeo)) history.pushState({ rodeo: 1 }, ''); } catch (e) { /* 무시 */ } }
+  window.addEventListener('popstate', () => {
+    const ov = document.getElementById('mb-sheet') || document.getElementById('tp-dict');
+    if (ov) { ov.remove(); inApp(); return; }
+    home();
+  });
   function ask(q) {
     const r = ROUTES.find(x => x.keys.some(k => q.includes(k)));
     if (r && q.length <= 14) { r.go(); return; } // "내 사주", "궁합 보기"처럼 짧은 메뉴성 입력만 바로 이동
@@ -3761,6 +3807,7 @@ const MB = (() => {
       <button class="btn-submit" type="submit">저장하기</button>
       ${getP() ? '<button type="button" class="mb-link" data-forget>내 정보 지우기</button>' : ''}</form>`;
     document.body.appendChild(ov);
+    easyDate($('me-date'));
     $('me-city').value = p.city || 'seoul'; $('me-gender').value = p.gender || '';
     $('me-notime').addEventListener('change', e => { $('me-time').disabled = e.target.checked; });
     const close = () => ov.remove();
@@ -3776,6 +3823,7 @@ const MB = (() => {
       Object.keys(ran).forEach(k => delete ran[k]); ['saju', 'astro'].forEach(k => delete $('tab-' + k).dataset.open); fillForms(); collapse(); meLabel(); renderToday(); close();
       if ($('tab-fate').classList.contains('active')) autoRun(fateSub);
     });
+    inApp();
     setTimeout(() => $('me-date').focus(), 50);
   }
 
@@ -3823,7 +3871,7 @@ const MB = (() => {
     let i = 0; setInterval(() => { const inp = $('mb-input'); if (inp && document.activeElement !== inp && !inp.value) { i = (i + 1) % ex.length; inp.placeholder = ex[i]; } }, 3500);
   }
 
-  build(); bind(); meLabel(); renderToday(); fillForms(); show('home');
+  build(); ['sj-date', 'as-date'].forEach(id => easyDate($(id))); bind(); meLabel(); renderToday(); fillForms(); show('home');
   return { home, show, openFate, ask };
 })();
 
