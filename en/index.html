@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Korean Saju · Rodeo</title>
+<meta name="description" content="Saju is Korea's Four Pillars birth reading. Find your Day Master type, five-element balance and luck cycles from your birth date, time and city.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Nanum+Myeongjo:wght@700;800&display=swap">
+<style>
+:root {
+  --ink: #170D13; --panel: #21141B; --panel-2: #2B1A23; --brass: #C9A46A; --brass-hi: #E2C48F;
+  --text: #F3ECE4; --sub: #C2B4A8; --ill: #E08A78; --line: rgba(201,164,106,.28);
+  --serif: 'Cormorant Garamond', 'Nanum Myeongjo', Georgia, serif; --han: 'Nanum Myeongjo', 'Noto Serif KR', serif;
+  --sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--ink); color: var(--text); font-family: var(--sans); font-size: 16px; line-height: 1.6; }
+.wrap { max-width: 560px; margin: 0 auto; padding: 28px 16px 64px; }
+a { color: var(--brass-hi); }
+.brand { font-family: var(--han); font-size: 13.5px; color: var(--sub); letter-spacing: .02em; }
+.beta { font-family: var(--sans); font-size: 11.5px; font-weight: 700; color: var(--brass-hi); border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; margin-left: 6px; }
+#toast { position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 20px); opacity: 0; pointer-events: none; background: var(--brass-hi); color: #1B1014; font-weight: 700; padding: 11px 18px; border-radius: 999px; transition: opacity .25s, transform .25s; z-index: 50; }
+#toast.on { opacity: 1; transform: translate(-50%, 0); }
+h1 { font-family: var(--serif); font-weight: 700; font-size: 44px; line-height: 1.08; margin: 10px 0 12px; color: var(--brass-hi); }
+h1 .han { font-family: var(--han); font-size: .62em; color: var(--brass); margin-left: 6px; }
+.lede { color: var(--sub); font-size: 16.5px; margin: 0 0 22px; }
+form { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 18px 16px; display: grid; gap: 14px; }
+label { display: block; font-size: 14px; color: var(--sub); margin-bottom: 6px; }
+.inp { width: 100%; background: var(--ink); border: 1px solid var(--line); border-radius: 10px; color: var(--text); padding: 12px; font-size: 16px; font-family: inherit; }
+.inp:focus-visible, button:focus-visible { outline: 2px solid var(--brass-hi); outline-offset: 2px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.chk { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--sub); margin-top: 8px; }
+.go { background: var(--brass); color: #1B1014; border: 0; border-radius: 12px; padding: 15px; font-size: 17px; font-weight: 700; cursor: pointer; font-family: inherit; }
+.go:hover { background: var(--brass-hi); }
+.note { font-size: 13px; color: var(--sub); margin: 0; }
+#result { display: none; margin-top: 30px; }
+.sec { margin: 34px 0 0; }
+.sec h2 { font-family: var(--serif); font-size: 28px; font-weight: 700; color: var(--brass-hi); margin: 0 0 10px; line-height: 1.2; }
+.sec p { margin: 0 0 10px; }
+.pillars { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.pl { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 4px; text-align: center; }
+.pl.me { border-color: var(--brass); background: var(--panel-2); }
+.pl .role { font-size: 12px; color: var(--sub); line-height: 1.3; min-height: 32px; }
+.pl .h { font-family: var(--han); font-size: 34px; font-weight: 800; line-height: 1.15; }
+.pl .r { font-size: 12.5px; color: var(--sub); }
+.pl .g { font-size: 12px; color: var(--brass); margin-top: 4px; line-height: 1.3; }
+.type { background: var(--panel); border: 1px solid var(--brass); border-radius: 18px; padding: 22px 18px; text-align: center; }
+.type .big { font-family: var(--han); font-size: 88px; font-weight: 800; line-height: 1; }
+.type .nm { font-family: var(--serif); font-size: 34px; font-weight: 700; color: var(--brass-hi); margin-top: 8px; line-height: 1.15; }
+.type .yy { color: var(--sub); font-size: 15px; }
+.words { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; margin: 14px 0 10px; }
+.words span { border: 1px solid var(--line); border-radius: 999px; padding: 3px 12px; font-size: 14px; color: var(--brass-hi); }
+.type p { text-align: left; margin: 10px 0 0; }
+.bars { display: grid; gap: 8px; }
+.bar { display: grid; grid-template-columns: 62px 1fr 20px; gap: 10px; align-items: center; font-size: 14.5px; }
+.bar i { height: 10px; background: var(--panel-2); border-radius: 5px; overflow: hidden; }
+.bar b { display: block; height: 100%; border-radius: 5px; }
+.bar em { font-style: normal; text-align: right; color: var(--sub); }
+.kv { display: grid; gap: 10px; }
+.kv div { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+.kv b { color: var(--brass-hi); display: block; font-size: 15px; }
+.lock { position: relative; background: var(--panel); border: 1px dashed var(--brass); border-radius: 16px; padding: 18px 16px; }
+.lock .peek { filter: blur(5px); user-select: none; pointer-events: none; opacity: .7; }
+.lock .cta { text-align: center; margin-top: 12px; }
+.lock h3 { font-family: var(--serif); font-size: 24px; margin: 0 0 6px; color: var(--brass-hi); }
+.cycles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.cy { background: var(--panel-2); border-radius: 10px; padding: 8px 2px; text-align: center; font-size: 12.5px; color: var(--sub); }
+.cy.now { outline: 2px solid var(--brass); color: var(--text); }
+.cy .h { font-family: var(--han); font-size: 22px; font-weight: 800; }
+.actions { display: grid; grid-template-columns: 1.3fr 1fr; gap: 8px; margin-top: 24px; }
+.btn2 { border: 1px solid var(--brass); background: transparent; color: var(--brass-hi); border-radius: 12px; padding: 13px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; }
+.btn2.solid { background: var(--brass); color: #1B1014; }
+.btn2:disabled { opacity: .6; cursor: wait; }
+footer { margin-top: 48px; font-size: 13px; color: var(--sub); border-top: 1px solid var(--line); padding-top: 16px; }
+@media (max-width: 380px) { h1 { font-size: 38px; } .pl .h { font-size: 28px; } .type .big { font-size: 72px; } }
+@media (prefers-reduced-motion: no-preference) { #result.show { animation: rise .5s ease-out; } @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } } }
+</style>
+<script src="../config.js" onerror="void 0"></script>
+</head>
+<body>
+<main class="wrap">
+  <div class="brand">압구정 로데오 · Seoul <span class="beta">Beta</span></div>
+  <h1>Korean Saju<span class="han">사주</span></h1>
+  <p class="lede">Korea's thousand-year-old birth reading. Enter your birth moment and meet your Saju type in seconds.</p>
+
+  <form id="f" novalidate>
+    <div><label for="d">Birth date</label><input class="inp" type="date" id="d" min="1930-01-01" max="2030-12-31" required></div>
+    <div><label for="t">Birth time</label><input class="inp" type="time" id="t">
+      <label class="chk"><input type="checkbox" id="nt"> I don't know my birth time</label></div>
+    <div><label for="c">Birth city</label><select class="inp" id="c"></select>
+      <p class="note" style="margin-top:6px">Not listed? Pick the nearest city in the same time zone.</p></div>
+    <div><label for="g">Gender <span class="note">(sets the direction of your luck cycles)</span></label>
+      <select class="inp" id="g"><option value="f">Female</option><option value="m">Male</option></select></div>
+    <button class="go" type="submit">Read my Saju</button>
+    <p class="note">Your birth details are calculated on your device and never sent anywhere.</p>
+  </form>
+
+  <div id="result" aria-live="polite"></div>
+
+  <footer>
+    For entertainment and self-reflection. Not medical, legal or financial advice.<br>
+    Made in Seoul by <span style="font-family:var(--han)">압구정 로데오 타로</span> · <a href="../">한국어</a><span id="fb"></span>
+  </footer>
+</main>
+<script>
+/* =========================================================
+ * 별자 계산 엔진: 천문(태양·달·상승궁) + 사주 만세력
+ *  - 태양 황경: Meeus 저정밀식(오차 약 0.01°, 절기 시각 오차 수 분 이내)
+ *  - 달 황경: 주요 14항 근사(오차 약 0.3° 이내)
+ *  - 상승궁: 항성시 + 출생지 위도·경도
+ *  - 사주: 연주(입춘 기준), 월주(절기 기준), 일주(율리우스일), 시주(30분 보정)
+ * ========================================================= */
+const RAD = Math.PI / 180;
+const norm360 = x => ((x % 360) + 360) % 360;
+
+// 율리우스일 (UT 기준, 그레고리력)
+function julianDay(y, m, d, hourUT) {
+  if (m <= 2) { y -= 1; m += 12; }
+  const A = Math.floor(y / 100), B = 2 - A + Math.floor(A / 4);
+  return Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + d + B - 1524.5 + hourUT / 24;
+}
+
+function sunLongitude(jd) {
+  const T = (jd - 2451545) / 36525;
+  const L0 = 280.46646 + 36000.76983 * T + 0.0003032 * T * T;
+  const M = 357.52911 + 35999.05029 * T - 0.0001537 * T * T;
+  const C = (1.914602 - 0.004817 * T - 0.000014 * T * T) * Math.sin(M * RAD)
+          + (0.019993 - 0.000101 * T) * Math.sin(2 * M * RAD) + 0.000289 * Math.sin(3 * M * RAD);
+  const om = 125.04 - 1934.136 * T;
+  return norm360(L0 + C - 0.00569 - 0.00478 * Math.sin(om * RAD));
+}
+
+function moonLongitude(jd) {
+  const T = (jd - 2451545) / 36525;
+  const Lp = 218.3164477 + 481267.88123421 * T;
+  const D = 297.8501921 + 445267.1114034 * T;
+  const M = 357.5291092 + 35999.0502909 * T;
+  const Mp = 134.9633964 + 477198.8675055 * T;
+  const F = 93.2720950 + 483202.0175233 * T;
+  const s = x => Math.sin(x * RAD);
+  return norm360(Lp + 6.289 * s(Mp) + 1.274 * s(2 * D - Mp) + 0.658 * s(2 * D) + 0.214 * s(2 * Mp)
+    - 0.186 * s(M) - 0.114 * s(2 * F) + 0.059 * s(2 * D - 2 * Mp) + 0.057 * s(2 * D - M - Mp)
+    + 0.053 * s(2 * D + Mp) + 0.046 * s(2 * D - M) + 0.041 * s(Mp - M) - 0.035 * s(D) - 0.030 * s(Mp + M));
+}
+
+function ascendant(jd, lat, lonEast) {
+  const T = (jd - 2451545) / 36525;
+  const gmst = norm360(280.46061837 + 360.98564736629 * (jd - 2451545) + 0.000387933 * T * T);
+  const ramc = norm360(gmst + lonEast);
+  const eps = 23.4392911 - 0.0130042 * T;
+  const y = Math.cos(ramc * RAD);
+  const x = -(Math.sin(eps * RAD) * Math.tan(lat * RAD) + Math.cos(eps * RAD) * Math.sin(ramc * RAD));
+  return norm360(Math.atan2(y, x) / RAD);
+}
+
+/* ---------- 출생지 ---------- */
+const CITIES = {
+  seoul:   { name: '서울', lat: 37.5665, lon: 126.9780 },
+  incheon: { name: '인천', lat: 37.4563, lon: 126.7052 },
+  suwon:   { name: '수원·경기', lat: 37.2636, lon: 127.0286 },
+  chuncheon: { name: '춘천·강원', lat: 37.8813, lon: 127.7298 },
+  daejeon: { name: '대전·충청', lat: 36.3504, lon: 127.3845 },
+  daegu:   { name: '대구·경북', lat: 35.8714, lon: 128.6014 },
+  gwangju: { name: '광주·전라', lat: 35.1595, lon: 126.8526 },
+  busan:   { name: '부산·경남', lat: 35.1796, lon: 129.0756 },
+  ulsan:   { name: '울산', lat: 35.5384, lon: 129.3114 },
+  jeju:    { name: '제주', lat: 33.4996, lon: 126.5312 }
+};
+
+/* ---------- 한국 표준시·서머타임 이력 ---------- */
+// 반환: 그 시각의 UTC 오프셋(시간). 서머타임은 주요 시행 기간만 반영 (이전 기간은 날짜 단위 근사)
+const KOREA_DST = [
+  ['1948-06-01', '1948-09-13'], ['1949-04-03', '1949-09-11'], ['1950-04-01', '1950-09-10'], ['1951-05-06', '1951-09-09'],
+  ['1955-05-05', '1955-09-09'], ['1956-05-20', '1956-09-30'], ['1957-05-05', '1957-09-22'], ['1958-05-04', '1958-09-21'],
+  ['1959-05-03', '1959-09-20'], ['1960-05-01', '1960-09-18'], ['1987-05-10', '1987-10-11'], ['1988-05-08', '1988-10-09']
+];
+function koreaOffset(dateStr) {
+  if (typeof ZONE !== 'undefined' && ZONE) return ZONE; // 해외 출생 계산 중이면 그 시간대
+  let base = 9;
+  if (dateStr >= '1954-03-21' && dateStr < '1961-08-10') base = 8.5;
+  const dst = KOREA_DST.some(([a, b]) => dateStr >= a && dateStr < b);
+  return { base, dst, offset: base + (dst ? 1 : 0) };
+}
+
+/* ---------- 별자리 ---------- */
+const SIGNS = ['양자리', '황소자리', '쌍둥이자리', '게자리', '사자자리', '처녀자리', '천칭자리', '전갈자리', '사수자리', '염소자리', '물병자리', '물고기자리'];
+const SIGN_ELEMENT = ['불', '흙', '공기', '물', '불', '흙', '공기', '물', '불', '흙', '공기', '물'];
+const SIGN_MODE = ['활동궁', '고정궁', '유동궁', '활동궁', '고정궁', '유동궁', '활동궁', '고정궁', '유동궁', '활동궁', '고정궁', '유동궁'];
+const SIGN_RULER = ['화성', '금성', '수성', '달', '태양', '수성', '금성', '명왕성(전통: 화성)', '목성', '토성', '천왕성(전통: 토성)', '해왕성(전통: 목성)'];
+const SIGN_TRAIT = ['폭발적인 열정, 직진성, 도전, 결단력', '물질적 안정, 뚝심, 오감 만족, 끈기', '지적 호기심, 소통, 재치, 다재다능',
+  '풍부한 감수성, 모성애, 방어본능, 울타리 보호', '당당한 카리스마, 명예 중시, 리더십', '철저한 분석력, 완벽주의, 꼼꼼함, 실무',
+  '관계의 균형, 조화, 우아함, 사교성', '깊은 무의식, 강렬한 집착, 충성심, 통찰력', '자유로운 영혼, 철학적 탐구, 낙천성, 해외 지향',
+  '사회적 성취, 커리어 지향, 철저한 계획성', '독창성, 미래지향적 비전, 조직과 네트워크', '무의식, 영적 치유, 풍부한 상상력, 예술성'];
+const HOUSE_THEME = ['자아·외모·첫인상', '재물·소유·타고난 재능', '소통·학습·형제·단거리 이동', '가정·뿌리·부모·내면의 기반',
+  '연애·창작·자녀·즐거움', '일상 업무·루틴·컨디션', '파트너십·결혼·계약', '공유 자원·깊은 심리·위기와 재생',
+  '해외·고등교육·신념', '커리어·사회적 지위·명예', '친구·네트워크·조직·희망', '무의식·비밀·고립·영적 치유'];
+const signOf = lon => Math.floor(norm360(lon) / 30);
+const degIn = lon => Math.floor(norm360(lon) % 30);
+
+/* 출생 차트: 태양·달·상승궁 + 홀 사인 하우스 */
+function natalChart(dateStr, timeStr, cityKey) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const known = !!timeStr;
+  const [hh, mm] = known ? timeStr.split(':').map(Number) : [12, 0];
+  const tz = zoneFor(cityKey, dateStr, timeStr);
+  const jd = julianDay(y, m, d, hh + mm / 60 - tz.offset);
+  const city = CITIES[cityKey] || CITIES.seoul;
+  const sun = sunLongitude(jd), moon = moonLongitude(jd);
+  const res = { sun, moon, known, tz, city };
+  // 달은 하루 약 13° 이동: 시간 모르면 정오 기준이며 별자리가 바뀔 수 있음을 표시
+  if (!known) {
+    const m0 = moonLongitude(julianDay(y, m, d, 0 - tz.offset)), m1 = moonLongitude(julianDay(y, m, d, 24 - tz.offset));
+    res.moonUncertain = signOf(m0) !== signOf(m1);
+  }
+  if (known) {
+    res.asc = ascendant(jd, city.lat, city.lon);
+    const ascSign = signOf(res.asc);
+    res.houseOf = lon => ((signOf(lon) - ascSign + 12) % 12) + 1; // 홀 사인
+  }
+  return res;
+}
+
+/* ---------- 사주 만세력 ---------- */
+const STEMS = ['갑', '을', '병', '정', '무', '기', '경', '신', '임', '계'];
+const STEMS_H = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
+const BRANCHES = ['자', '축', '인', '묘', '진', '사', '오', '미', '신', '유', '술', '해'];
+const BRANCHES_H = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+const ANIMALS = ['쥐', '소', '호랑이', '토끼', '용', '뱀', '말', '양', '원숭이', '닭', '개', '돼지'];
+const EL = ['목', '화', '토', '금', '수'];
+const EL_H = ['木', '火', '土', '金', '水'];
+const STEM_EL = [0, 0, 1, 1, 2, 2, 3, 3, 4, 4];
+const BRANCH_EL = [4, 2, 0, 0, 2, 1, 1, 2, 3, 3, 2, 4];
+const BRANCH_MAIN_STEM = [9, 5, 0, 1, 4, 2, 3, 5, 6, 7, 4, 8]; // 지지 본기
+const pillarName = i => ({ stem: i % 10, branch: i % 12, ko: STEMS[i % 10] + BRANCHES[i % 12], han: STEMS_H[i % 10] + BRANCHES_H[i % 12] });
+
+// 십신: 일간 기준 다른 천간의 관계
+function tenGod(dayStem, otherStem) {
+  const a = STEM_EL[dayStem], b = STEM_EL[otherStem];
+  const same = (dayStem % 2) === (otherStem % 2);
+  const rel = (b - a + 5) % 5; // 0 같음, 1 내가 생함, 2 내가 극함, 3 나를 극함, 4 나를 생함
+  return [['비견', '겁재'], ['식신', '상관'], ['편재', '정재'], ['편관', '정관'], ['편인', '정인']][rel][same ? 0 : 1];
+}
+
+// 태양 황경이 target(°)에 도달하는 시각(율리우스일)을 근처에서 이분 탐색
+function sunCrossing(target, jdGuess) {
+  let lo = jdGuess - 20, hi = jdGuess + 20;
+  const f = jd => ((sunLongitude(jd) - target + 540) % 360) - 180;
+  for (let i = 0; i < 60; i++) { const mid = (lo + hi) / 2; if (f(mid) < 0) lo = mid; else hi = mid; }
+  return (lo + hi) / 2;
+}
+
+const TERM_NAMES = { 315: '입춘', 345: '경칩', 15: '청명', 45: '입하', 75: '망종', 105: '소서', 135: '입추', 165: '백로', 195: '한로', 225: '입동', 255: '대설', 285: '소한' };
+
+/* opts: { dateStr:'YYYY-MM-DD', timeStr:'HH:MM'|'' , ziMode:'next'|'same' }
+ * ziMode 'next' = 23:30 이후 출생은 다음 날 일주 (기본), 'same' = 야자시 적용(당일 일주 유지) */
+function sajuPillars({ dateStr, timeStr, ziMode = 'next' }) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const known = !!timeStr;
+  const [hh, mm] = known ? timeStr.split(':').map(Number) : [12, 0];
+  const tz = koreaOffset(dateStr);
+  const ut = hh + mm / 60 - tz.offset;
+  const jd = julianDay(y, m, d, ut);
+
+  // 연주: 입춘(태양 황경 315°) 기준
+  const ipchun = sunCrossing(315, julianDay(y, 2, 4, 0));
+  const sajuYear = jd >= ipchun ? y : y - 1;
+  const yearIdx = (((sajuYear - 4) % 60) + 60) % 60;
+
+  // 월주: 절기(315°부터 30°마다) 기준
+  const lon = sunLongitude(jd);
+  const monthOffset = Math.floor(norm360(lon - 315) / 30); // 0=인월
+  const monthBranch = (monthOffset + 2) % 12;
+  const monthStem = ((yearIdx % 10) % 5 * 2 + 2 + monthOffset) % 10;
+  const monthIdx = [...Array(60).keys()].find(i => i % 10 === monthStem && i % 12 === monthBranch);
+
+  // 시간: 표준시 기준 30분 보정(1954~1961 UTC+8:30 시기는 보정 없음), 서머타임은 1시간 빼기
+  let localMin = tz.foreign ? Math.round(hh * 60 + mm - tz.offset * 60 + tz.lon * 4) // 해외: 지방평균시
+    : hh * 60 + mm - (tz.dst ? 60 : 0) - (tz.base === 9 ? 30 : 0);
+  let dayShift = 0;
+  if (localMin < 0) { localMin += 1440; dayShift = -1; }
+  if (localMin >= 1440) { localMin -= 1440; dayShift = 1; }
+  // 자시(23:00 보정시각 이후) 처리
+  if (known && localMin >= 23 * 60 && ziMode === 'next') dayShift += 1;
+
+  const civil = new Date(Date.UTC(y, m - 1, d + dayShift));
+  const jdn = Math.floor(julianDay(civil.getUTCFullYear(), civil.getUTCMonth() + 1, civil.getUTCDate(), 12));
+  const dayIdx = (jdn + 49) % 60;
+
+  let hourIdx = null;
+  if (known) {
+    const hb = Math.floor(((localMin + 60) % 1440) / 120); // 0=자시
+    const hs = ((dayIdx % 10) % 5 * 2 + hb) % 10;
+    hourIdx = [...Array(60).keys()].find(i => i % 10 === hs && i % 12 === hb);
+  }
+
+  // 다음·이전 절기 (경계 근처 알림용)
+  const termTarget = norm360(315 + monthOffset * 30);
+  const termJd = sunCrossing(termTarget, jd - 15);
+  const nearBoundary = Math.abs(jd - termJd) < 1 || Math.abs(jd - sunCrossing(norm360(termTarget + 30), jd + 15)) < 1;
+
+  const pillars = {
+    year: pillarName(yearIdx), month: pillarName(monthIdx), day: pillarName(dayIdx),
+    hour: hourIdx === null ? null : pillarName(hourIdx)
+  };
+  const ds = pillars.day.stem;
+  const list = ['hour', 'day', 'month', 'year'].map(k => pillars[k]).filter(Boolean);
+  const counts = [0, 0, 0, 0, 0];
+  list.forEach(p => { counts[STEM_EL[p.stem]]++; counts[BRANCH_EL[p.branch]]++; });
+  const gods = {};
+  ['year', 'month', 'day', 'hour'].forEach(k => {
+    const p = pillars[k]; if (!p) return;
+    gods[k] = { stem: k === 'day' ? '일간(나)' : tenGod(ds, p.stem), branch: tenGod(ds, BRANCH_MAIN_STEM[p.branch]) };
+  });
+  return { pillars, counts, gods, sajuYear, tz, known, nearBoundary, termName: TERM_NAMES[termTarget] };
+}
+
+/* =========================================================
+ * 세계 출생지·시간대 (2026-11-15)
+ *  - 브라우저 Intl(IANA tz 데이터베이스)로 출생 당시 UTC 오프셋·서머타임 계산
+ *  - 해외 출생 사주: 표준시 대신 출생지 경도 기준 지방평균시(LMT = UTC + 경도/15)로 시주·일주 판정
+ *  - 한국 출생은 기존 규칙(30분 보정, 한국 서머타임 이력) 그대로
+ * ========================================================= */
+const WORLD_CITIES = [
+  // [key, English, 한국어, country, lat, lon, tz]
+  ['nyc', 'New York', '뉴욕', 'USA', 40.7128, -74.006, 'America/New_York'], ['la', 'Los Angeles', '로스앤젤레스', 'USA', 34.0522, -118.2437, 'America/Los_Angeles'],
+  ['chicago', 'Chicago', '시카고', 'USA', 41.8781, -87.6298, 'America/Chicago'], ['houston', 'Houston', '휴스턴', 'USA', 29.7604, -95.3698, 'America/Chicago'],
+  ['dallas', 'Dallas', '댈러스', 'USA', 32.7767, -96.797, 'America/Chicago'], ['phoenix', 'Phoenix', '피닉스', 'USA', 33.4484, -112.074, 'America/Phoenix'],
+  ['denver', 'Denver', '덴버', 'USA', 39.7392, -104.9903, 'America/Denver'], ['seattle', 'Seattle', '시애틀', 'USA', 47.6062, -122.3321, 'America/Los_Angeles'],
+  ['sf', 'San Francisco', '샌프란시스코', 'USA', 37.7749, -122.4194, 'America/Los_Angeles'], ['sandiego', 'San Diego', '샌디에이고', 'USA', 32.7157, -117.1611, 'America/Los_Angeles'],
+  ['vegas', 'Las Vegas', '라스베이거스', 'USA', 36.1699, -115.1398, 'America/Los_Angeles'], ['miami', 'Miami', '마이애미', 'USA', 25.7617, -80.1918, 'America/New_York'],
+  ['atlanta', 'Atlanta', '애틀랜타', 'USA', 33.749, -84.388, 'America/New_York'], ['boston', 'Boston', '보스턴', 'USA', 42.3601, -71.0589, 'America/New_York'],
+  ['dc', 'Washington, D.C.', '워싱턴 D.C.', 'USA', 38.9072, -77.0369, 'America/New_York'], ['philly', 'Philadelphia', '필라델피아', 'USA', 39.9526, -75.1652, 'America/New_York'],
+  ['detroit', 'Detroit', '디트로이트', 'USA', 42.3314, -83.0458, 'America/Detroit'], ['minneapolis', 'Minneapolis', '미니애폴리스', 'USA', 44.9778, -93.265, 'America/Chicago'],
+  ['austin', 'Austin', '오스틴', 'USA', 30.2672, -97.7431, 'America/Chicago'], ['portland', 'Portland', '포틀랜드', 'USA', 45.5152, -122.6784, 'America/Los_Angeles'],
+  ['honolulu', 'Honolulu', '호놀룰루', 'USA', 21.3069, -157.8583, 'Pacific/Honolulu'], ['anchorage', 'Anchorage', '앵커리지', 'USA', 61.2181, -149.9003, 'America/Anchorage'],
+  ['toronto', 'Toronto', '토론토', 'Canada', 43.6532, -79.3832, 'America/Toronto'], ['vancouver', 'Vancouver', '밴쿠버', 'Canada', 49.2827, -123.1207, 'America/Vancouver'],
+  ['montreal', 'Montreal', '몬트리올', 'Canada', 45.5017, -73.5673, 'America/Toronto'], ['calgary', 'Calgary', '캘거리', 'Canada', 51.0447, -114.0719, 'America/Edmonton'],
+  ['mexicocity', 'Mexico City', '멕시코시티', 'Mexico', 19.4326, -99.1332, 'America/Mexico_City'], ['saopaulo', 'São Paulo', '상파울루', 'Brazil', -23.5505, -46.6333, 'America/Sao_Paulo'],
+  ['rio', 'Rio de Janeiro', '리우데자네이루', 'Brazil', -22.9068, -43.1729, 'America/Sao_Paulo'], ['buenosaires', 'Buenos Aires', '부에노스아이레스', 'Argentina', -34.6037, -58.3816, 'America/Argentina/Buenos_Aires'],
+  ['santiago', 'Santiago', '산티아고', 'Chile', -33.4489, -70.6693, 'America/Santiago'], ['lima', 'Lima', '리마', 'Peru', -12.0464, -77.0428, 'America/Lima'],
+  ['bogota', 'Bogotá', '보고타', 'Colombia', 4.711, -74.0721, 'America/Bogota'],
+  ['london', 'London', '런던', 'UK', 51.5074, -0.1278, 'Europe/London'], ['manchester', 'Manchester', '맨체스터', 'UK', 53.4808, -2.2426, 'Europe/London'],
+  ['dublin', 'Dublin', '더블린', 'Ireland', 53.3498, -6.2603, 'Europe/Dublin'], ['paris', 'Paris', '파리', 'France', 48.8566, 2.3522, 'Europe/Paris'],
+  ['berlin', 'Berlin', '베를린', 'Germany', 52.52, 13.405, 'Europe/Berlin'], ['munich', 'Munich', '뮌헨', 'Germany', 48.1351, 11.582, 'Europe/Berlin'],
+  ['frankfurt', 'Frankfurt', '프랑크푸르트', 'Germany', 50.1109, 8.6821, 'Europe/Berlin'], ['madrid', 'Madrid', '마드리드', 'Spain', 40.4168, -3.7038, 'Europe/Madrid'],
+  ['barcelona', 'Barcelona', '바르셀로나', 'Spain', 41.3874, 2.1686, 'Europe/Madrid'], ['rome', 'Rome', '로마', 'Italy', 41.9028, 12.4964, 'Europe/Rome'],
+  ['milan', 'Milan', '밀라노', 'Italy', 45.4642, 9.19, 'Europe/Rome'], ['amsterdam', 'Amsterdam', '암스테르담', 'Netherlands', 52.3676, 4.9041, 'Europe/Amsterdam'],
+  ['brussels', 'Brussels', '브뤼셀', 'Belgium', 50.8503, 4.3517, 'Europe/Brussels'], ['zurich', 'Zurich', '취리히', 'Switzerland', 47.3769, 8.5417, 'Europe/Zurich'],
+  ['vienna', 'Vienna', '빈', 'Austria', 48.2082, 16.3738, 'Europe/Vienna'], ['stockholm', 'Stockholm', '스톡홀름', 'Sweden', 59.3293, 18.0686, 'Europe/Stockholm'],
+  ['oslo', 'Oslo', '오슬로', 'Norway', 59.9139, 10.7522, 'Europe/Oslo'], ['copenhagen', 'Copenhagen', '코펜하겐', 'Denmark', 55.6761, 12.5683, 'Europe/Copenhagen'],
+  ['helsinki', 'Helsinki', '헬싱키', 'Finland', 60.1699, 24.9384, 'Europe/Helsinki'], ['warsaw', 'Warsaw', '바르샤바', 'Poland', 52.2297, 21.0122, 'Europe/Warsaw'],
+  ['prague', 'Prague', '프라하', 'Czechia', 50.0755, 14.4378, 'Europe/Prague'], ['budapest', 'Budapest', '부다페스트', 'Hungary', 47.4979, 19.0402, 'Europe/Budapest'],
+  ['lisbon', 'Lisbon', '리스본', 'Portugal', 38.7223, -9.1393, 'Europe/Lisbon'], ['athens', 'Athens', '아테네', 'Greece', 37.9838, 23.7275, 'Europe/Athens'],
+  ['istanbul', 'Istanbul', '이스탄불', 'Türkiye', 41.0082, 28.9784, 'Europe/Istanbul'], ['moscow', 'Moscow', '모스크바', 'Russia', 55.7558, 37.6173, 'Europe/Moscow'],
+  ['kyiv', 'Kyiv', '키이우', 'Ukraine', 50.4501, 30.5234, 'Europe/Kyiv'],
+  ['dubai', 'Dubai', '두바이', 'UAE', 25.2048, 55.2708, 'Asia/Dubai'], ['riyadh', 'Riyadh', '리야드', 'Saudi Arabia', 24.7136, 46.6753, 'Asia/Riyadh'],
+  ['telaviv', 'Tel Aviv', '텔아비브', 'Israel', 32.0853, 34.7818, 'Asia/Jerusalem'], ['cairo', 'Cairo', '카이로', 'Egypt', 30.0444, 31.2357, 'Africa/Cairo'],
+  ['lagos', 'Lagos', '라고스', 'Nigeria', 6.5244, 3.3792, 'Africa/Lagos'], ['nairobi', 'Nairobi', '나이로비', 'Kenya', -1.2921, 36.8219, 'Africa/Nairobi'],
+  ['johannesburg', 'Johannesburg', '요하네스버그', 'South Africa', -26.2041, 28.0473, 'Africa/Johannesburg'],
+  ['mumbai', 'Mumbai', '뭄바이', 'India', 19.076, 72.8777, 'Asia/Kolkata'], ['delhi', 'New Delhi', '뉴델리', 'India', 28.6139, 77.209, 'Asia/Kolkata'],
+  ['bangalore', 'Bengaluru', '벵갈루루', 'India', 12.9716, 77.5946, 'Asia/Kolkata'], ['karachi', 'Karachi', '카라치', 'Pakistan', 24.8607, 67.0011, 'Asia/Karachi'],
+  ['dhaka', 'Dhaka', '다카', 'Bangladesh', 23.8103, 90.4125, 'Asia/Dhaka'], ['bangkok', 'Bangkok', '방콕', 'Thailand', 13.7563, 100.5018, 'Asia/Bangkok'],
+  ['hanoi', 'Hanoi', '하노이', 'Vietnam', 21.0278, 105.8342, 'Asia/Ho_Chi_Minh'], ['hcmc', 'Ho Chi Minh City', '호찌민', 'Vietnam', 10.8231, 106.6297, 'Asia/Ho_Chi_Minh'],
+  ['singapore', 'Singapore', '싱가포르', 'Singapore', 1.3521, 103.8198, 'Asia/Singapore'], ['kl', 'Kuala Lumpur', '쿠알라룸푸르', 'Malaysia', 3.139, 101.6869, 'Asia/Kuala_Lumpur'],
+  ['jakarta', 'Jakarta', '자카르타', 'Indonesia', -6.2088, 106.8456, 'Asia/Jakarta'], ['manila', 'Manila', '마닐라', 'Philippines', 14.5995, 120.9842, 'Asia/Manila'],
+  ['hongkong', 'Hong Kong', '홍콩', 'Hong Kong', 22.3193, 114.1694, 'Asia/Hong_Kong'], ['taipei', 'Taipei', '타이베이', 'Taiwan', 25.033, 121.5654, 'Asia/Taipei'],
+  ['beijing', 'Beijing', '베이징', 'China', 39.9042, 116.4074, 'Asia/Shanghai'], ['shanghai', 'Shanghai', '상하이', 'China', 31.2304, 121.4737, 'Asia/Shanghai'],
+  ['guangzhou', 'Guangzhou', '광저우', 'China', 23.1291, 113.2644, 'Asia/Shanghai'], ['tokyo', 'Tokyo', '도쿄', 'Japan', 35.6762, 139.6503, 'Asia/Tokyo'],
+  ['osaka', 'Osaka', '오사카', 'Japan', 34.6937, 135.5023, 'Asia/Tokyo'], ['fukuoka', 'Fukuoka', '후쿠오카', 'Japan', 33.5904, 130.4017, 'Asia/Tokyo'],
+  ['ulaanbaatar', 'Ulaanbaatar', '울란바토르', 'Mongolia', 47.8864, 106.9057, 'Asia/Ulaanbaatar'], ['almaty', 'Almaty', '알마티', 'Kazakhstan', 43.222, 76.8512, 'Asia/Almaty'],
+  ['tashkent', 'Tashkent', '타슈켄트', 'Uzbekistan', 41.2995, 69.2401, 'Asia/Tashkent'],
+  ['sydney', 'Sydney', '시드니', 'Australia', -33.8688, 151.2093, 'Australia/Sydney'], ['melbourne', 'Melbourne', '멜버른', 'Australia', -37.8136, 144.9631, 'Australia/Melbourne'],
+  ['brisbane', 'Brisbane', '브리즈번', 'Australia', -27.4698, 153.0251, 'Australia/Brisbane'], ['perth', 'Perth', '퍼스', 'Australia', -31.9505, 115.8605, 'Australia/Perth'],
+  ['auckland', 'Auckland', '오클랜드', 'New Zealand', -36.8485, 174.7633, 'Pacific/Auckland'],
+  ['pyongyang', 'Pyongyang', '평양', 'North Korea', 39.0392, 125.7625, 'Asia/Pyongyang']
+];
+WORLD_CITIES.forEach(([k, en, ko, country, lat, lon, tz]) => { CITIES[k] = { name: ko, en, country, lat, lon, tz }; });
+
+// tz에서 UTC 시각 utcMs의 오프셋(분)
+function tzOffsetMin(tz, utcMs) {
+  const f = new Intl.DateTimeFormat('en-US', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+  const p = Object.fromEntries(f.formatToParts(new Date(utcMs)).map(x => [x.type, x.value]));
+  return (Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour % 24, +p.minute) - utcMs) / 60000;
+}
+// 출생지 현지 시각(벽시계) → 그 순간의 오프셋, 표준시, 서머타임 여부
+function zoneAt(tz, dateStr, timeStr, lon) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const [hh, mm] = timeStr ? timeStr.split(':').map(Number) : [12, 0];
+  const local = Date.UTC(y, m - 1, d, hh, mm);
+  let off = tzOffsetMin(tz, local);
+  off = tzOffsetMin(tz, local - off * 60000);
+  const std = Math.min(tzOffsetMin(tz, Date.UTC(y, 0, 15)), tzOffsetMin(tz, Date.UTC(y, 6, 15)));
+  return { offset: off / 60, base: std / 60, dst: off > std, foreign: true, lon, tz };
+}
+// 도시 키 → 한국이면 기존 한국 규칙, 해외면 IANA 시간대
+function zoneFor(cityKey, dateStr, timeStr) {
+  const c = CITIES[cityKey];
+  return c && c.tz ? zoneAt(c.tz, dateStr, timeStr, c.lon) : koreaOffset(dateStr);
+}
+// 사주·대운 계산을 해외 시간대로 감싸서 실행
+let ZONE = null;
+function withZone(cityKey, dateStr, timeStr, fn) {
+  const c = CITIES[cityKey];
+  ZONE = c && c.tz ? zoneAt(c.tz, dateStr, timeStr, c.lon) : null;
+  try { return fn(); } finally { ZONE = null; }
+}
+
+/* ===== 사주 확장: 대운·12운성·합충·신살 (calc_engine.js 뒤에 붙여 사용) ===== */
+const STAGES = ['장생','목욕','관대','건록','제왕','쇠','병','사','묘','절','태','양'];
+const STAGE_START = [11, 6, 2, 9, 2, 9, 5, 0, 8, 3]; // 갑을병정무기경신임계의 장생 지지 index
+function twelveStage(stem, branch) {
+  const s = STAGE_START[stem];
+  const k = stem % 2 === 0 ? (branch - s + 12) % 12 : (s - branch + 12) % 12;
+  return STAGES[k];
+}
+
+/* 대운: gender 'm'|'f'. 절입 시각은 태양 황경 315°부터 30°마다 */
+function daeun({ dateStr, timeStr, gender }) {
+  const base = sajuPillars({ dateStr, timeStr });
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const [hh, mm] = timeStr ? timeStr.split(':').map(Number) : [12, 0];
+  const tz = koreaOffset(dateStr);
+  const jd = julianDay(y, m, d, hh + mm / 60 - tz.offset);
+  const yangYear = base.pillars.year.stem % 2 === 0;
+  const forward = (yangYear && gender === 'm') || (!yangYear && gender === 'f');
+  const lon = sunLongitude(jd);
+  const off = Math.floor(norm360(lon - 315) / 30);
+  const prevTerm = sunCrossing(norm360(315 + off * 30), jd - 15);
+  const nextTerm = sunCrossing(norm360(315 + (off + 1) * 30), jd + 15);
+  const days = forward ? nextTerm - jd : jd - prevTerm;
+  const num = Math.max(1, Math.round(days / 3));
+  const monthIdx = [...Array(60).keys()].find(i => i % 10 === base.pillars.month.stem && i % 12 === base.pillars.month.branch);
+  const list = [];
+  for (let i = 1; i <= 10; i++) {
+    const idx = ((monthIdx + (forward ? i : -i)) % 60 + 60) % 60;
+    const p = pillarName(idx);
+    list.push({ startAge: num + (i - 1) * 10, ...p,
+      stemGod: tenGod(base.pillars.day.stem, p.stem), branchGod: tenGod(base.pillars.day.stem, BRANCH_MAIN_STEM[p.branch]),
+      stage: twelveStage(base.pillars.day.stem, p.branch) });
+  }
+  return { forward, days: +days.toFixed(2), num, list };
+}
+
+const SAMHAP_GROUP = b => [[2,6,10],[8,0,4],[5,9,1],[11,3,7]].findIndex(g => g.includes(b)); // 인오술,신자진,사유축,해묘미
+const SHINSAL = [ {역마:8, 도화:3, 화개:10}, {역마:2, 도화:9, 화개:4}, {역마:11, 도화:6, 화개:1}, {역마:5, 도화:0, 화개:7} ];
+const CHEONEUL = [[1,7],[0,8],[11,9],[11,9],[1,7],[0,8],[1,7],[2,6],[5,3],[5,3]];
+const PAIRS = {
+  육합: [[0,1],[2,11],[3,10],[4,9],[5,8],[6,7]], 충: [[0,6],[1,7],[2,8],[3,9],[4,10],[5,11]],
+  파: [[0,9],[1,4],[2,11],[3,6],[5,8],[7,10]], 해: [[0,7],[1,6],[2,5],[3,4],[8,11],[9,10]],
+  원진: [[0,7],[1,6],[2,9],[3,8],[4,11],[5,10]], 형: [[2,5],[5,8],[2,8],[1,10],[10,7],[1,7],[0,3]]
+};
+const STEM_PAIRS = { 천간합: [[0,5],[1,6],[2,7],[3,8],[4,9]], 천간충: [[0,6],[1,7],[2,8],[3,9]] };
+
+function sajuAnalysis(opts) {
+  const r = sajuPillars(opts);
+  const P = r.pillars, ds = P.day.stem;
+  const keys = ['year','month','day','hour'].filter(k => P[k]);
+  const label = { year:'연', month:'월', day:'일', hour:'시' };
+  const stages = {}; keys.forEach(k => stages[k] = twelveStage(ds, P[k].branch));
+  const rel = [];
+  for (let i = 0; i < keys.length; i++) for (let j = i + 1; j < keys.length; j++) {
+    const a = P[keys[i]], b = P[keys[j]], where = label[keys[i]] + '-' + label[keys[j]];
+    for (const [name, list] of Object.entries(PAIRS)) if (list.some(([x,y]) => (x===a.branch&&y===b.branch)||(y===a.branch&&x===b.branch))) rel.push({ type:name, where, ko: BRANCHES[a.branch]+BRANCHES[b.branch] });
+    if (a.branch === b.branch && [4,6,9,11].includes(a.branch)) rel.push({ type:'형(자형)', where, ko: BRANCHES[a.branch]+BRANCHES[b.branch] });
+    for (const [name, list] of Object.entries(STEM_PAIRS)) if (list.some(([x,y]) => (x===a.stem&&y===b.stem)||(y===a.stem&&x===b.stem))) rel.push({ type:name, where, ko: STEMS[a.stem]+STEMS[b.stem] });
+  }
+  const shinsal = [];
+  [['year','연지'],['day','일지']].forEach(([bk, bl]) => {
+    const g = SAMHAP_GROUP(P[bk].branch);
+    for (const [name, target] of Object.entries(SHINSAL[g])) keys.forEach(k => { if (k !== bk && P[k].branch === target) shinsal.push({ name, basis: bl, at: label[k] }); });
+  });
+  keys.forEach(k => { if (CHEONEUL[ds].includes(P[k].branch)) shinsal.push({ name:'천을귀인', basis:'일간', at: label[k] }); });
+  const uniq = [...new Map(shinsal.map(s => [s.name + s.at, s])).values()];
+  const excess = [], lack = [];
+  r.counts.forEach((c, i) => { if (c >= 3) excess.push(EL[i]); if (c === 0) lack.push(EL[i]); });
+  return { ...r, stages, relations: rel, shinsal: uniq, excess, lack };
+}
+
+/* =========================================================
+ * Korean Saju — English content (2026-11-15)
+ *  Day Master 10 types, Five Elements, Ten Gods, 12 animals, special stars
+ *  Source logic: saju_data.json / fortune_engine_rules.md (rewritten for a global audience)
+ * ========================================================= */
+const EN = {
+  STEM_ROMAN: ['Gap', 'Eul', 'Byeong', 'Jeong', 'Mu', 'Gi', 'Gyeong', 'Sin', 'Im', 'Gye'],
+  BRANCH_ROMAN: ['Ja', 'Chuk', 'In', 'Myo', 'Jin', 'Sa', 'O', 'Mi', 'Sin', 'Yu', 'Sul', 'Hae'],
+  ELEMENT: ['Wood', 'Fire', 'Earth', 'Metal', 'Water'],
+  EL_COLOR: ['#7FB685', '#E07A5F', '#D9B26F', '#D8D3CB', '#6FA8DC'],
+  ANIMAL: ['Rat', 'Ox', 'Tiger', 'Rabbit', 'Dragon', 'Snake', 'Horse', 'Goat', 'Monkey', 'Rooster', 'Dog', 'Pig'],
+  ANIMAL_TRAIT: [
+    'Quick, resourceful and always one step ahead of the room.', 'Patient and dependable. You finish what others abandon.',
+    'Bold and protective. You lead from the front.', 'Gentle, perceptive and quietly lucky.',
+    'Big energy and bigger ambitions. Hard to ignore.', 'Intuitive and strategic. You read people fast.',
+    'Free-spirited and fast-moving. Routine bores you.', 'Kind, artistic and loyal to your people.',
+    'Clever and playful. You solve problems sideways.', 'Sharp-eyed and proud. You notice every detail.',
+    'Honest and loyal. Your friends trust you completely.', 'Warm, generous and good at enjoying life.'
+  ],
+  // Day Master: the stem of your day pillar — the core of who you are
+  DM: [
+    { name: 'The Great Tree', yy: 'Yang Wood', nature: 'You grow straight up, steady and proud. People lean on you, and you like being the one they lean on.', love: 'Loyal and protective, but you can be stubborn about how love should look.', work: 'Natural leader for long projects. Teaching, building, starting things from zero.', money: 'Slow and steady growth beats quick wins for you.', shadow: 'Bending feels like breaking to you. Learn to sway in the wind.', words: ['Upright', 'Steady', 'Leader'] },
+    { name: 'The Vine', yy: 'Yin Wood', nature: 'Soft but impossible to stop. You find a way around every wall and grow toward the light.', love: 'Attentive and adaptable. You give a lot. Make sure you get it back.', work: 'Networking, design, diplomacy. You climb by connecting.', money: 'You earn through people. Relationships are your bank.', shadow: 'Over-adapting until you forget what you wanted.', words: ['Resilient', 'Graceful', 'Connector'] },
+    { name: 'The Sun', yy: 'Yang Fire', nature: 'Bright, open, impossible to miss. You warm up every room and hide nothing.', love: 'Passionate and generous. You love out loud.', work: 'Stage, sales, media, anything with an audience.', money: 'Big earner, big spender. Build a system before the fun.', shadow: 'Burning hot then fading. Pace yourself.', words: ['Radiant', 'Generous', 'Bold'] },
+    { name: 'The Candle', yy: 'Yin Fire', nature: 'Quiet glow, deep focus. You light up one person or one craft completely.', love: 'Devoted and thoughtful. Small gestures mean everything to you.', work: 'Research, art, care work, detail-heavy craft.', money: 'Careful and intuitive with money. Trust your gut on value.', shadow: 'Worrying in silence. Say it out loud.', words: ['Warm', 'Focused', 'Insightful'] },
+    { name: 'The Mountain', yy: 'Yang Earth', nature: 'Solid, calm and trusted. People feel safe around you.', love: 'The stable partner. You show love by showing up.', work: 'Management, real estate, operations, anything that needs a backbone.', money: 'Asset builder. Property and long holds suit you.', shadow: 'Slow to change even when change is needed.', words: ['Grounded', 'Reliable', 'Calm'] },
+    { name: 'The Garden', yy: 'Yin Earth', nature: 'Fertile ground. You nurture people and ideas until they bloom.', love: 'Caring and practical. You remember everything they need.', work: 'HR, education, food, wellness, coordination.', money: 'Saver by instinct. Small habits make you rich.', shadow: 'Taking care of everyone except yourself.', words: ['Nurturing', 'Practical', 'Kind'] },
+    { name: 'The Sword', yy: 'Yang Metal', nature: 'Decisive and direct. You cut through noise and say what others will not.', love: 'Straightforward and fiercely loyal. No games.', work: 'Law, engineering, finance, competitive fields.', money: 'Clear rules, clear profits. You negotiate well.', shadow: 'Sharp words leave marks. Soften the edge.', words: ['Decisive', 'Brave', 'Honest'] },
+    { name: 'The Jewel', yy: 'Yin Metal', nature: 'Refined, precise and quietly brilliant. You have taste and high standards.', love: 'Romantic but selective. You want someone who sees your shine.', work: 'Design, beauty, analysis, luxury, editing.', money: 'Quality over quantity. Invest in what lasts.', shadow: 'Perfectionism and sensitivity to criticism.', words: ['Elegant', 'Precise', 'Sensitive'] },
+    { name: 'The Ocean', yy: 'Yang Water', nature: 'Big-picture mind, restless and free. You flow toward wherever life is bigger.', love: 'Charming and adventurous. You need space to stay.', work: 'Travel, trade, strategy, tech, anything global.', money: 'Money moves fast around you. Keep a harbor.', shadow: 'Hard to pin down, even for yourself.', words: ['Free', 'Visionary', 'Adaptable'] },
+    { name: 'The Rain', yy: 'Yin Water', nature: 'Intuitive and deep. You sense what is unsaid and quietly change everything you touch.', love: 'Empathic and tender. You feel your partner before they speak.', work: 'Psychology, writing, music, research, healing.', money: 'Steady drips fill the well. Automate your savings.', shadow: 'Absorbing other people\'s moods. Protect your energy.', words: ['Intuitive', 'Gentle', 'Deep'] }
+  ],
+  EL_INFO: [
+    { mean: 'growth, plans and new beginnings', lack: 'Start something small and new. Morning walks, plants, green.', excess: 'Too many plans at once. Finish one before the next.' },
+    { mean: 'passion, visibility and joy', lack: 'Get seen. Share your work, wear warm colors, get sunlight.', excess: 'Burnout risk. Rest before you crash.' },
+    { mean: 'stability, trust and the body', lack: 'Build routines. Regular meals and sleep ground you.', excess: 'Overthinking and holding on. Let something go.' },
+    { mean: 'decisions, structure and boundaries', lack: 'Practice saying no. Declutter, set clear rules.', excess: 'Too rigid. Leave room for surprise.' },
+    { mean: 'wisdom, flow and connection', lack: 'Slow down to feel. Journaling, water, quiet time.', excess: 'Drifting and worrying. Pick a direction and move.' }
+  ],
+  // Ten Gods: how each part of your chart relates to you
+  GOD: {
+    비견: { en: 'The Peer', chart: 'independence and self-reliance', year: 'A year to stand on your own. Competition rises, so does confidence.' },
+    겁재: { en: 'The Rival', chart: 'drive, rivalry and bold risks', year: 'Bold moves pay off, but watch money and shared deals.' },
+    식신: { en: 'The Creator', chart: 'talent, food, pleasure and creativity', year: 'A creative, comfortable year. Make things and enjoy them.' },
+    상관: { en: 'The Performer', chart: 'expression, rebellion and charisma', year: 'Speak up and show off your skills. Mind the rules.' },
+    편재: { en: 'The Adventurer', chart: 'windfalls, deals and wide networks', year: 'Money moves in waves. Great for side hustles and travel.' },
+    정재: { en: 'The Keeper', chart: 'steady income and practical love', year: 'Stable gains. Save, budget and build.' },
+    편관: { en: 'The Challenger', chart: 'pressure, courage and sudden change', year: 'Pressure turns you into a leader. Do not fight alone.' },
+    정관: { en: 'The Authority', chart: 'status, rules and recognition', year: 'Recognition, promotion and commitment are in the air.' },
+    편인: { en: 'The Mystic', chart: 'intuition, unusual skills and solitude', year: 'Study something unusual. Trust your instincts.' },
+    정인: { en: 'The Mentor', chart: 'learning, support and protection', year: 'Help arrives. Great for study, certificates and mentors.' }
+  },
+  STAR: {
+    역마: { en: 'Traveling Horse', text: 'Movement is your luck. Travel, moving abroad and changing scenes open doors.' },
+    도화: { en: 'Peach Blossom', text: 'Natural charm. People are drawn to you, in love and on stage.' },
+    화개: { en: 'Flower Canopy', text: 'Artistic and spiritual depth. You shine in solitude and creative work.' },
+    천을귀인: { en: 'Noble Helper', text: 'The strongest lucky star. Someone appears to help you at the right moment.' }
+  },
+  PILLAR_ROLE: { year: 'Year · roots & family', month: 'Month · career & parents', day: 'Day · you & partner', hour: 'Hour · future & children' }
+};
+
+</script>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const CFG = Object.assign({ BETA: true, GA_ID: '', FEEDBACK_URL: '' }, window.RODEO_CONFIG || {});
+  if (CFG.GA_ID) { const s = document.createElement('script'); s.async = true; s.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(CFG.GA_ID); document.head.appendChild(s);
+    window.dataLayer = window.dataLayer || []; window.gtag = function () { window.dataLayer.push(arguments); }; gtag('js', new Date()); gtag('config', CFG.GA_ID, { anonymize_ip: true }); }
+  const track = (n, p) => { try { if (window.gtag && CFG.GA_ID) gtag('event', n, Object.assign({ lang: 'en' }, p || {})); } catch (e) { /* 무시 */ } };
+  const toast = msg => { let t = $('toast'); if (!t) { t = document.createElement('div'); t.id = 'toast'; t.setAttribute('role', 'status'); document.body.appendChild(t); } t.textContent = msg; t.classList.add('on'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('on'), 2600); };
+  if (CFG.FEEDBACK_URL) $('fb').innerHTML = ` · <a href="${CFG.FEEDBACK_URL}" target="_blank" rel="noopener">Send feedback</a>`;
+  if (!CFG.BETA) document.querySelectorAll('.beta').forEach(b => b.remove());
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const KR_EN = { seoul: 'Seoul', incheon: 'Incheon', suwon: 'Suwon / Gyeonggi', chuncheon: 'Chuncheon / Gangwon', daejeon: 'Daejeon', daegu: 'Daegu', gwangju: 'Gwangju', busan: 'Busan', ulsan: 'Ulsan', jeju: 'Jeju' };
+  Object.entries(KR_EN).forEach(([k, n]) => { if (CITIES[k]) { CITIES[k].en = n; CITIES[k].country = 'South Korea'; } });
+
+  // 도시 선택: 나라별 묶음, 기기 시간대와 같은 도시를 기본값으로
+  const byCountry = {};
+  Object.entries(CITIES).forEach(([k, c]) => { (byCountry[c.country] = byCountry[c.country] || []).push([k, c]); });
+  const countries = Object.keys(byCountry).sort((a, b) => a.localeCompare(b));
+  $('c').innerHTML = countries.map(n => `<optgroup label="${esc(n)}">${byCountry[n].sort((a, b) => a[1].en.localeCompare(b[1].en)).map(([k, c]) => `<option value="${k}">${esc(c.en)}</option>`).join('')}</optgroup>`).join('');
+  let myTz = ''; try { myTz = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch (e) { /* 무시 */ }
+  const guess = myTz === 'Asia/Seoul' ? 'seoul' : (Object.entries(CITIES).find(([, c]) => c.tz === myTz) || ['nyc'])[0];
+  $('c').value = guess;
+  $('nt').addEventListener('change', e => { $('t').disabled = e.target.checked; });
+
+  let state = null, unlocked = false;
+  const elOfStem = s => STEM_EL[s], elOfBranch = b => BRANCH_EL[b];
+  const yy = s => (s % 2 === 0 ? 'Yang ' : 'Yin ') + EN.ELEMENT[STEM_EL[s]];
+
+  $('f').addEventListener('submit', e => {
+    e.preventDefault();
+    const d = $('d').value; if (!d) { $('d').focus(); $('d').setAttribute('aria-invalid', 'true'); return; }
+    const t = $('nt').checked ? '' : $('t').value;
+    if (!t && !$('nt').checked) { $('t').focus(); alert('Enter your birth time, or tick "I don\'t know my birth time".'); return; }
+    const city = $('c').value, gender = $('g').value;
+    const r = withZone(city, d, t, () => sajuAnalysis({ dateStr: d, timeStr: t, ziMode: 'next' }));
+    const du = withZone(city, d, t, () => daeun({ dateStr: d, timeStr: t, gender }));
+    state = { d, t, city, gender, r, du }; track('saju_view', { country: CITIES[city].country });
+    render(); const res = $('result'); res.style.display = 'block'; res.classList.add('show');
+    res.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  function render() {
+    const { r, du, d, city } = state, P = r.pillars, ds = P.day.stem, DM = EN.DM[ds];
+    const now = new Date(), age = now.getFullYear() - Number(d.slice(0, 4));
+    const cur = du.list.find(x => age >= x.startAge && age < x.startAge + 10);
+    const yIdx = (((now.getFullYear() - 4) % 60) + 60) % 60, yP = pillarName(yIdx);
+    const yGodS = tenGod(ds, yP.stem), yGodB = tenGod(ds, BRANCH_MAIN_STEM[yP.branch]);
+    const pillar = (k) => {
+      const p = P[k];
+      if (!p) return `<div class="pl"><div class="role">${EN.PILLAR_ROLE[k]}</div><div class="h" style="color:var(--sub)">?</div><div class="r">time unknown</div></div>`;
+      const g = r.gods[k];
+      return `<div class="pl${k === 'day' ? ' me' : ''}"><div class="role">${EN.PILLAR_ROLE[k]}</div>
+        <div class="h" style="color:${EN.EL_COLOR[elOfStem(p.stem)]}">${STEMS_H[p.stem]}</div>
+        <div class="h" style="color:${EN.EL_COLOR[elOfBranch(p.branch)]}">${BRANCHES_H[p.branch]}</div>
+        <div class="r">${EN.STEM_ROMAN[p.stem]}-${EN.BRANCH_ROMAN[p.branch].toLowerCase()}</div>
+        <div class="g">${k === 'day' ? 'You' : esc(EN.GOD[g.stem].en)}</div></div>`;
+    };
+    const cnt = r.counts, max = Math.max(...cnt, 1);
+    const lack = cnt.map((c, i) => c === 0 ? i : -1).filter(i => i >= 0), top = cnt.indexOf(Math.max(...cnt));
+    const stars = [...new Map(r.shinsal.map(s => [s.name, s])).values()].filter(s => EN.STAR[s.name]);
+    const animal = P.year.branch;
+    const tz = r.tz;
+    let h = `
+      <section class="sec"><h2>Your Four Pillars</h2>
+        <div class="pillars">${['hour', 'day', 'month', 'year'].map(pillar).join('')}</div>
+        <p class="note" style="margin-top:10px">${tz.foreign ? `Born in ${esc(CITIES[city].en)} (${tz.tz}${tz.dst ? ', daylight saving' : ''}). The hour pillar uses true local solar time for that longitude.` : `Born in ${esc(CITIES[city].en)}. Korean standard-time rules applied${tz.dst ? ', including daylight saving' : ''}.`}${r.nearBoundary ? ' You were born close to a solar-term boundary, so an exact birth time matters.' : ''}</p>
+      </section>
+      <section class="sec"><h2>Your Day Master</h2>
+        <div class="type"><div class="big" style="color:${EN.EL_COLOR[elOfStem(ds)]}">${STEMS_H[ds]}</div>
+          <div class="nm">${esc(DM.name)}</div><div class="yy">${yy(ds)} · ${EN.STEM_ROMAN[ds]}</div>
+          <div class="words">${DM.words.map(w => `<span>${w}</span>`).join('')}</div>
+          <p>${esc(DM.nature)}</p><p style="color:var(--sub)"><b style="color:var(--brass-hi)">Watch out:</b> ${esc(DM.shadow)}</p></div>
+      </section>
+      <section class="sec"><h2>Your Five Elements</h2>
+        <div class="bars">${EN.ELEMENT.map((n, i) => `<div class="bar"><span>${n}</span><i><b style="width:${Math.round(cnt[i] / max * 100)}%;background:${EN.EL_COLOR[i]}"></b></i><em>${cnt[i]}</em></div>`).join('')}</div>
+        <p style="margin-top:12px">Your strongest element is <b>${EN.ELEMENT[top]}</b>, the energy of ${EN.EL_INFO[top].mean}. ${cnt[top] >= 3 ? esc(EN.EL_INFO[top].excess) : ''}</p>
+        ${lack.map(i => `<p>You have <b>no ${EN.ELEMENT[i]}</b>. That's the energy of ${EN.EL_INFO[i].mean}. ${esc(EN.EL_INFO[i].lack)}</p>`).join('')}
+      </section>
+      <section class="sec"><h2>Your Animal &amp; Stars</h2><div class="kv">
+        <div><b>${EN.ANIMAL[animal]} ${BRANCHES_H[animal]}</b>${esc(EN.ANIMAL_TRAIT[animal])}${r.sajuYear !== Number(d.slice(0, 4)) ? ` <span class="note">(Born before the Korean solar new year, so your animal follows ${r.sajuYear}.)</span>` : ''}</div>
+        ${stars.map(s => `<div><b>✦ ${EN.STAR[s.name].en}</b>${esc(EN.STAR[s.name].text)}</div>`).join('') || '<div><b>✦ Clean chart</b>No special stars. Your story is written by your own choices.</div>'}
+      </div></section>`;
+    const deep = `
+      <div class="kv">
+        <div><b>Love</b>${esc(DM.love)}</div><div><b>Work</b>${esc(DM.work)}</div><div><b>Money</b>${esc(DM.money)}</div>
+      </div>
+      <h3 style="font-family:var(--serif);font-size:24px;color:var(--brass-hi);margin:22px 0 6px">${now.getFullYear()} · Year of the ${yP.stem % 2 === 0 ? 'Yang' : 'Yin'} ${EN.ELEMENT[STEM_EL[yP.stem]]} ${EN.ANIMAL[yP.branch]} ${yP.han}</h3>
+      <p><b>${esc(EN.GOD[yGodS].en)}</b> leads the first half: ${esc(EN.GOD[yGodS].year)}</p>
+      <p><b>${esc(EN.GOD[yGodB].en)}</b> shapes the second half: ${esc(EN.GOD[yGodB].year)}</p>
+      <h3 style="font-family:var(--serif);font-size:24px;color:var(--brass-hi);margin:22px 0 6px">Your 10-year luck cycles</h3>
+      <div class="cycles">${du.list.map(x => `<div class="cy${x === cur ? ' now' : ''}"><div>${x.startAge}</div><div class="h" style="color:${EN.EL_COLOR[STEM_EL[x.stem]]}">${x.han}</div><div>${EN.GOD[x.stemGod].en.replace('The ', '')}</div></div>`).join('')}</div>
+      ${cur ? `<p style="margin-top:12px">You are now in a <b>${esc(EN.GOD[cur.stemGod].en)}</b> decade (from age ${cur.startAge}). The theme is ${esc(EN.GOD[cur.stemGod].chart)}, turning toward ${esc(EN.GOD[cur.branchGod].chart)} in the second half.</p>` : `<p style="margin-top:12px">Your first luck cycle begins at age ${du.num}.</p>`}`;
+    h += `<section class="sec"><h2>Deep Reading</h2>${unlocked ? deep : `<div class="lock"><div class="peek">${deep}</div>
+      <div class="cta"><h3>Love, work, money &amp; your ${now.getFullYear()}</h3><p class="note">Plus your ten-year luck cycles, decoded.</p>
+      <button class="go" type="button" id="unlock" style="width:100%;margin-top:10px">Unlock full reading · $2.99</button>
+      <p class="note" style="margin-top:8px">${CFG.BETA ? 'Free during our beta. No payment is taken.' : ''}</p></div></div>`}</section>
+      <div class="actions"><button class="btn2 solid" type="button" id="save">Save my Saju card</button><button class="btn2" type="button" id="share">Share</button></div>`;
+    $('result').innerHTML = h;
+    const u = $('unlock'); if (u) u.addEventListener('click', () => { track('pay_click', { product: 'saju_en' }); if (CFG.BETA) toast('Free during beta 🎁'); setTimeout(() => { unlocked = true; render(); }, 450); });
+    $('save').addEventListener('click', e => { track('image_save'); saveCard(e); });
+    $('share').addEventListener('click', () => { track('share'); shareText(); });
+  }
+
+  async function shareText() {
+    const { r } = state, ds = r.pillars.day.stem, DM = EN.DM[ds];
+    const text = `My Korean Saju type is ${DM.name} (${STEMS_H[ds]}, ${yy(ds)}): ${DM.words.join(', ')}. Find yours:`;
+    try { if (navigator.share) await navigator.share({ title: 'Korean Saju', text, url: location.href.split('#')[0] }); else { await navigator.clipboard.writeText(text + ' ' + location.href.split('#')[0]); alert('Copied. Paste it anywhere to share.'); } } catch (e) { /* 취소 */ }
+  }
+
+  /* My Saju Type 이미지 (1080×1920) */
+  async function cardBlob() {
+    const { r } = state, P = r.pillars, ds = P.day.stem, DM = EN.DM[ds], W = 1080, H = 1920;
+    try { await Promise.all([document.fonts.load("800 300px 'Nanum Myeongjo'"), document.fonts.load("700 80px 'Cormorant Garamond'")]); } catch (e) { /* 기본 서체 */ }
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const x = cv.getContext('2d');
+    const g = x.createRadialGradient(W / 2, 620, 80, W / 2, 800, 1300); g.addColorStop(0, '#2A1620'); g.addColorStop(1, '#170D13');
+    x.fillStyle = g; x.fillRect(0, 0, W, H);
+    x.strokeStyle = '#C9A46A'; x.lineWidth = 3; x.strokeRect(36, 36, W - 72, H - 72); x.globalAlpha = .45; x.lineWidth = 1.5; x.strokeRect(52, 52, W - 104, H - 104); x.globalAlpha = 1;
+    x.textAlign = 'center';
+    x.fillStyle = '#C2B4A8'; x.font = "500 34px system-ui, sans-serif"; x.fillText('My Korean Saju type', W / 2, 170);
+    x.fillStyle = EN.EL_COLOR[STEM_EL[ds]]; x.font = "800 360px 'Nanum Myeongjo', serif"; x.fillText(STEMS_H[ds], W / 2, 620);
+    x.fillStyle = '#E2C48F'; x.font = "700 104px 'Cormorant Garamond', Georgia, serif"; x.fillText(DM.name, W / 2, 800);
+    x.fillStyle = '#C2B4A8'; x.font = "500 40px system-ui, sans-serif"; x.fillText(`${yy(ds)} · ${EN.STEM_ROMAN[ds]}`, W / 2, 870);
+    x.fillStyle = '#F3ECE4'; x.font = "600 44px system-ui, sans-serif"; x.fillText(DM.words.join('  ·  '), W / 2, 960);
+    // 네 기둥
+    const keys = ['hour', 'day', 'month', 'year'], cw = 190, gap = 26, tot = 4 * cw + 3 * gap; let px = (W - tot) / 2; const py = 1040;
+    keys.forEach(k => {
+      const p = P[k];
+      x.strokeStyle = k === 'day' ? '#C9A46A' : 'rgba(201,164,106,.35)'; x.lineWidth = k === 'day' ? 3 : 1.5; x.strokeRect(px, py, cw, 250);
+      x.font = "800 86px 'Nanum Myeongjo', serif";
+      if (p) { x.fillStyle = EN.EL_COLOR[STEM_EL[p.stem]]; x.fillText(STEMS_H[p.stem], px + cw / 2, py + 105); x.fillStyle = EN.EL_COLOR[BRANCH_EL[p.branch]]; x.fillText(BRANCHES_H[p.branch], px + cw / 2, py + 210); }
+      else { x.fillStyle = '#8E7F74'; x.fillText('?', px + cw / 2, py + 160); }
+      x.fillStyle = '#C2B4A8'; x.font = "500 26px system-ui, sans-serif"; x.fillText(k[0].toUpperCase() + k.slice(1), px + cw / 2, py + 295);
+      px += cw + gap;
+    });
+    // 오행 막대
+    const cnt = r.counts, mx = Math.max(...cnt, 1); let by = 1400;
+    EN.ELEMENT.forEach((n, i) => {
+      x.textAlign = 'left'; x.fillStyle = '#C2B4A8'; x.font = "500 32px system-ui, sans-serif"; x.fillText(n, 150, by + 24);
+      x.fillStyle = '#2B1A23'; x.fillRect(330, by, 600, 22); x.fillStyle = EN.EL_COLOR[i]; x.fillRect(330, by, Math.max(6, 600 * cnt[i] / mx), 22);
+      by += 58;
+    });
+    x.textAlign = 'center'; x.strokeStyle = 'rgba(201,164,106,.4)'; x.beginPath(); x.moveTo(90, H - 210); x.lineTo(W - 90, H - 210); x.stroke();
+    x.fillStyle = '#E2C48F'; x.font = "700 48px 'Cormorant Garamond', Georgia, serif"; x.fillText("What's your Saju type?", W / 2, H - 140);
+    x.fillStyle = '#C2B4A8'; x.font = "500 30px system-ui, sans-serif";
+    x.fillText(/^https?:/.test(location.href) ? location.host : 'Korean Saju · Seoul', W / 2, H - 92);
+    return new Promise(res => cv.toBlob(res, 'image/png'));
+  }
+  async function saveCard(e) {
+    const b = e.currentTarget, old = b.textContent; b.disabled = true; b.textContent = 'Making your card...';
+    try {
+      const blob = await cardBlob(), name = `my_saju_type_${Date.now()}.png`, file = new File([blob], name, { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] }) && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) await navigator.share({ files: [file], title: 'My Korean Saju type' });
+      else { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
+    } catch (err) { /* 취소 */ }
+    b.disabled = false; b.textContent = old;
+  }
+  window.__saju = { cardBlob, get state() { return state; } };
+})();
+
+</script>
+</body>
+</html>
