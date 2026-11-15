@@ -541,6 +541,11 @@ details.deep p b { color: var(--text); margin-right: 4px; font-weight: 700; }
 .qc-sug { text-align: left; font-size: 14px; background: #1F153A; border: 1px solid rgba(201,164,106,.35); padding: 12px 14px; border-radius: 12px; color: var(--text); cursor: pointer; }
 .qc-inp { font-size: 14px; background: #120B21; border: 1px solid rgba(201,164,106,.35); border-radius: 12px; padding: 11px 12px; color: var(--text); }
 .qc-go { padding: 0 16px; font-weight: 800; border-radius: 12px; background: var(--brass); color: #1B1014; border: 0; cursor: pointer; }
+.mb-vision { margin-top: 10px; width: 100%; display: flex; align-items: center; gap: 12px; text-align: left; padding: 13px 16px; border-radius: 16px; border: 1px solid var(--brass); background: rgba(201,164,106,.1); color: var(--text); cursor: pointer; }
+.mb-vision i { font-style: normal; font-size: 24px; }
+.mb-vision span { flex: 1; display: flex; flex-direction: column; }
+.mb-vision b { color: var(--brass-hi); font-size: 15.5px; } .mb-vision small { color: var(--sub); font-size: 12.5px; }
+.mb-vision em { font-style: normal; color: var(--brass-hi); font-weight: 800; }
 
 </style>
 <script src="config.js" onerror="void 0"></script>
@@ -4152,6 +4157,7 @@ const MB = (() => {
           <button type="button" data-quick="daily"><i>🌙</i>오늘의 카드</button><button type="button" data-quick="saju"><i>🔮</i>내 사주</button>
           <button type="button" data-quick="astro"><i>✨</i>별자리</button><button type="button" data-quick="compat"><i>💞</i>궁합</button>
         </div>
+        <button type="button" class="mb-vision" data-more="vision"><i>📷</i><span><b>관상 · 손금 보기</b><small>사진 한 장이면 돼요 · 무료</small></span><em>→</em></button>
         <p class="mb-today" id="mb-today"></p>
       </div>`);
     $('app-screen').classList.add('mb-chat-off');
