@@ -528,6 +528,9 @@ details.deep p b { color: var(--text); margin-right: 4px; font-weight: 700; }
 .rp-story p { padding-left: 2px; }
 .rp-do { color: var(--text); }
 .rp-dont { color: var(--ill); }
+.rp-tease { border: 1px dashed var(--brass); border-radius: 12px; padding: 12px; background: rgba(201,164,106,.06); }
+.rp-tlock { font-size: 13.5px; color: var(--sub); }
+.rp-tbtn { margin-top: 4px; width: 100%; padding: 11px; border-radius: 10px; border: 1px solid var(--brass); background: transparent; color: var(--brass-hi); font-weight: 800; font-size: 14.5px; cursor: pointer; }
 
 </style>
 <script src="config.js" onerror="void 0"></script>
@@ -3169,6 +3172,7 @@ const GUIDE = {
   }
 };
 const eul = w => { const c = String(w).trim().slice(-1).charCodeAt(0) - 0xAC00; return c >= 0 && c < 11172 && c % 28 ? '을' : '를'; };
+const eun = w => { const c = String(w).trim().slice(-1).charCodeAt(0) - 0xAC00; return c >= 0 && c < 11172 && c % 28 ? '은' : '는'; };
 function toneOf(sc) { return sc >= 0.7 ? ['좋은 카드', 'tone-good', '좋은 기운'] : sc > 0.15 ? ['조금 좋은 카드', 'tone-good', '조금 좋은 기운'] : sc >= -0.15 ? ['보통 카드', 'tone-mid', '좋지도 나쁘지도 않은 기운'] : sc > -1 ? ['조금 걸리는 카드', 'tone-bad', '조금 걸리는 기운'] : ['조심할 카드', 'tone-bad', '조심해야 할 기운']; }
 function posRole(i, tk) {
   const t = POS_Q[layout.key];
@@ -3194,6 +3198,45 @@ function reportCard(c, i, tk, sc) {
       ${kw}
       <p class="plain">👉 <b>쉽게 말하면,</b> ${esc(role)}에 ${tone[2]}이 나왔어요. ${esc(keyText(c))}${revPlain}<br>${lean}</p>
     </section>`;
+}
+
+/* 맛보기: 타로를 물으면 타로는 자세히, 사주·별자리는 짧게 (궁금하면 자세히 보기) */
+const GOD_BRIEF = {
+  비견: '내 힘으로 밀고 나가는 해', 겁재: '경쟁이 붙고 돈이 새기 쉬운 해', 식신: '좋아하는 일로 실력이 쌓이는 해', 상관: '말과 재주가 튀는 해',
+  편재: '큰돈과 바깥 활동이 커지는 해', 정재: '꾸준한 돈이 들어오는 해', 편관: '부담과 책임이 커지는 해', 정관: '직장과 평판이 자리 잡는 해',
+  편인: '남다른 공부에 빠지는 해', 정인: '공부·계약·도움 운이 좋은 해'
+};
+const TEASE = {
+  love: ['인연이 들어오는 해와 달', '사랑의 별(금성)로 본 연애 스타일과 연애운이 강한 시기'],
+  money: ['돈이 모이는 해와 새는 해', '행운의 별(목성)로 본 돈이 붙는 분야'],
+  work: ['자리를 옮기기 좋은 해', '태어난 날 하늘로 본 잘 맞는 직업'],
+  study: ['합격운이 강한 시기', '생각의 별(수성)로 본 나에게 맞는 공부법'],
+  general: ['10년 단위 운의 흐름', '태어난 날 하늘로 본 타고난 성향']
+};
+const SUN_SIGNS = [['염소', 1, 19], ['물병', 2, 18], ['물고기', 3, 20], ['양', 4, 19], ['황소', 5, 20], ['쌍둥이', 6, 21], ['게', 7, 22], ['사자', 8, 22], ['처녀', 9, 22], ['천칭', 10, 23], ['전갈', 11, 22], ['사수', 12, 21], ['염소', 12, 31]];
+function sunSignKo(ds) { const m = +ds.slice(5, 7), d = +ds.slice(8, 10); const s = SUN_SIGNS.find(([, mm, dd]) => m < mm || (m === mm && d <= dd)); return s ? s[0] : '염소'; }
+function teaserHtml(tk) {
+  let p = null; try { p = JSON.parse(localStorage.getItem('rodeo_profile_v1') || 'null'); } catch (e) { /* 무시 */ }
+  const T = TEASE[tk] || TEASE.general;
+  if (!p || !p.date) return `<div class="rp-tease"><p>생년월일만 넣으면 이 질문을 <b>사주</b>와 <b>별자리</b>로도 짧게 봐드려요.</p>
+    <button type="button" class="rp-tbtn" data-more="me">생년월일 넣기</button></div>`;
+  let saju = '';
+  try {
+    const d = new Date(), ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const me = withZone(p.city, p.date, p.notime ? '' : p.time, () => sajuPillars({ dateStr: p.date, timeStr: p.notime ? '' : p.time })).pillars.day;
+    const yr = sajuPillars({ dateStr: ds, timeStr: '12:00' }).pillars.year;
+    const god = tenGod(me.stem, yr.stem), ST = SAJU.stems[me.stem];
+    saju = `${esc(ST.image)} 같은 사람이에요. 올해(${yr.ko}년)는 <b>${esc(GOD_BRIEF[god] || god)}</b>예요.`;
+  } catch (e) { saju = '타고난 기질과 올해의 흐름을 볼 수 있어요.'; }
+  const sign = sunSignKo(p.date);
+  return `<div class="rp-tease">
+      <p class="rp-tline">🔮 <b>사주로 보면</b> · ${saju}</p>
+      <p class="rp-tlock">🔒 ${esc(T[0])}${eun(T[0])} 사주 리포트에서 자세히 알려드려요.</p>
+      <button type="button" class="rp-tbtn" data-quick="saju">사주 리포트 보기</button>
+      <p class="rp-tline" style="margin-top:12px">✨ <b>별자리로 보면</b> · ${esc(sign)}자리예요.</p>
+      <p class="rp-tlock">🔒 ${esc(T[1])}${eun(T[1])} 별자리 리포트에서 자세히 알려드려요.</p>
+      <button type="button" class="rp-tbtn" data-quick="astro">별자리 리포트 보기</button>
+    </div>`;
 }
 function renderReport() {
   const v = verdictInfo(), L = layout, LV = v.level;
@@ -3231,6 +3274,8 @@ function renderReport() {
 
     <p class="rp-h">6. 한 줄 정리</p>
     <p class="plain">${esc(v.topic[LV.key])} ${esc(adviceText(v))}</p>
+    <p class="rp-h">7. 다른 눈으로 보면 (맛보기)</p>
+    ${teaserHtml(tk)}
     <p class="rp-muted" style="margin-top:8px">원문은 A.E. 웨이트 『The Pictorial Key to the Tarot』(1910)의 점술 의미예요. 오락과 참고용이에요.</p>
   </div>`;
 }
