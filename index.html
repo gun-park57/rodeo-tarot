@@ -558,6 +558,13 @@ details.deep p b { color: var(--text); margin-right: 4px; font-weight: 700; }
 .ch-col { border: 1px solid rgba(201,164,106,.3); border-radius: 12px; padding: 8px; }
 .ch-col .bubble-art { width: 100%; max-width: 110px; margin: 4px auto; display: block; }
 .ch-name { font-weight: 800; color: var(--text); text-align: center; font-size: 15px; }
+.rp-empathy { font-size: 15px; color: var(--text); margin: 6px 0 8px !important; }
+.rp-word { font-size: 14px; margin: 6px 0 0 !important; padding: 8px 10px; border-radius: 10px; background: rgba(201,164,106,.1); }
+.rp-angles { list-style: none; padding: 0; margin: 4px 0 0; }
+.rp-angles li { font-size: 14px; line-height: 1.6; padding: 5px 0; border-bottom: 1px dashed rgba(201,164,106,.18); }
+.rp-angles li:last-child { border-bottom: 0; }
+.rp-angles b { margin-right: 4px; }
+.rp-pick { margin: 8px 0 4px; padding: 11px 12px; border-radius: 12px; border: 1px solid var(--brass); background: rgba(201,164,106,.12); font-size: 15px; line-height: 1.65; }
 
 </style>
 <script src="config.js" onerror="void 0"></script>
@@ -3471,27 +3478,48 @@ function posRole(i, tk) {
   const t = POS_Q[layout.key];
   return t && t[i] ? t[i][tk] : layout.positions[i].frame.replace(/(입니다|이에요|예요)\.?$/, '');
 }
+// 공감 한마디: 질문 주제 × 결론
+const EMPATHY = {
+  love: { yes: '두근두근하죠? 좋은 쪽으로 기울어 있어요.', mid: '괜히 마음 졸이게 되는 상황이죠. 아직 정해진 건 없어요.', no: '많이 기다렸을 텐데 속상하죠. 그래도 끝까지 같이 볼게요.' },
+  money: { yes: '통장이 웃을 일이 생겨요.', mid: '돈 걱정, 다들 하죠. 크게 흔들릴 정도는 아니에요.', no: '요즘 지갑 사정이 빡빡하죠. 지키는 쪽으로 같이 봐요.' },
+  work: { yes: '그동안 고생한 게 보상받는 흐름이에요.', mid: '고민 많이 되죠. 조건을 따져볼 때예요.', no: '지치고 답답하죠. 지금은 숨 고를 때예요.' },
+  study: { yes: '열심히 한 거 카드도 알아요.', mid: '불안한 마음 당연해요. 마지막 한 끗이 남았어요.', no: '불안하죠. 이번이 끝이 아니에요.' },
+  health: { yes: '몸이 좋아지는 쪽이에요.', mid: '컨디션이 들쭉날쭉하죠. 관리하기에 달렸어요.', no: '많이 지쳤죠. 지금은 쉬는 게 먼저예요.' },
+  people: { yes: '그 사람이랑 다시 편해질 수 있어요.', mid: '서운한 마음, 그럴 수 있어요. 한마디가 바꿔요.', no: '사람한테 지쳤죠. 거리 둬도 괜찮아요.' },
+  general: { yes: '좋은 흐름이 와 있어요.', mid: '아직 반반이에요. 내가 정하기 나름이에요.', no: '마음이 무겁죠. 그래도 방법은 있어요.' }
+};
+const ANGLES = [['love', '💗 연애'], ['money', '💰 돈'], ['work', '💼 일'], ['people', '👥 사람'], ['health', '🩺 컨디션']];
 function reportCard(c, i, tk, sc) {
-  const P = layout.positions[i], o = PKT[c.id], r = cardReading(c), tone = toneOf(sc);
+  const P = layout.positions[i], o = PKT[c.id], tone = toneOf(sc);
   const rev = c.isReversed;
-  const kw = c.keywords && !rev ? `<p class="rp-kw">핵심 단어 · ${esc(c.keywords)}</p>` : '';
   const role = POS_Q[layout.key] ? posRole(i, tk) : P.short;
   const pos = POS_Q[layout.key] ? `이 자리는 <b>${esc(role)}</b>${eul(role)} 봐요.` : esc(P.frame);
   const revPlain = !rev ? '' : c.lucky ? ' 거꾸로 떴는데, 이 카드는 거꾸로가 오히려 좋은 뜻이에요.' : ' 거꾸로 떠서 원래 뜻이 약해지거나 늦어져요.';
-  const lean = sc > 0.15 ? '이건 내 편이에요.' : sc < -0.15 ? '여기가 발목 잡을 수 있어요. 미리 챙겨요.' : '아직 어느 쪽으로도 정해지지 않았어요. 내 행동에 따라 바뀌어요.';
+  const lean = sc > 0.15 ? '이건 내 편이에요.' : sc < -0.15 ? '여기가 발목 잡을 수 있어요. 미리 챙겨요.' : '아직 어느 쪽으로도 안 정해졌어요. 내가 하기 나름이에요.';
+  const word = typeof DAILY_WORD !== 'undefined' && DAILY_WORD[c.id] ? DAILY_WORD[c.id][rev ? 1 : 0] : '';
+  const q = userContext.customQuery || '';
+  const inf = typeof INFER !== 'undefined' ? INFER.one(c, q) : '';
+  const dom = inf ? INFER.domainOf(q) : null;
+  const angles = ANGLES.filter(([k]) => k !== tk && MAJOR_TOPIC[0][k]).slice(0, 3)
+    .map(([k, label]) => `<li><b>${label}</b> ${esc(topicLine(c, k))}</li>`).join('');
+  const note = typeof studyNote === 'function' ? studyNote(c, tk) : '';
   return `<section class="rp-card">
       <div class="rp-card-head"><b>${esc(P.label)}</b><span class="tone ${tone[1]}">${tone[0]}</span></div>
-      <p class="rp-name">${esc(cardLabel(c))} <span class="rp-en">${esc(c.en)}${rev ? ' · Reversed' : ''}</span></p>
+      <p class="rp-name">${esc(cardLabel(c))}</p>
       <p class="rp-role">${pos}</p>
-      ${o ? `<div class="rp-orig"><p class="rp-sub">📖 원문 해석 <span>A.E. 웨이트, 1910</span></p>
-        <p class="rp-en-q">“${esc(rev ? o[2] : o[0])}”</p>
-        <p>${esc(rev ? o[3] : o[1])}</p></div>` : ''}
-      <p class="rp-sub">🔮 전문 해석</p>
-      <p>${esc(rev ? c.reversed : c.upright)}</p>
-      ${kw}
-      <p class="plain">👉 <b>쉽게 말하면,</b> ${esc(role)}에 ${tone[2]}가 떴어요. ${esc(keyText(c))}${revPlain}<br>${lean}</p>
-      ${typeof studyNote === 'function' && studyNote(c, tk) ? `<p class="rp-study">${studyNote(c, tk)}</p>` : ''}
-      ${typeof INFER !== 'undefined' && INFER.one(c, userContext.customQuery) ? `<p class="rp-infer">🔍 <b>질문에 맞춰 풀면</b><br>${INFER.one(c, userContext.customQuery)}</p>` : ''}
+      <p class="plain">👉 ${esc(keyText(c))}${revPlain}<br>${lean}</p>
+      ${dom ? `<p class="rp-infer">🔍 <b>${esc(dom.label)}${dom.label.match(/[가-힣]$/) && (dom.label.slice(-1).charCodeAt(0) - 0xAC00) % 28 && (dom.label.slice(-1).charCodeAt(0) - 0xAC00) % 28 !== 8 ? '으로' : '로'} 보면</b> ${inf.split('👉 ')[1] || ''}</p>` : ''}
+      ${word ? `<p class="rp-word">💬 카드가 하는 말 · ${esc(word)}</p>` : ''}
+      ${angles ? `<p class="rp-sub">다른 쪽으로 보면</p><ul class="rp-angles">${angles}</ul>` : ''}
+      ${note && c.type === 'major' ? `<p class="rp-study">${note}</p>` : ''}
+      <details class="deep"><summary>＋ 전문가 풀이 보기</summary>
+        ${o ? `<p><b>원문 (웨이트, 1910)</b> <i>“${esc(rev ? o[2] : o[0])}”</i><br>${esc(rev ? o[3] : o[1])}</p>` : ''}
+        <p><b>전통 해석</b> ${esc(rev ? c.reversed : c.upright)}</p>
+        ${c.keywords && !rev ? `<p><b>핵심 단어</b> ${esc(c.keywords)}</p>` : ''}
+        ${note && c.type !== 'major' ? `<p>${note}</p>` : ''}
+        ${inf ? `<p><b>추론 과정</b> ${inf}</p>` : ''}
+        <p class="text-[11px]">${esc(c.en)}${rev ? ' · Reversed' : ''}</p>
+      </details>
     </section>`;
 }
 
@@ -3538,28 +3566,35 @@ function renderReport() {
   const tk = topicKey(v.q) || 'general';
   const good = v.scores.filter(s => s > 0.15).length, bad = v.scores.filter(s => s < -0.15).length, mid = v.scores.length - good - bad;
   const key = chosen[v.keyIdx], keyTone = toneOf(v.scores[v.keyIdx]);
-  const G = GUIDE[tk][LV.key];
+  const dom = typeof INFER !== 'undefined' ? INFER.domainOf(v.q) : null;
+  const G = (dom ? GUIDE.general : GUIDE[tk])[LV.key];
+  const domAns = dom ? (INFER.one(key, v.q) || '').split('👉 ')[1] : '';
   const story = chosen.map((c, i) => `<p><b>${esc(L.positions[i].short)}</b> · ${esc(keyText(c))}</p>`).join('');
-  const why = `${L.count}장 중 좋은 카드 ${good}장, 보통 ${mid}장, 걸리는 카드 ${bad}장이에요. 제일 중요한 <b>${esc(L.positions[v.keyIdx].short)}</b> 자리에 <b>${esc(cardLabel(key))}</b>(${keyTone[0]})가 떴어요. 자리마다 중요도를 다르게 쳐서 계산하니 <b>${esc(LV.tag)}</b>이 나왔어요.`;
+  const why = `좋은 카드 ${good}장, 걸리는 카드 ${bad}장이 나왔어요. 결과를 정하는 <b>${esc(L.positions[v.keyIdx].short)}</b> 카드가 <b>${esc(keyTone[0])}</b>라서 <b>${esc(LV.tag)}</b>으로 봤어요.`;
   const flow = summaryLines(), combo = comboLines(chosen);
   return `<div class="rp">
-    <p class="rp-title">📜 ${esc(TOPIC_NAME[tk])} 상세 리포트</p>
+    <p class="rp-title">📜 ${esc(TOPIC_NAME[tk])} 풀이</p>
     ${v.q ? `<p class="rp-q">“${esc(v.q.replace(/\s*\([^)]*\)\s*$/, ''))}”</p>` : ''}
+    <p class="rp-empathy">${esc((EMPATHY[tk] || EMPATHY.general)[LV.key])}</p>
     <div class="verdict"><span class="vtag v-${LV.key}">${esc(LV.tag)}</span><p class="vhead">${esc(v.topic[LV.key] + LV.tail)}</p></div>
 
     ${tk === 'health' ? '<p class="rp-health">🩺 타로는 컨디션 참고용이에요. 아프거나 걱정되는 증상이 있으면 꼭 병원에서 확인해요.</p>' : ''}
+    ${dom && domAns ? `<div class="rp-pick">🎯 <b>${esc(dom.label)} 추천</b><br>${domAns}<p class="rp-muted" style="margin:4px 0 0">결과를 정하는 ${esc(L.positions[v.keyIdx].short)} 카드(${esc(cardLabel(key))})로 골랐어요.</p></div>` : ''}
     <p class="rp-h">1. 왜 이렇게 나왔냐면</p>
     <p>${why}</p>
     ${v.worst >= 0 ? `<p>발목 잡는 카드는 <b>${esc(L.positions[v.worst].short)}</b> 자리의 <b>${esc(cardLabel(chosen[v.worst]))}</b>예요. 여기만 풀면 결과가 한 단계 좋아져요.</p>` : '<p>크게 걸리는 카드가 없어요. 막는 게 별로 없어요.</p>'}
 
-    <p class="rp-h">2. 카드 한 장씩 자세히</p>
+    <p class="rp-h">2. 카드 한 장씩</p>
     ${chosen.map((c, i) => reportCard(c, i, tk, v.scores[i])).join('')}
 
     <p class="rp-h">3. 이어서 읽으면</p>
     <div class="rp-story">${story}</div>
-    ${typeof INFER !== 'undefined' && INFER.links(chosen, L.positions.map(p => p.short)).length ? `<p class="rp-sub">🔗 카드끼리 연결해서 보면</p>${INFER.links(chosen, L.positions.map(p => p.short)).map(l => `<p>• ${l}</p>`).join('')}` : ''}
-    ${flow.length ? `<p class="rp-sub">🃏 카드 구성으로 보면</p>${flow.map(l => `<p>• ${esc(l)}</p>`).join('')}` : ''}
-    ${combo.length ? `<p class="rp-sub">🔗 카드 조합</p>${combo.map(l => `<p>• ${esc(l)}</p>`).join('')}` : ''}
+    ${combo.filter(l => !/정방향|역방향/.test(l)).length ? combo.filter(l => !/정방향|역방향/.test(l)).map(l => `<p>• ${esc(l)}</p>`).join('') : ''}
+    <details class="deep"><summary>＋ 카드끼리 관계 자세히 (전문가용)</summary>
+      ${typeof INFER !== 'undefined' ? INFER.links(chosen, L.positions.map(p => p.short)).map(l => `<p>• ${l}</p>`).join('') : ''}
+      ${flow.map(l => `<p>• ${esc(l)}</p>`).join('')}
+      <p class="text-[11px]">원문은 A.E. 웨이트 『The Pictorial Key to the Tarot』(1910)이에요.</p>
+    </details>
 
     <p class="rp-h">4. 언제쯤?</p>
     <p>${timingLine(chosen)}</p>
@@ -3573,7 +3608,7 @@ function renderReport() {
     <p class="plain">${esc(v.topic[LV.key])} ${esc(adviceText(v))}</p>
     <p class="rp-h">7. 다른 눈으로 보면 (맛보기)</p>
     ${teaserHtml(tk)}
-    <p class="rp-muted" style="margin-top:8px">원문은 A.E. 웨이트 『The Pictorial Key to the Tarot』(1910)의 점술 의미예요. 오락과 참고용이에요.</p>
+    <p class="rp-muted" style="margin-top:8px">재미와 참고용 풀이예요.</p>
   </div>`;
 }
 
