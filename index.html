@@ -889,7 +889,7 @@ function elementRelation(a, b, anyReversed) {
     const table = {
         'Air+Fire':    { type: '상생', icon: '🔥', text: '생각이 곧바로 행동으로 이어져요. 빠른 진전과 결실이 기대돼요.' },
         'Earth+Water': { type: '상생', icon: '🌱', text: '감정과 현실이 조화를 이뤄요. 관계가 안정되고 결실을 맺기 좋은 흐름이에요.' },
-        'Fire+Water':  { type: '상극', icon: '⚡', text: '의지와 감정이 정면으로 부딪혀요. 마음속 갈등과 불안정을 먼저 다스려야 합니다.' },
+        'Fire+Water':  { type: '상극', icon: '⚡', text: '의지와 감정이 정면으로 부딪혀요. 마음속 갈등과 불안정을 먼저 다스려야 해요.' },
         'Air+Earth':   { type: '상극', icon: '🌫', text: '머릿속 계획과 현실 여건이 따로 놀아요. 실행이 늦어질 수 있어요.' },
         'Earth+Fire':  { type: '중립', icon: '⏳', text: '행동은 있지만 속도가 더뎌요. 끈기가 필요한 구간이에요.' },
         'Air+Water':   { type: '중립', icon: '💭', text: '감정을 이성으로 재단하려다 마음이 복잡해질 수 있어요.' }
@@ -2479,8 +2479,8 @@ const TP = (() => {
   }
   function answer(q, c) {
     const s = cardScore(c);
-    const A = s >= 0.7 ? { t: '예', cls: 'v-yes', d: '원하는 쪽으로 기울어 있어요.' } : s > 0.15 ? { t: '아마도 예', cls: 'v-yes', d: '가능성이 있어요. 조건을 챙기면 돼요.' }
-      : s >= -0.15 ? { t: '아직 몰라요', cls: 'v-mid', d: '지금은 반반이에요. 내 행동이 답을 정해요.' } : s > -0.7 ? { t: '아마도 아니오', cls: 'v-no', d: '쉽지 않아 보여요. 대안도 준비하세요.' } : { t: '아니오', cls: 'v-no', d: '이번엔 기대를 접는 게 나아요.' };
+    const A = s >= 0.7 ? { t: '예', cls: 'v-yes', d: '원하는 쪽으로 기울어 있어요.' } : s > 0.15 ? { t: '아마도 예', cls: 'v-yes', d: '예 쪽이에요. 다만 확실한 예는 아니에요.' }
+      : s >= -0.15 ? { t: '아직 몰라요', cls: 'v-mid', d: '예도 아니오도 아닌 반반이에요. 며칠 지나 다시 물어보세요.' } : s > -0.7 ? { t: '아마도 아니오', cls: 'v-no', d: '쉽지 않아 보여요. 대안도 준비하세요.' } : { t: '아니오', cls: 'v-no', d: '이번엔 기대를 접는 게 나아요.' };
     const tl = topicLine(c, topicKey(q));
     loadingPanel('카드를 뒤집는 중...');
     setTimeout(() => {
@@ -2905,20 +2905,20 @@ function cardScore(c) {
 }
 const VERDICT_TOPIC = [
   { keys: ['시험', '합격', '편입', '수능', '면접', '자격증', '입시', '승진', '공채', '고시', '대학'], subject: '결과',
-    yes: '합격 쪽으로 기울어 있어요.', mid: '합격선 근처예요. 마지막 준비가 결과를 갈라요.', no: '이번 결과는 쉽지 않아 보여요.' },
+    yes: '합격 쪽으로 기울어 있어요.', mid: '붙을 가능성과 떨어질 가능성이 반반이에요. 합격선에 딱 걸쳐 있어요.', no: '이번 결과는 쉽지 않아 보여요.' },
   { keys: ['재회', '연락', '속마음', '고백', '썸', '짝사랑', '연애', '결혼', '관계', '애인', '그 사람'], subject: '관계',
-    yes: '좋은 쪽으로 이어질 흐름이에요.', mid: '마음은 있지만 아직 확신할 단계는 아니에요.', no: '지금 흐름으로는 기대만큼 이어지기 어려워요.' },
+    yes: '좋은 쪽으로 이어질 흐름이에요.', mid: '상대도 관심은 있어요. 하지만 확신이 없어서 먼저 다가오진 않을 거예요.', no: '지금 흐름으로는 기대만큼 이어지기 어려워요.' },
   { keys: ['돈', '투자', '재물', '사업', '월급', '주식', '코인', '매출', '대출'], subject: '돈 흐름',
-    yes: '돈 흐름이 좋아지는 쪽이에요.', mid: '이익은 있지만 크게 기대하긴 일러요.', no: '손실 위험이 커요. 지금은 지키는 게 맞아요.' },
+    yes: '돈 흐름이 좋아지는 쪽이에요.', mid: '들어오는 돈은 있지만 큰돈은 아니에요. 본전에서 조금 남는 정도예요.', no: '손실 위험이 커요. 지금은 지키는 게 맞아요.' },
   { keys: ['이직', '취업', '퇴사', '회사', '채용', '합류', '창업'], subject: '자리',
-    yes: '원하는 자리로 움직일 수 있는 흐름이에요.', mid: '기회는 오지만 조건을 꼼꼼히 따져야 해요.', no: '지금 움직이면 기대에 못 미칠 수 있어요.' }
+    yes: '원하는 자리로 움직일 수 있는 흐름이에요.', mid: '옮길 수는 있어요. 하지만 지금보다 확실히 나은 자리는 아니에요.', no: '지금 움직이면 기대에 못 미칠 수 있어요.' }
 ];
 const VERDICT_DEFAULT = { subject: '흐름', yes: '원하는 방향으로 풀릴 가능성이 높아요.', mid: '좋지도 나쁘지도 않은 딱 반반이에요. 아직 어느 쪽으로도 기울지 않았어요.', no: '지금은 원하는 대로 풀리기 어려워요.' };
 const VERDICT_LEVEL = [
   { min: 0.7, tag: '긍정', key: 'yes', tail: '', advice: '지금 하던 대로 밀고 가세요. 흐름이 당신 편이에요.' },
-  { min: 0.15, tag: '조건부 긍정', key: 'yes', tail: ' 다만 방심하면 놓칠 수 있어요.', advice: '좋은 흐름이지만 걸리는 카드를 먼저 챙기세요.' },
+  { min: 0.15, tag: '조건부 긍정', key: 'yes', tail: ' 다만 확실한 건 아니에요. 걸리는 카드 하나가 있어요.', advice: '좋은 흐름이지만 걸리는 카드를 먼저 챙기세요.' },
   { min: -0.15, tag: '반반', key: 'mid', tail: '', advice: '좋지도 나쁘지도 않은 반반이에요. 작은 행동 하나가 결과를 기울게 해요.' },
-  { min: -0.7, tag: '어려움', key: 'no', tail: ' 하지만 바꿀 여지는 남아 있어요.', advice: '기대를 낮추고 대안을 함께 준비하세요.' },
+  { min: -0.7, tag: '어려움', key: 'no', tail: ' 완전히 막힌 건 아니에요. 걸리는 카드를 풀면 반반까지는 돌아와요.', advice: '기대를 낮추고 대안을 함께 준비하세요.' },
   { min: -99, tag: '부정', key: 'no', tail: '', advice: '이번엔 무리하지 말고 다음 기회를 준비하는 게 나아요.' }
 ];
 function shortPractical(c) {
@@ -2945,16 +2945,16 @@ function summaryLines() {
   chosen.forEach(c => { counts[c.element] = (counts[c.element] || 0) + 1; });
   const dominant = Object.entries(counts).sort((x, y) => y[1] - x[1])[0];
   const lines = [];
-  if (majors >= 2) lines.push('메이저 카드가 많아요. 내 선택보다 큰 흐름이 움직이는 시기예요.');
-  else if (majors === 0) lines.push('모두 마이너 카드예요. 내 행동으로 충분히 바꿀 수 있는 문제예요.');
+  if (majors >= 2) lines.push('메이저 카드가 많아요. 내 노력만으로는 바꾸기 어려운 큰 변화가 오는 시기예요. 거스르지 말고 흐름을 타세요.');
+  else if (majors === 0) lines.push('모두 마이너 카드예요. 운명보다 내 행동으로 결과가 바뀌는 문제예요.');
   if (reversedCount >= 2) lines.push('막히거나 어긋난 카드가 여러 장이에요. 서두르기보다 원인부터 점검하세요.');
-  if (dominant && dominant[1] >= 2) lines.push(`${ELEMENT_KO[dominant[0]]} 기운이 중심이에요.`);
+  if (dominant && dominant[1] >= 2) lines.push(`${ELEMENT_KO[dominant[0]]} 기운이 중심이에요. ${{ Fire: '생각보다 행동이 먼저 필요해요.', Water: '머리보다 마음이 결과를 움직여요.', Air: '대화와 판단이 결과를 정해요.', Earth: '돈과 현실 조건이 결과를 정해요.' }[dominant[0]]}`);
   const suitCounts = {};
   chosen.filter(c => c.type === 'minor').forEach(c => { suitCounts[c.suit] = (suitCounts[c.suit] || 0) + 1; });
   const topSuit = Object.entries(suitCounts).sort((x, y) => y[1] - x[1])[0];
   if (topSuit && topSuit[1] >= 2) lines.push(`카드가 가리키는 중심은 ${SUIT_THEME[topSuit[0]].theme}${ieyo(SUIT_THEME[topSuit[0]].theme)}.`);
   const courts = chosen.filter(c => c.type === 'minor' && COURT_RANKS.includes(c.rank)).length;
-  if (courts >= 2) lines.push('궁정 카드가 여러 장이에요. 사건보다 사람의 태도가 열쇠예요.');
+  if (courts >= 2) lines.push('궁정 카드가 여러 장이에요. 이 문제의 핵심은 사람이에요. 누구와 함께하느냐가 결과를 정해요.');
   return lines;
 }
 function cardLabel(c) { return `${c.type === 'major' ? c.name : c.name.replace(/^\S+\s/, '')} ${c.isReversed ? '역방향' : '정방향'}`; } // 문장 속에서는 슈트 한자 기호 빼기
