@@ -2420,7 +2420,8 @@ const TP = (() => {
   const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
   const hash = s => { let h = 2166136261; for (const ch of s) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
   const cardName = c => c.type === 'major' ? `${c.num}. ${c.ko}` : c.name;
-  const dir = c => c.isReversed ? '역방향' : '정방향';
+  const dir = c => c.isReversed ? '거꾸로' : '바로';
+  const plainName = c => c.type === 'major' ? c.ko : c.name.replace(/^\S+\s/, ''); // 화면용: 한자 기호 없이
   let lastShare = '';
   const c2 = c => (c.isReversed ? ' 역방향' : ' 정방향') + '이에요';
 
@@ -2449,6 +2450,12 @@ const TP = (() => {
   }
   document.addEventListener('click', e => { if (e.target.closest('[data-share]')) doShare(); });
   function backToChips() { showChips('✨ 다른 질문도 해볼까요?'); }
+  // 결과 카드가 화면 맨 위에 오게 고정하고, 아래 질문 목록이 붙어도 끌려 내려가지 않게
+  function showResult() {
+    if (typeof readFrom === 'function') readFrom();
+    backToChips();
+    if (typeof readDone === 'function') setTimeout(readDone, 900);
+  }
 
   /* 오늘의 카드: 기기마다 다르고, 같은 날엔 같은 카드 */
   function daily() {
@@ -2465,7 +2472,7 @@ const TP = (() => {
     setTimeout(() => {
       botMsg(`<div class="tp-daily">${miniCard(c)}<div>
         <p class="text-xs gold-text font-bold mb-1">🌙 ${today().slice(5).replace('-', '월 ')}일 오늘의 카드</p>
-        <p class="font-bold gold-text">${esc(cardName(c))} · ${dir(c)}</p>
+        <p class="font-bold gold-text">${esc(plainName(c))}${c.isReversed ? ' <span class="rev-word">거꾸로</span>' : ''}</p>
         <p class="text-[13px] mt-1"><b class="text-white">${esc(meaning(c))}</b></p></div></div>
         <div class="mt-2">${lines}</div>
         <p class="text-[12px] text-sky-200/90 mt-1">💡 오늘의 한마디: ${esc((c.isReversed ? c.practicalRev : c.practicalUp) || '')}</p>
@@ -2474,7 +2481,7 @@ const TP = (() => {
         ${shareBtn(`[오늘의 카드] ${cardName(c)} ${dir(c)}\n${meaning(c)}`, { title: '오늘의 카드', cards: [c], head: meaning(c),
           lines: ['love', 'money', 'work'].map(k => TOPIC_LABEL[k].replace(/^\S+\s/, '') + ' · ' + topicLine(c, k)).concat(c.isReversed ? [] : []) })}`);
       if (!already) record('daily', '오늘의 카드', [c], '', { day: today() });
-      backToChips();
+      showResult();
     }, 700);
   }
 
@@ -2503,14 +2510,14 @@ const TP = (() => {
     setTimeout(() => {
       botMsg(`<div class="tp-daily">${miniCard(c)}<div>
         <div class="verdict"><span class="vtag ${A.cls}">${A.t}</span><p class="vhead">${esc(A.d)}</p></div>
-        <p class="font-bold gold-text text-[13px]">${esc(cardName(c))} · ${dir(c)}</p></div></div>
+        <p class="font-bold gold-text text-[13px]">${esc(plainName(c))}${c.isReversed ? ' <span class="rev-word">거꾸로</span>' : ''}</p></div></div>
         <p class="text-[13px] mt-2">${esc(meaning(c))}</p>
         ${tl ? `<p class="text-[13px] mt-1"><b>${TOPIC_LABEL[topicKey(q)]}</b> · ${esc(tl)}</p>` : ''}
         <p class="text-[11px] text-purple-300/70 mt-1">원카드는 빠른 방향 확인용이에요. 자세한 흐름은 3장 리딩으로 보세요.</p>
         ${shareBtn(`[예/아니오 타로] ${q}\n→ ${A.t} (${cardName(c)} ${dir(c)})`, { title: '예/아니오 타로', q, cards: [c], tag: A.t, tagKey: A.cls.slice(2), head: A.d,
           lines: [meaning(c)].concat(tl ? [tl] : []) })}`);
       record('yesno', q, [c], A.t);
-      backToChips();
+      showResult();
     }, 700);
   }
 
