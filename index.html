@@ -3495,7 +3495,7 @@ function reportCard(c, i, tk, sc) {
   const role = POS_Q[layout.key] ? posRole(i, tk) : P.short;
   const pos = POS_Q[layout.key] ? `이 자리는 <b>${esc(role)}</b>${eul(role)} 봐요.` : esc(P.frame);
   const revPlain = !rev ? '' : c.lucky ? ' 거꾸로 떴는데, 이 카드는 거꾸로가 오히려 좋은 뜻이에요.' : ' 거꾸로 떠서 원래 뜻이 약해지거나 늦어져요.';
-  const lean = sc > 0.15 ? '이 부분은 걱정 안 해도 돼요.' : sc < -0.15 ? '이 부분은 신경 써야 해요.' : '이 부분은 아직 반반이에요. 내가 어떻게 하느냐에 달렸어요.';
+  const lean = sc > 0.15 ? '✅ 이 카드는 도움이 돼요.' : sc < -0.15 ? '⚠️ 이 카드는 도움이 안 돼요. 미리 신경 써요.' : '➖ 이 카드는 도움이 될 수도, 안 될 수도 있어요. 내가 하기 나름이에요.';
   const word = typeof DAILY_WORD !== 'undefined' && DAILY_WORD[c.id] ? DAILY_WORD[c.id][rev ? 1 : 0] : '';
   const q = userContext.customQuery || '';
   const inf = typeof INFER !== 'undefined' ? INFER.one(c, q) : '';
@@ -3582,7 +3582,7 @@ function renderReport() {
     ${dom && domAns ? `<div class="rp-pick">🎯 <b>${esc(dom.label)} 추천</b><br>${domAns}<p class="rp-muted" style="margin:4px 0 0">결과를 정하는 ${esc(L.positions[v.keyIdx].short)} 카드(${esc(cardLabel(key))})로 골랐어요.</p></div>` : ''}
     <p class="rp-h">1. 왜 이렇게 나왔냐면</p>
     <p>${why}</p>
-    ${v.worst >= 0 ? `<p>제일 신경 쓰이는 카드는 <b>${esc(L.positions[v.worst].short)}</b> 자리의 <b>${esc(cardLabel(chosen[v.worst]))}</b>예요. 이 부분만 잘 넘기면 결과가 한 단계 좋아져요.</p>` : '<p>크게 걸리는 카드가 없어요. 막는 게 별로 없어요.</p>'}
+    ${v.worst >= 0 ? `<p>제일 도움이 안 되는 카드는 <b>${esc(L.positions[v.worst].short)}</b> 자리의 <b>${esc(cardLabel(chosen[v.worst]))}</b>예요. 이 부분만 잘 넘기면 결과가 한 단계 좋아져요.</p>` : '<p>크게 걸리는 카드가 없어요. 막는 게 별로 없어요.</p>'}
 
     <p class="rp-h">2. 카드 한 장씩</p>
     ${chosen.map((c, i) => reportCard(c, i, tk, v.scores[i])).join('')}
@@ -3989,7 +3989,7 @@ function renderSummary() {
   const head = (v.q ? `"${esc(v.q.replace(/\s*\([^)]*\)\s*$/, ''))}" ` : '') + esc(T[LV.key] + LV.tail);
   const key = chosen[v.keyIdx];
   const keyLine = `결과를 정하는 카드는 <b>${esc(L.positions[v.keyIdx].short)}</b> 자리의 <b>${esc(cardLabel(key))}</b>예요. ${esc(keyText(key))}`;
-  const warn = v.worst >= 0 ? `제일 신경 쓰이는 카드는 <b>${esc(L.positions[v.worst].short)}</b> 자리의 <b>${esc(cardLabel(chosen[v.worst]))}</b>예요. ${esc(keyText(chosen[v.worst]))}` : '';
+  const warn = v.worst >= 0 ? `제일 도움이 안 되는 카드는 <b>${esc(L.positions[v.worst].short)}</b> 자리의 <b>${esc(cardLabel(chosen[v.worst]))}</b>예요. ${esc(keyText(chosen[v.worst]))}` : '';
   const flow = summaryLines(), combo = comboLines(chosen);
   return `<p class="text-xs font-bold gold-text mb-1.5">🧭 ${L.count}장 종합</p>
     <div class="verdict"><span class="vtag v-${LV.key}">${LV.tag}</span><p class="vhead">${head}</p></div>
