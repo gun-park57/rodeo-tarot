@@ -483,6 +483,21 @@ header.top .mb-me { margin-left: auto; }
 .beta-was { opacity: .6; font-weight: 500; margin-left: 4px; }
 .beta-zero { font-weight: 800; margin-left: 2px; }
 
+/* 쉬운 말 카드 풀이 */
+.tone { font-size: 12.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+.tone-good { background: rgba(226,196,143,.18); color: var(--brass-hi); border: 1px solid rgba(226,196,143,.45); }
+.tone-mid { background: rgba(194,180,168,.12); color: var(--sub); border: 1px solid rgba(194,180,168,.35); }
+.tone-bad { background: rgba(224,138,120,.14); color: var(--ill); border: 1px solid rgba(224,138,120,.45); }
+.rev-word { font-size: 12.5px; font-weight: 700; color: var(--ill); margin-left: 4px; }
+.plain-frame { font-size: 13.5px; color: var(--sub); margin: 0; }
+.plain-main { font-size: 16px; font-weight: 700; color: var(--text); line-height: 1.55; margin: 2px 0 4px; }
+details.deep { margin-top: 6px; border-top: 1px solid rgba(201,164,106,.18); padding-top: 6px; }
+details.deep summary { font-size: 13px; color: var(--brass); cursor: pointer; list-style: none; padding: 4px 0; }
+details.deep summary::-webkit-details-marker { display: none; }
+details.deep summary::before { content: '＋ '; } details.deep[open] summary::before { content: '－ '; }
+details.deep p { font-size: 13px; color: var(--sub); margin: 4px 0; line-height: 1.55; }
+details.deep p b { color: var(--text); margin-right: 4px; font-weight: 700; }
+
 </style>
 <script src="config.js" onerror="void 0"></script>
 </head>
@@ -891,10 +906,10 @@ function elementRelation(a, b, anyReversed) {
     const table = {
         'Air+Fire':    { type: '상생', icon: '🔥', text: '생각이 곧바로 행동으로 이어져요. 빠른 진전과 결실이 기대돼요.' },
         'Earth+Water': { type: '상생', icon: '🌱', text: '감정과 현실이 조화를 이뤄요. 관계가 안정되고 결실을 맺기 좋은 흐름이에요.' },
-        'Fire+Water':  { type: '상극', icon: '⚡', text: '의지와 감정이 정면으로 부딪혀요. 마음속 갈등과 불안정을 먼저 다스려야 해요.' },
+        'Fire+Water':  { type: '상극', icon: '⚡', text: '하고 싶은 마음과 감정이 부딪혀요. 마음속 갈등부터 정리하세요.' },
         'Air+Earth':   { type: '상극', icon: '🌫', text: '머릿속 계획과 현실 여건이 따로 놀아요. 실행이 늦어질 수 있어요.' },
         'Earth+Fire':  { type: '중립', icon: '⏳', text: '행동은 있지만 속도가 더뎌요. 끈기가 필요한 구간이에요.' },
-        'Air+Water':   { type: '중립', icon: '💭', text: '감정을 이성으로 재단하려다 마음이 복잡해질 수 있어요.' }
+        'Air+Water':   { type: '중립', icon: '💭', text: '머리로만 정리하려다 마음이 더 복잡해질 수 있어요.' }
     };
     return table[pair];
 }
@@ -2276,10 +2291,10 @@ const TI = (() => {
     ctx.restore();
     ctx.strokeStyle = C.brass; ctx.lineWidth = Math.max(3, w * 0.012); rr(ctx, x, y, w, h, w * 0.06); ctx.stroke();
     if (card.isReversed) {
-      const bw = Math.round(w * 0.24), bh = Math.round(w * 0.15);
+      const bw = Math.round(w * 0.42), bh = Math.round(w * 0.15);
       ctx.fillStyle = card.lucky ? C.hi : C.ill; rr(ctx, x + w * 0.05, y + w * 0.05, bw, bh, bh / 3); ctx.fill();
       ctx.fillStyle = '#1B1014'; ctx.textAlign = 'center'; ctx.font = `800 ${Math.round(bh * 0.62)}px ${SANS}`;
-      ctx.fillText('역', x + w * 0.05 + bw / 2, y + w * 0.05 + bh * 0.72);
+      ctx.fillText('거꾸로', x + w * 0.05 + bw / 2, y + w * 0.05 + bh * 0.72);
     }
   }
 
@@ -2329,7 +2344,7 @@ const TI = (() => {
       ctx.textAlign = 'center';
       if (p.labels && p.labels[i]) { ctx.fillStyle = C.sub; ctx.font = `500 ${n === 5 ? 24 : 28}px ${SANS}`; ctx.fillText(p.labels[i], x + cw / 2, y + ch + 42); }
       ctx.fillStyle = C.hi; ctx.font = `700 ${n === 5 ? 24 : 30}px ${SERIF}`;
-      const nm = (c.type === 'major' ? c.ko : c.name.replace(/^\S+\s/, '')) + (c.isReversed ? (n === 5 ? ' · 역' : ' · 역방향') : '');
+      const nm = (c.type === 'major' ? c.ko : c.name.replace(/^\S+\s/, '')) + (c.isReversed ? ' · 거꾸로' : '');
       ctx.fillText(nm, x + cw / 2, y + ch + (p.labels ? 82 : 46));
       x += cw + gap;
     });
@@ -2604,7 +2619,7 @@ const TP = (() => {
       const v = verdictInfo(), L = layout, k = chosen[v.keyIdx];
       TI.set({ title: `${L.count}장 리딩`, q: userContext.customQuery, cards: chosen, labels: L.positions.map(p => p.short),
         tag, tagKey: v.level.key, head,
-        lines: [`결정적인 카드는 ${L.positions[v.keyIdx].short} 자리의 ${cardLabel(k)}이에요. ${keyText(k)}`, adviceText(v), timingLine(chosen)] });
+        lines: [`결정적인 카드는 ${L.positions[v.keyIdx].short} 자리의 ${cardLabel(k)}예요. ${keyText(k)}`, adviceText(v), timingLine(chosen)] });
     } catch (e) { /* 이미지 데이터 실패해도 리딩은 계속 */ }
     lastShare = `[압구정 로데오 타로] ${userContext.customQuery || ''}\n→ ${tag}: ${head}\n카드: ${chosen.map(c => `${cardName(c)}${c.isReversed ? '(역)' : ''}`).join(' · ')}`;
   }
@@ -2828,7 +2843,7 @@ function flipCardHtml(card, i) {
         <div class="flip-inner">
           <div class="face card-back gold-text text-lg">${i >= layout.free ? '<span class="bg-black/60 rounded-full px-1.5 py-0.5">🔒</span>' : ''}</div>
           <div class="face front${CARD_IMG[card.id] ? ' has-art' : ''}">
-            ${card.isReversed ? `<span class="rev-badge${card.lucky ? ' lucky' : ''}" aria-label="역방향">역</span>` : ''}
+            ${card.isReversed ? `<span class="rev-badge${card.lucky ? ' lucky' : ''}" aria-label="거꾸로 나온 카드">거꾸로</span>` : ''}
             ${CARD_IMG[card.id] ? `<img class="card-art ${card.isReversed ? 'rev' : ''}" src="${CARD_IMG[card.id]}" alt="${esc(card.type === 'major' ? card.ko : card.name)}" onerror="this.nextElementSibling && this.nextElementSibling.removeAttribute('hidden'); this.parentElement.classList.remove('has-art'); this.remove()">` : ''}
             <div class="front-content ${card.isReversed ? 'rev' : ''}"${CARD_IMG[card.id] ? ' hidden' : ''}>
               <span class="text-[10px] text-amber-200/80">${esc(top)}</span>
@@ -2846,34 +2861,37 @@ function flip(i) {
   const el = document.getElementById(`flip-${trayNo}-${i}`);
   if (el) el.classList.add('flipped');
   const lb = document.getElementById(`flip-label-${trayNo}-${i}`);
-  if (lb) lb.textContent = `${layout.positions[i].short} · ${chosen[i].isReversed ? '역' : '정'}`;
+  if (lb) lb.textContent = `${layout.positions[i].short}${chosen[i].isReversed ? ' · 거꾸로' : ''}`;
 }
 
 /* ---------- 3. 리딩 말풍선 ---------- */
 function cardBubble(card, posIndex) {
   const r = cardReading(card);
   const gaze = effectiveGaze(card);
-  const badgeColor = !card.isReversed
-    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-    : card.lucky ? 'bg-sky-500/20 text-sky-300 border-sky-500/30' : 'bg-rose-500/20 text-rose-300 border-rose-500/30';
-  const extra = card.type === 'minor'
-    ? minorDetail(card)
-    : `아르케타입: ${card.archetype}`;
+  const tk = topicKey(), plain = tk ? topicLine(card) : '';
+  const sc = typeof cardScore === 'function' ? cardScore(card) : 0;
+  const tone = sc >= 0.7 ? ['좋은 카드', 'tone-good'] : sc > 0.15 ? ['조금 좋은 카드', 'tone-good'] : sc >= -0.15 ? ['보통 카드', 'tone-mid'] : sc > -1 ? ['조금 걸리는 카드', 'tone-bad'] : ['조심할 카드', 'tone-bad'];
+  const name = card.type === 'major' ? card.ko : card.name.replace(/^\S+\s/, '');
+  const extra = card.type === 'minor' ? minorDetail(card) : (card.archetype ? `상징: ${card.archetype}` : '');
   return `
     <div class="space-y-1.5">
       <div class="flex items-center justify-between gap-2">
-        <span class="text-[11px] text-purple-300/70">${esc(layout.positions[posIndex].label)}</span>
-        <span class="text-[10px] px-2 py-0.5 rounded border ${badgeColor}">${esc(r.badge)}</span>
+        <span class="text-[12px] text-purple-300/80">${esc(layout.positions[posIndex].label)}</span>
+        <span class="tone ${tone[1]}">${tone[0]}</span>
       </div>
       ${CARD_IMG[card.id] ? `<img class="bubble-art ${card.isReversed ? 'rev' : ''}" src="${CARD_IMG[card.id]}" alt="" data-dict="${card.id}" title="카드 사전 보기" onerror="this.remove()">` : ''}
-      <p class="font-bold gold-text">${esc(card.name)} <span class="text-[11px] font-normal text-purple-300/70">${esc(card.en)} · ${esc(ELEMENT_KO[card.element])}</span></p>
-      <p class="text-[13px]">${esc(layout.positions[posIndex].frame)} <b class="text-white">${esc(r.text)}</b></p>
-      ${card.isReversed ? `<p class="rev-note">🔄 거꾸로(역방향) 나온 카드예요.${card.lucky ? ' 이 카드는 거꾸로 나올 때 오히려 좋은 뜻이 되는 "반전의 긍정" 카드예요.' : ''}</p>` : ''}
-      ${topicKey() ? `<p class="text-[13px] tp-topic"><b>${TOPIC_LABEL[topicKey()]}</b> · ${esc(topicLine(card))}</p>` : ''}
-      ${r.practical ? `<p class="text-[12px] text-sky-200/90">💡 실전 포인트: ${esc(r.practical)}</p>` : ''}
-      <p class="text-[11px] text-amber-200/80">${esc(extra)}</p>
-      ${r.mechText ? `<p class="text-[11px] text-purple-300/70">역방향 기제: ${esc(r.mechText)}</p>` : ''}
-      ${gaze ? `<p class="text-[11px] text-purple-300/70">시선: ${esc(GAZE_TEXT[gaze])}</p>` : ''}
+      <p class="font-bold gold-text">${esc(name)}${card.isReversed ? ' <span class="rev-word">거꾸로</span>' : ''}</p>
+      <p class="plain-frame">${esc(layout.positions[posIndex].frame)}</p>
+      <p class="plain-main">${esc(plain || r.text)}</p>
+      ${card.isReversed ? `<p class="rev-note">🔄 ${card.lucky ? '거꾸로 나왔지만, 이 카드는 거꾸로일 때 오히려 좋은 뜻이에요.' : '거꾸로 나온 카드예요. 뜻이 약해지거나 늦어진다는 신호예요.'}</p>` : ''}
+      <details class="deep"><summary>더 깊이 보기</summary>
+        ${plain ? `<p><b>카드 키워드</b> ${esc(r.text)}</p>` : ''}
+        ${r.practical ? `<p><b>한 줄 팁</b> ${esc(r.practical)}</p>` : ''}
+        ${extra ? `<p>${esc(extra)}</p>` : ''}
+        ${r.mechText ? `<p><b>거꾸로 나온 이유</b> ${esc(r.mechText)}</p>` : ''}
+        ${gaze ? `<p><b>인물의 시선</b> ${esc(GAZE_TEXT[gaze])}</p>` : ''}
+        <p class="text-[11px]">${esc(card.en)} · ${esc(ELEMENT_KO[card.element])} 원소${card.isReversed ? ` · ${esc(r.badge)}` : ''}</p>
+      </details>
     </div>`;
 }
 
@@ -2883,8 +2901,8 @@ function pairBubble(a, b, title) {
   return `
     <div class="space-y-1.5">
       <p class="text-xs font-bold text-violet-300">🔗 ${esc(title)}</p>
-      <p class="text-[13px]">${esc(el.icon)} <b>${esc(ELEMENT_KO[a.element])} + ${esc(ELEMENT_KO[b.element])} · ${esc(el.type)}</b> — ${esc(el.text)}</p>
-      ${gz ? `<p class="text-[13px]">👀 <b>${esc(gz.type)}</b> — ${esc(gz.text)}</p>` : ''}
+      <p class="text-[14px]">${esc(el.icon)} <b>${esc({ 상생: '서로 돕는 흐름', 상극: '부딪히는 흐름', 중립: '무난한 흐름', 강화: '힘이 더해지는 흐름', 과잉: '한쪽으로 쏠린 흐름' }[el.type] || el.type)}</b> · ${esc(el.text)}</p>
+      ${gz ? `<p class="text-[14px]">👀 <b>${gz.type === '마주봄' ? '두 인물이 마주봐요' : '두 인물이 등을 돌렸어요'}</b> · ${esc(gz.text.replace(/^두 카드의 인물이 [^.]*\.\s*/, ''))}</p>` : ''}
     </div>`;
 }
 
@@ -2963,7 +2981,7 @@ function summaryLines() {
   if (courts >= 2) lines.push('궁정 카드가 여러 장이에요. 이 문제의 핵심은 사람이에요. 누구와 함께하느냐가 결과를 정해요.');
   return lines;
 }
-function cardLabel(c) { return `${c.type === 'major' ? c.name : c.name.replace(/^\S+\s/, '')} ${c.isReversed ? '역방향' : '정방향'}`; } // 문장 속에서는 슈트 한자 기호 빼기
+function cardLabel(c) { return `${c.isReversed ? '거꾸로 나온 ' : ''}${c.type === 'major' ? c.ko : c.name.replace(/^\S+\s/, '')} 카드`; } // 문장 속에서는 슈트 한자 기호 빼기
 // 질문 주제가 있으면 주제 해석, 없으면 실전 포인트
 function keyText(c) { const t = typeof topicLine === 'function' ? topicLine(c) : ''; return t || shortPractical(c); } // 끝 글자 '향' → '이에요'
 
@@ -2985,8 +3003,8 @@ function renderSummary() {
   const v = verdictInfo(), L = layout, T = v.topic, LV = v.level;
   const head = (v.q ? `"${esc(v.q.replace(/\s*\([^)]*\)\s*$/, ''))}" ` : '') + esc(T[LV.key] + LV.tail);
   const key = chosen[v.keyIdx];
-  const keyLine = `결정적인 카드는 <b>${esc(L.positions[v.keyIdx].short)}</b> 자리의 <b>${esc(cardLabel(key))}</b>이에요. ${esc(keyText(key))}`;
-  const warn = v.worst >= 0 ? `걸리는 카드는 <b>${esc(L.positions[v.worst].short)}</b> 자리의 <b>${esc(cardLabel(chosen[v.worst]))}</b>이에요. ${esc(keyText(chosen[v.worst]))}` : '';
+  const keyLine = `결정적인 카드는 <b>${esc(L.positions[v.keyIdx].short)}</b> 자리의 <b>${esc(cardLabel(key))}</b>예요. ${esc(keyText(key))}`;
+  const warn = v.worst >= 0 ? `걸리는 카드는 <b>${esc(L.positions[v.worst].short)}</b> 자리의 <b>${esc(cardLabel(chosen[v.worst]))}</b>예요. ${esc(keyText(chosen[v.worst]))}` : '';
   const flow = summaryLines(), combo = comboLines(chosen);
   return `<p class="text-xs font-bold gold-text mb-1.5">🧭 ${L.count}장 종합</p>
     <div class="verdict"><span class="vtag v-${LV.key}">${LV.tag}</span><p class="vhead">${head}</p></div>
