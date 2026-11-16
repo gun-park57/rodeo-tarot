@@ -3178,7 +3178,7 @@ const INFER = (() => {
     const { e, text } = traits(c);
     let ans;
     if (d.key === 'time') {
-      const n = c.type === 'major' ? (c.num <= 7 ? '1~2주' : c.num <= 14 ? '1~3개월' : '3개월 이상') : RANKN[c.rank] ? `${RANKN[c.rank]}${c.suit === 'wands' ? '일' : c.suit === 'swords' ? '주' : c.suit === 'cups' ? '주~달' : '달'} 안팎` : e.time;
+      const n = c.type === 'major' ? (c.num <= 7 ? '1~2주' : c.num <= 14 ? '1~3개월' : '3개월 이상') : RANKN[c.rank] ? `${RANKN[c.rank]}${c.suit === 'wands' ? '일' : c.suit === 'swords' ? '주' : c.suit === 'cups' ? '주~개월' : '개월'} 안팎` : e.time;
       ans = `<b>${n}</b>쯤이에요. ${e.ko} 카드라 속도는 "${e.time}"이고, 계절로 치면 <b>${e.season}</b>이에요.${c.isReversed && !c.lucky ? ' 거꾸로라 조금 늦어질 수 있어요.' : ''}`;
     } else {
       ans = e[d.key];
@@ -4212,7 +4212,7 @@ const READER = (() => {
     cups_Page_r: [/(그 사람|썸|연애|사귈)/, '잡은 물고기를 놓칠 수 있어요.'],
     cups_King_r: [/(그 사람|연애|썸|남친|여친)/, '마음 갖고 노는 바람둥이 스타일을 조심해요.'],
     pentacles_2: [/(직구|배송|해외|택배|무역)/, '해외 직구나 배송은 2주쯤 걸려요.'],
-    pentacles_2_r: [/(직구|배송|해외|택배)/, '해외 배송은 2달 넘게 걸릴 수 있어요.'],
+    pentacles_2_r: [/(직구|배송|해외|택배)/, '해외 배송은 2개월 넘게 걸릴 수 있어요.'],
     pentacles_3: [/(공사|인테리어|이사|집|팀)/, '세 박자가 맞아야 완성돼요. 공사나 인테리어엔 좋아요.'],
     pentacles_4: [/(투자|주식|코인|돈)/, '지금은 돈 꽉 쥐고 움직이지 마요.'],
     pentacles_6: [/(월급|연봉|알바|급여|보너스)/, '일한 만큼 제값 받아요.'],
@@ -4271,10 +4271,10 @@ const READER = (() => {
   /* ---------- 시기 ---------- */
   // LUX 카드별 기간 [바로, 거꾸로]
   const LUXT = {
-    maj_3: ['빠르면 3주, 길면 3달', '3달 넘게'], maj_14: ['꽤 오래, 몇 달은', '몇 달 넘게'], maj_9: ['한참 뒤에', '한참 뒤에'],
-    pentacles_2: ['2주쯤', '2달 넘게'], swords_2: ['보름쯤', '보름 넘게'], swords_3: ['3주, 길면 3달', '3주, 길면 3달'],
-    cups_4: ['조금 기다려야', '3달쯤 뒤에'], cups_5: ['3개월쯤', '3개월쯤 지나서'], wands_8: ['아주 빨리, 며칠 안에', '절차 때문에 몇 주 늦게'],
-    swords_10: ['바닥 찍고 천천히', '몇 달에 걸쳐 천천히']
+    maj_3: ['빠르면 3주, 길면 3개월', '3개월 넘게'], maj_14: ['꽤 오래, 몇 개월은', '몇 개월 넘게'], maj_9: ['한참 뒤에', '한참 뒤에'],
+    pentacles_2: ['2주쯤', '2개월 넘게'], swords_2: ['보름쯤', '보름 넘게'], swords_3: ['3주, 길면 3개월', '3주, 길면 3개월'],
+    cups_4: ['조금 기다려야', '3개월쯤 뒤에'], cups_5: ['3개월쯤', '3개월쯤 지나서'], wands_8: ['아주 빨리, 며칠 안에', '절차 때문에 몇 주 늦게'],
+    swords_10: ['바닥 찍고 천천히', '몇 개월에 걸쳐 천천히']
   };
   const FAST_MAJ = [0, 1, 7, 10, 16, 19, 20], SLOW_MAJ = [4, 5, 9, 12, 14, 15, 18];
   function timing(c) {
@@ -4282,21 +4282,21 @@ const READER = (() => {
     if (LUXT[c.id]) return { text: LUXT[c.id][slow ? 1 : 0], why: `${short(c)} 카드가 원래 이 기간으로 읽혀요.` };
     if (c.type === 'major') {
       const n = reduce(c.num) || 1;
-      let unit = FAST_MAJ.includes(c.num) ? ['일', '주'] : SLOW_MAJ.includes(c.num) ? ['달', '달 넘게'] : ['주', '달'];
-      if (unit[0] === '달' && n >= 5) unit = ['주', '달'];
+      let unit = FAST_MAJ.includes(c.num) ? ['일', '주'] : SLOW_MAJ.includes(c.num) ? ['개월', '개월 넘게'] : ['주', '개월'];
+      if (unit[0] === '개월' && n >= 5) unit = ['주', '개월'];
       const red = c.num > 9 ? `${c.num}번은 줄이면 ${n}${ira(n)} ` : '';
       if (n === 1 || c.num === 0) return { text: slow ? '생각보다 늦게' : '곧, 며칠 안에', why: `${red}${short(c)} 카드는 바로 움직이는 숫자예요.` };
       return { text: slow ? (unit[1].includes('넘게') ? `${n}${unit[1]}` : `길면 ${n}${unit[1]}`) : `빠르면 ${n}${unit[0]}, 길면 ${n}${unit[1]}`, why: `${red}숫자 ${n} 기준으로 봤어요.${slow ? ' 거꾸로라 긴 쪽으로 봐요.' : ''}` };
     }
     if (c.rank === 'Knight') {
-      const t = { swords: '며칠 안에', wands: '1~2주 안에', cups: '한 달쯤', pentacles: '몇 달, 천천히' }[c.suit];
+      const t = { swords: '며칠 안에', wands: '1~2주 안에', cups: '1개월쯤', pentacles: '몇 개월, 천천히' }[c.suit];
       return { text: slow ? `${t}보다 늦게` : t, why: `기사는 소드가 제일 빠르고 펜타클이 제일 느려요.` };
     }
     const n = RN[c.rank] && c.rank !== 'Ace' ? null : (RN[c.rank] || +c.rank);
-    if (n === 1) { const t = { wands: '며칠 안에', swords: '일주일 안팎', cups: '1~2주', pentacles: '한 달쯤' }[c.suit]; return { text: slow ? `${t}보다 늦게` : t, why: `에이스는 시작 카드라 ${SUIT_KO[c.suit]} 속도에서 제일 빠른 쪽이에요.` }; }
-    let U = { wands: ['일', '주'], swords: ['일', '주'], cups: ['주', '달'], pentacles: ['달', '달 넘게'] }[c.suit];
-    if (U[0] === '달' && n >= 5) U = ['주', '달'];
-    if (n == null) { const t = { wands: '1~2주', swords: '2~3주', cups: '한두 달', pentacles: '두세 달' }[c.suit]; return { text: slow ? `${t}보다 늦게` : `${t}쯤`, why: `${SUIT_KO[c.suit]} 속도로 봤어요.` }; }
+    if (n === 1) { const t = { wands: '며칠 안에', swords: '일주일 안팎', cups: '1~2주', pentacles: '1개월쯤' }[c.suit]; return { text: slow ? `${t}보다 늦게` : t, why: `에이스는 시작 카드라 ${SUIT_KO[c.suit]} 속도에서 제일 빠른 쪽이에요.` }; }
+    let U = { wands: ['일', '주'], swords: ['일', '주'], cups: ['주', '개월'], pentacles: ['개월', '개월 넘게'] }[c.suit];
+    if (U[0] === '개월' && n >= 5) U = ['주', '개월'];
+    if (n == null) { const t = { wands: '1~2주', swords: '2~3주', cups: '1~2개월', pentacles: '2~3개월' }[c.suit]; return { text: slow ? `${t}보다 늦게` : `${t}쯤`, why: `${SUIT_KO[c.suit]} 속도로 봤어요.` }; }
     return { text: slow ? (U[1].includes('넘게') ? `${n}${U[1]}` : `길면 ${n}${U[1]}`) : `빠르면 ${n}${U[0]}, 길면 ${n}${U[1]}`, why: `숫자 ${n} × ${SUIT_KO[c.suit]} 속도예요.${slow ? ' 거꾸로라 긴 쪽으로 봐요.' : ''}` };
   }
   const isTimeQ = q => /(언제|며칠|몇\s?월|몇\s?주|몇\s?달|시기|타이밍|얼마나 걸|올까)/.test(q || '');
