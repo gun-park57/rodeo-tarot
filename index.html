@@ -711,6 +711,27 @@ details.deep p b { color: var(--text); margin-right: 4px; font-weight: 700; }
 #chat-stream .glass-luxury:has(.flip) .flip .face { border-radius: 10px; }
 #chat-stream .glass-luxury:has(.flip) [id^="flip-label"] { font-size: 14px !important; margin-top: 2px; }
 #chat-stream .glass-luxury:has(.flip) .rev-badge { font-size: 12px; padding: 3px 6px; }
+/* 2026-11-17 호리AI 벤치마킹: 출처 꼬리표 · 이모지 줄이기 · 이어서 묻기 */
+.src { display: inline-block; font-size: 11.5px; font-weight: 700; line-height: 1.5; color: var(--brass-hi); border: 1px solid rgba(201,164,106,.45); background: rgba(201,164,106,.08); border-radius: 6px; padding: 0 6px; margin: 0 2px; vertical-align: 1px; white-space: nowrap; font-style: normal; }
+.rd-tag { display: inline-block; font-size: 12px; font-weight: 800; border-radius: 6px; padding: 1px 7px; margin-right: 8px; vertical-align: 3px; }
+.rd-tag.t-yes { background: var(--brass); color: #1B1014; }
+.rd-tag.t-mid { border: 1px solid var(--brass); color: var(--brass-hi); }
+.rd-tag.t-no { border: 1px solid var(--ill); color: var(--ill); }
+.tw { font-style: normal; }
+.tw.t-yes { color: var(--brass-hi); }
+.tw.t-mid { color: var(--text); }
+.tw.t-no { color: var(--ill); }
+.hk { margin: 18px 0 6px; padding-top: 14px; border-top: 1px solid rgba(201,164,106,.25); }
+.hk-h { font-family: var(--serif); font-size: 17px; font-weight: 800; color: var(--brass-hi); margin: 0 0 6px !important; }
+.hk-line { font-size: 15px; line-height: 1.65; margin: 0 0 10px !important; word-break: keep-all; }
+.hk-q { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; text-align: left; padding: 14px; margin: 0 0 8px; border-radius: 12px; border: 1px solid var(--brass); background: rgba(201,164,106,.08); color: var(--text); font-size: 15.5px; font-weight: 700; line-height: 1.45; cursor: pointer; word-break: keep-all; }
+.hk-q:active { transform: scale(.98); }
+.hk-q i { flex: 0 0 auto; font-style: normal; font-size: 12px; font-weight: 800; color: #1B1014; background: var(--brass); border-radius: 6px; padding: 2px 8px; }
+.hk-note { font-size: 13px; color: var(--sub); margin: 2px 0 0 !important; }
+.hk-note s { opacity: .7; }
+.hk-free { text-align: center; font-size: 14px; color: var(--brass-hi); padding: 12px; border: 1px solid rgba(201,164,106,.4); border-radius: 12px; }
+.hk-out { font-size: 13px; font-weight: 700; color: var(--brass-hi); margin: 0 0 4px; }
+.hk-out ~ div .rounded-full { white-space: nowrap; }
 
 </style>
 <script src="config.js" onerror="void 0"></script>
@@ -4017,12 +4038,12 @@ function teaserHtml(tk) {
   const sign = sunSignKo(p.date);
   const lc = typeof READER !== 'undefined' ? READER.lifeCard(p.date) : null;
   return `<div class="rp-tease">
-      ${lc ? `<p class="rp-tline">🎂 <b>내 생일 카드</b> · ${lc.n}번 ${esc(lc.name)}. ${esc(lc.text)}</p>` : ''}
-      <p class="rp-tline">🔮 <b>사주로 보면</b> · ${saju}</p>
-      <p class="rp-tlock">🔒 ${esc(T[0])}${eun(T[0])} 사주 리포트에서 자세히 알려드려요.</p>
+      ${lc ? `<p class="rp-tline"><b>내 생일 카드</b>는 ${lc.n}번 ${esc(lc.name)} 카드예요. ${esc(lc.text)} <span class="src">생일 숫자</span></p>` : ''}
+      <p class="rp-tline">${saju} <span class="src">사주</span></p>
+      <p class="rp-tlock">${esc(T[0])}${eun(T[0])} 사주 리포트에서 자세히 알려드려요.</p>
       <button type="button" class="rp-tbtn" data-quick="saju" data-topic="${tk}">사주 리포트 보기</button>
-      <p class="rp-tline" style="margin-top:12px">✨ <b>별자리로 보면</b> · ${esc(sign)}자리예요.</p>
-      <p class="rp-tlock">🔒 ${esc(T[1])}${eun(T[1])} 별자리 리포트에서 자세히 알려드려요.</p>
+      <p class="rp-tline" style="margin-top:12px">${esc(sign)}자리예요. <span class="src">별자리</span></p>
+      <p class="rp-tlock">${esc(T[1])}${eun(T[1])} 별자리 리포트에서 자세히 알려드려요.</p>
       <button type="button" class="rp-tbtn" data-quick="astro" data-topic="${tk}">별자리 리포트 보기</button>
     </div>`;
 }
@@ -4037,16 +4058,16 @@ function renderReport() {
   // 타로사처럼: 카드마다 질문이랑 이어서 한두 문장
   const reads = chosen.map((c, i) => `<p class="rd-card"><span class="rd-pos">${esc(L.positions[i].short)}</span>${READER.joiner(i ? v.scores[i - 1] : null, v.scores[i], i)}${READER.line(c, i, tk, v.q)}</p>`).join('');
   return `<div class="rp">
-    <p class="rp-title">📜 ${esc((TOPIC_NAME[tk] || '전체 운'))} 점사</p>
+    <p class="rp-title">${esc((TOPIC_NAME[tk] || '전체 운'))} 점사</p>
     ${v.q ? `<p class="rp-q">“${esc(v.q.replace(/\s*\([^)]*\)\s*$/, ''))}”</p>` : ''}
     ${READER.quick(v, tk, G)}
-    ${tk === 'health' ? '<p class="rp-health">🩺 타로는 컨디션 참고용이에요. 아프거나 걱정되는 증상이 있으면 꼭 병원에서 확인해요.</p>' : ''}
-    ${dom && domAns ? `<p class="rp-pick">🎯 <b>${esc(dom.label)}</b>는 ${domAns}</p>` : ''}
+    ${tk === 'health' ? '<p class="rp-health">타로는 컨디션 참고용이에요. 아프거나 걱정되는 증상이 있으면 꼭 병원에서 확인해요.</p>' : ''}
+    ${dom && domAns ? `<p class="rp-pick"><b>${esc(dom.label)}</b>는 ${domAns}</p>` : ''}
     <details class="deep rd-more"><summary>자세히 보기 · 카드 한 장씩 + 제 점사</summary>
     <p class="rp-empathy">${esc((EMPATHY[tk] || EMPATHY.general)[LV.key])}</p>
     <div class="rd-reads">${reads}</div>
     <div class="rd-final">
-      <p class="rd-final-h">🔮 제 점사는요</p>
+      <p class="rd-final-h">제 점사는요</p>
       ${READER.final(v, tk, G)}
     </div>
     <div class="rd-num">${READER.numerology(chosen)}</div>
@@ -4060,6 +4081,7 @@ function renderReport() {
     </details>
     <p class="rp-h">다른 눈으로 보면 (맛보기)</p>
     ${teaserHtml(tk)}
+    ${typeof HOOK !== 'undefined' ? HOOK.html(v, tk) : ''}
     <p class="rp-muted" style="margin-top:8px">재미와 참고용 풀이예요.</p>
   </div>`;
 }
@@ -4808,6 +4830,8 @@ const READER = (() => {
     if (k === 'reunion') { say[0] = '그 사람 마음은요,'; say[1] = '다시 이어질지는요,'; }
     return pick.filter(i => cards[i]).map((i, n) => `${say[n]} ${esc(firstSentence((typeof POSLINE !== 'undefined' && POSLINE.get(cards[i], i)) || keyText(cards[i])))}`).join(' ');
   }
+  const src = t => `<span class="src">${esc(t)}</span>`;
+  const csrc = c => src(short(c) + (c.isReversed ? ' 거꾸로' : ''));
   function final(v, tk, G) {
     const cards = chosen, key = cards[v.keyIdx], q = v.q;
     const tm = timing(key), timeQ = isTimeQ(q);
@@ -4816,15 +4840,15 @@ const READER = (() => {
     const advice = actLine || G.do[0];
     const adv2 = !actLine && layout.key === 'reunion' && cards[4] ? ` 조언 카드도 "${(typeof POSLINE !== 'undefined' && POSLINE.get(cards[4], 4)) || firstSentence(keyText(cards[4]))}" 라고 해요.` : '';
     const parts = [];
-    if (timeQ) parts.push(`<p class="rd-time">⏳ <b>${esc(tm.text)}</b> 보여요. ${esc(tm.why)}</p>`);
+    if (timeQ) parts.push(`<p class="rd-time"><b>${esc(tm.text)}</b> 보여요. ${esc(tm.why)} ${csrc(key)}</p>`);
     parts.push(`<p class="rd-say">제가 보기엔, <b>${esc(v.topic[v.level.key])}</b>${esc(v.level.tail)} ${esc(shape(v.scores.slice(0, v.keyIdx + 1)))}</p>`);
     parts.push(`<p>${story(cards)}</p>`);
     const sf = suitFocus(cards); if (sf) parts.push(`<p>${sf}</p>`);
     parts.push(`<p>${stability(key)}</p>`);
-    if (!timeQ) parts.push(`<p>⏳ 변화는 <b>${esc(tm.text)}</b> 보여요. ${esc(tm.why)}</p>`);
+    if (!timeQ) parts.push(`<p>변화는 <b>${esc(tm.text)}</b> 보여요. ${esc(tm.why)} ${csrc(key)}</p>`);
     if (v.worst >= 0) {
       const wn = short(cards[v.worst]), sn = sol ? short(cards[sol.i]) : '';
-      parts.push(`<p>제일 걸리는 건 <b>${esc(layout.positions[v.worst].short)}</b> 자리 ${esc(wn)}${ye(wn)}.${sol ? ` 풀 열쇠는 <b>${esc(layout.positions[sol.i].short)}</b> 자리 ${esc(sn)}${ye(sn)}. ${esc(sol.how)}` : ''}</p>`);
+      parts.push(`<p>제일 걸리는 건 <b>${esc(layout.positions[v.worst].short)}</b> 자리 ${esc(wn)}${ye(wn)}.${sol ? ` 풀 열쇠는 <b>${esc(layout.positions[sol.i].short)}</b> 자리 ${esc(sn)}${ye(sn)}. ${esc(sol.how)}` : ''} ${csrc(cards[v.worst])}${sol ? ' ' + csrc(cards[sol.i]) : ''}</p>`);
     }
     parts.push(`<p class="rd-do">그러니까 <b>${esc(advice)}</b>${esc(adv2)}</p>`);
     parts.push(`<p class="rd-dont">대신 ${esc(G.dont)}</p>`);
@@ -4832,12 +4856,12 @@ const READER = (() => {
   }
   function numerology(cards) {
     const s = sumCard(cards), r = repeats(cards);
-    const out = [`<p>🔢 카드 숫자를 다 더하면 ${s.nums.join('+')}=${s.total}${s.total > 22 ? ` → <b>${s.n}번 ${s.name}</b>` : ` → <b>${s.n}번 ${s.name}</b>`} 카드예요. 숨은 조언은 <b>"${esc(s.advice)}"</b>예요.</p>`];
+    const out = [`<p>카드 숫자를 다 더하면 ${s.nums.join('+')}=${s.total}${s.total > 22 ? ` → <b>${s.n}번 ${s.name}</b>` : ` → <b>${s.n}번 ${s.name}</b>`} 카드예요. 숨은 조언은 <b>"${esc(s.advice)}"</b>예요. ${src('숫자 풀이')}</p>`];
     r.forEach(x => out.push(`<p>숫자 ${x.n}${iga(x.n)} ${x.v}번 겹쳐요. <b>${NUM_MEAN[x.n] || '같은 숫자'}</b>${eunN(NUM_MEAN[x.n] || '숫자')} 이번 질문에서 특히 중요해요.</p>`));
     return out.join('');
   }
   /* ---------- 세 줄 요약 (2026-11-17, 베타 "뭔 말인지 모르겠어, 간단히 말해주는 형식") ---------- */
-  const ICON = { yes: '👍', mid: '🤔', no: '⚠️' };
+  const ICON = { yes: '좋아요', mid: '반반', no: '조심' };
   const textOf = (c, i) => (typeof POSLINE !== 'undefined' && POSLINE.get(c, i)) || keyText(c);
   function quick(v, tk, G) {
     const cards = chosen, key = cards[v.keyIdx], LV = v.level;
@@ -4846,12 +4870,12 @@ const READER = (() => {
     const nm = short(key), pos = layout.positions[v.keyIdx].short;
     const head = `${v.topic[LV.key]}${timeQ ? ` ${tm.text} 보여요.` : ''}`;
     return `<div class="rd-quick">
-      <p class="rd-q1">${ICON[LV.key]} <b>${esc(head)}</b></p>
-      <p class="rd-q2"><span>왜?</span> ${esc(pos)} 카드가 ${esc(nm)}${ira(nm)} 그래요. ${esc(firstSentence(textOf(key, v.keyIdx)))}</p>
+      <p class="rd-q1"><span class="rd-tag t-${LV.key}">${ICON[LV.key]}</span><b>${esc(head)}</b></p>
+      <p class="rd-q2"><span>왜?</span> ${esc(pos)} 카드가 ${esc(nm)}${ira(nm)} 그래요. ${esc(firstSentence(textOf(key, v.keyIdx)))} ${csrc(key)}</p>
       <p class="rd-q3"><span>그래서</span> ${esc(actLine || G.do[0])}</p>
     </div>`;
   }
-  function toneWord(sc) { return sc > 0.15 ? '좋아요 👍' : sc < -0.15 ? '조심해요 ⚠️' : '반반이에요 🤔'; }
+  function toneWord(sc) { const k = sc > 0.15 ? 'yes' : sc < -0.15 ? 'no' : 'mid'; return `<i class="tw t-${k}">${{ yes: '좋아요', no: '조심해요', mid: '반반이에요' }[k]}</i>`; }
   function quickBubble(card, i) {
     const pos = layout.positions[i].short, t = firstSentence(textOf(card, i));
     const SUBJ = { 나: '내 마음은', 상대방: '상대 마음은', 상대: '그 사람 마음은', 관계: '두 사람 사이는', 재회: '재회 가능성은', 과거: '지나온 일은', 현재: '지금은', 미래: '앞으로는', '가까운 미래': '곧', '결과·조언': '결과는' };
@@ -4872,6 +4896,100 @@ const READER = (() => {
   }
   function revPlain(c) { const m = revMode(c); return m ? REV_TEXT[m] : (c.isReversed && c.lucky ? '거꾸로지만 이 카드는 오히려 좋게 읽어요.' : ''); }
   return { minorPlain, revPlain, quick, quickBubble, bubble, line, joiner, final, numerology, timing, lifeCard, sumCard, solver, shape, revMode, lux, isTimeQ };
+})();
+
+/* =========================================================
+ * 무료 질문 2개 + 후킹 질문 (2026-11-17, 호리AI 벤치마킹)
+ *  - 하루 무료 질문 FREE_Q개(기본 2): 잠긴 카드까지 결제창 없이 다 열어줌
+ *  - 무료를 다 쓰면 기존 결제창(2,500원, 베타는 0원)이 다시 나옴
+ *  - 리포트 끝에 "이어서 물어볼까요?" 질문 버튼 2개 → 누르면 바로 새 점
+ * ========================================================= */
+const QUOTA = (() => {
+  const KEY = 'rodeo_quota_v1';
+  const max = () => { const n = window.RODEO_CONFIG && Number(window.RODEO_CONFIG.FREE_Q); return Number.isFinite(n) && n >= 0 ? n : 2; };
+  const today = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
+  let mem = { d: today(), n: 0 };
+  function read() {
+    try { const o = JSON.parse(localStorage.getItem(KEY) || 'null'); if (o && o.d === today()) mem = o; else mem = { d: today(), n: 0 }; } catch (e) { if (mem.d !== today()) mem = { d: today(), n: 0 }; }
+    return mem;
+  }
+  function used() { return read().n; }
+  function left() { return Math.max(0, max() - used()); }
+  function use() { const o = read(); o.n += 1; mem = o; try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) { /* 저장 불가: 이번 세션만 */ } }
+  return { left, use, used, max };
+})();
+
+const HOOK = (() => {
+  const Q = {
+    love: ['그 사람, 지금 내 생각 하고 있을까요?', '그 사람이 나한테 숨기는 마음이 있을까요?', '우리 사이, 3개월 뒤엔 어떻게 돼 있을까요?', '그 사람이 먼저 연락할까요?'],
+    reunion: ['그 사람도 나랑 다시 만나고 싶어할까요?', '연락은 언제쯤 올까요?', '다시 만나면 이번엔 잘될까요?', '그 사람 옆에 지금 다른 사람이 있을까요?'],
+    money: ['올해 안에 돈 들어올 일이 있을까요?', '지금 돈이 새는 곳이 어디일까요?', '지금 하려는 투자, 해도 될까요?', '부업 시작하면 잘될까요?'],
+    work: ['지금 회사, 버티는 게 맞을까요?', '올해 안에 좋은 제안이 올까요?', '이직하면 지금보다 나아질까요?', '윗사람이 나를 어떻게 보고 있을까요?'],
+    study: ['이번 시험, 붙을 수 있을까요?', '지금 공부 방법이 맞을까요?', '결과는 언제쯤 나올까요?', '끝까지 버틸 힘이 남아 있을까요?'],
+    health: ['요즘 지친 게 언제쯤 풀릴까요?', '지금 제일 신경 써야 할 건 뭘까요?', '이번 달 컨디션은 어떨까요?'],
+    general: ['올해 남은 기간, 제일 조심할 건 뭘까요?', '곧 들어올 좋은 소식이 있을까요?', '지금 제일 신경 써야 할 사람은 누구일까요?', '다음 달 나한테 무슨 일이 생길까요?']
+  };
+  const price = () => !(window.RODEO_CONFIG && window.RODEO_CONFIG.BETA === false);
+  function pickQs(tk, q) {
+    const key = typeof layout !== 'undefined' && layout.key === 'reunion' ? 'reunion' : (Q[tk] ? tk : 'general');
+    const norm = s => (s || '').replace(/[\s?？.!]/g, '');
+    const pool = Q[key].filter(x => norm(x) !== norm(q));
+    const seed = (chosen || []).reduce((a, c) => a + (c.id ? String(c.id).length : 1) + (c.num || 0), 0);
+    const a = pool[seed % pool.length], b = pool[(seed + 1) % pool.length];
+    return [a, b];
+  }
+  function line(v) {
+    if (v && v.worst >= 0 && chosen[v.worst]) {
+      const pos = layout.positions[v.worst].short, nm = cardLabel(chosen[v.worst]);
+      return `근데 하나 걸리는 게 있어요. <b>${esc(pos)}</b> 자리 <b>${esc(nm)}</b>가 아직 할 말이 남은 것 같아요.`;
+    }
+    return '근데 카드가 하나 더 보여주는 게 있어요.';
+  }
+  function html(v, tk) {
+    const [a, b] = pickQs(tk, v && v.q);
+    const n = QUOTA.left();
+    const note = n > 0
+      ? `오늘 무료 질문이 <b>${n}번</b> 남았어요.`
+      : (price() ? `오늘 무료 질문을 다 썼어요. 다음 질문은 <s>2,500원</s> <b>베타라 0원</b>이에요.` : '오늘 무료 질문을 다 썼어요. 다음 질문은 2,500원이에요.');
+    const tag = n > 0 ? '무료' : (price() ? '0원' : '2,500원');
+    return `<div class="hk">
+      <p class="hk-h">이어서 물어볼까요?</p>
+      <p class="hk-line">${line(v)}</p>
+      ${[a, b].filter(Boolean).map(x => `<button type="button" class="hk-q" data-hookq="${esc(x)}"><span>${esc(x)}</span><i>${tag}</i></button>`).join('')}
+      <p class="hk-note">${note}</p>
+    </div>`;
+  }
+  function ask(q) {
+    if (typeof busy !== 'undefined' && busy) return;
+    if (typeof BETA !== 'undefined') BETA.track('hook_click', { left: QUOTA.left() });
+    chosen = []; spread = []; userContext = {};
+    selectQuestion(q);
+  }
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-hookq]');
+    if (b) { e.preventDefault(); ask(b.dataset.hookq); }
+  });
+  return { html, ask };
+})();
+
+/* 결제창 앞에서: 무료 질문이 남았으면 잠긴 카드까지 바로 열기 */
+(function () {
+  if (typeof renderPaywall !== 'function') return;
+  const _pay = renderPaywall;
+  renderPaywall = function () {
+    if (QUOTA.left() > 0) {
+      QUOTA.use();
+      const n = QUOTA.used(), m = QUOTA.max();
+      setPanel(`<div class="hk-free">무료 질문 ${n}/${m} · 남은 카드까지 다 열어드릴게요</div>`);
+      if (typeof BETA !== 'undefined') BETA.track('free_question', { n });
+      setTimeout(unlockFinal, 900);
+      return;
+    }
+    _pay.apply(this, arguments);
+    if (typeof BETA !== 'undefined') BETA.track('paywall_view', { spread: layout.key });
+    const box = document.querySelector('#btn-pay') && document.querySelector('#btn-pay').closest('.glass-luxury');
+    if (box) box.insertAdjacentHTML('afterbegin', `<p class="hk-out">오늘 무료 질문 ${QUOTA.max()}개를 다 썼어요</p>`);
+  };
 })();
 
 function renderSummary() {
