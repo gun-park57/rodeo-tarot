@@ -630,7 +630,7 @@ const EN = {
       <p><b>${esc(EN.GOD[yGodB].en)}</b> shapes the second half: ${esc(EN.GOD[yGodB].year)}</p>
       <h3 style="font-family:var(--serif);font-size:24px;color:var(--brass-hi);margin:22px 0 6px">Your 10-year luck cycles</h3>
       <div class="cycles">${du.list.map(x => `<div class="cy${x === cur ? ' now' : ''}"><div>${x.startAge}</div><div class="h" style="color:${EN.EL_COLOR[STEM_EL[x.stem]]}">${x.han}</div><div>${EN.GOD[x.stemGod].en.replace('The ', '')}</div></div>`).join('')}</div>
-      ${cur ? `<p style="margin-top:12px">You are now in a <b>${esc(EN.GOD[cur.stemGod].en)}</b> decade (from age ${cur.startAge}). The theme is ${esc(EN.GOD[cur.stemGod].chart)}, turning toward ${esc(EN.GOD[cur.branchGod].chart)} in the second half.</p>` : `<p style="margin-top:12px">Your first luck cycle begins at age ${du.num}.</p>`}`;
+      ${cur ? `<p style="margin-top:12px">You are now in your <b>${esc(EN.GOD[cur.stemGod].en.replace(/^The /, ""))}</b> decade (from age ${cur.startAge}). The theme is ${esc(EN.GOD[cur.stemGod].chart)}, turning toward ${esc(EN.GOD[cur.branchGod].chart)} in the second half.</p>` : `<p style="margin-top:12px">Your first luck cycle begins at age ${du.num}.</p>`}`;
     h += `<section class="sec"><h2>Deep Reading</h2>${unlocked ? deep : `<div class="lock"><div class="peek">${deep}</div>
       <div class="cta"><h3>Love, work, money &amp; your ${now.getFullYear()}</h3><p class="note">Plus your ten-year luck cycles, decoded.</p>
       <button class="go" type="button" id="unlock" style="width:100%;margin-top:10px">${CFG.BETA ? '🎁 Unlock for free <s style="opacity:.6;font-weight:500">$2.99</s> $0' : 'Unlock full reading · $2.99'}</button>

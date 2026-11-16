@@ -581,6 +581,17 @@ details.deep p b { color: var(--text); margin-right: 4px; font-weight: 700; }
 .rd-bub { font-weight: 500 !important; font-size: 15px !important; line-height: 1.7 !important; }
 .rd-life { font-size: 13px; }
 
+/* 세 줄 요약 (2026-11-17) */
+.rd-quick { margin: 10px 0 12px; padding: 14px; border-radius: 14px; border: 1.5px solid var(--brass); background: rgba(201,164,106,.14); }
+.rd-quick p { margin: 0 0 8px; line-height: 1.6; }
+.rd-q1 { font-size: 19px; }
+.rd-q2, .rd-q3 { font-size: 15px; }
+.rd-q2 span, .rd-q3 span { display: inline-block; font-size: 12px; font-weight: 700; color: var(--brass); border: 1px solid rgba(201,164,106,.5); border-radius: 999px; padding: 0 8px; margin-right: 6px; }
+.rd-q3 { margin-bottom: 0 !important; font-weight: 700; }
+.rd-more > summary { font-size: 15px !important; font-weight: 700; padding: 10px 0; }
+.rd-q-sub { font-size: 14px; font-weight: 400; color: var(--sub); }
+.rd-bub b { font-size: 16px; }
+
 </style>
 <script src="config.js" onerror="void 0"></script>
 </head>
@@ -3000,9 +3011,10 @@ function cardBubble(card, posIndex) {
       </div>
       ${CARD_IMG[card.id] ? `<img class="bubble-art ${card.isReversed ? 'rev' : ''}" src="${CARD_IMG[card.id]}" alt="" data-dict="${card.id}" title="카드 사전 보기" onerror="this.remove()">` : ''}
       <p class="font-bold gold-text">${esc(name)}${card.isReversed ? ' <span class="rev-word">거꾸로</span>' : ''}</p>
-      <p class="plain-main rd-bub">${typeof READER !== 'undefined' ? READER.bubble(card, posIndex) : esc(plain || r.text)}</p>
+      <p class="plain-main rd-bub">${typeof READER !== 'undefined' ? READER.quickBubble(card, posIndex) : esc(plain || r.text)}</p>
       ${card.isReversed && card.lucky ? '<p class="rev-note">🔄 거꾸로 나왔지만, 이 카드는 거꾸로일 때 오히려 좋은 뜻이에요.</p>' : ''}
       <details class="deep"><summary>더 깊이 보기</summary>
+        ${typeof READER !== 'undefined' ? `<p>${READER.bubble(card, posIndex)}</p>` : ''}
         ${plain ? `<p><b>카드 키워드</b> ${esc(r.text)}</p>` : ''}
         ${r.practical ? `<p><b>한 줄 팁</b> ${esc(r.practical)}</p>` : ''}
         ${extra ? `<p>${esc(extra)}</p>` : ''}
@@ -3590,12 +3602,14 @@ function renderReport() {
   return `<div class="rp">
     <p class="rp-title">📜 ${esc((TOPIC_NAME[tk] || '전체 운'))} 점사</p>
     ${v.q ? `<p class="rp-q">“${esc(v.q.replace(/\s*\([^)]*\)\s*$/, ''))}”</p>` : ''}
-    <p class="rp-empathy">${esc((EMPATHY[tk] || EMPATHY.general)[LV.key])}</p>
+    ${READER.quick(v, tk, G)}
     ${tk === 'health' ? '<p class="rp-health">🩺 타로는 컨디션 참고용이에요. 아프거나 걱정되는 증상이 있으면 꼭 병원에서 확인해요.</p>' : ''}
+    ${dom && domAns ? `<p class="rp-pick">🎯 <b>${esc(dom.label)}</b>는 ${domAns}</p>` : ''}
+    <details class="deep rd-more"><summary>자세히 보기 · 카드 한 장씩 + 제 점사</summary>
+    <p class="rp-empathy">${esc((EMPATHY[tk] || EMPATHY.general)[LV.key])}</p>
     <div class="rd-reads">${reads}</div>
     <div class="rd-final">
       <p class="rd-final-h">🔮 제 점사는요</p>
-      ${dom && domAns ? `<p class="rp-pick">🎯 <b>${esc(dom.label)}</b>는 ${domAns}</p>` : ''}
       ${READER.final(v, tk, G)}
     </div>
     <div class="rd-num">${READER.numerology(chosen)}</div>
@@ -3605,6 +3619,7 @@ function renderReport() {
       ${typeof INFER !== 'undefined' ? INFER.links(chosen, L.positions.map(p => p.short)).map(l => `<p>• ${l}</p>`).join('') : ''}
       ${flow.map(l => `<p>• ${esc(l)}</p>`).join('')}
       <p class="text-[11px]">원문은 A.E. 웨이트 『The Pictorial Key to the Tarot』(1910)이에요.</p>
+    </details>
     </details>
     <p class="rp-h">다른 눈으로 보면 (맛보기)</p>
     ${teaserHtml(tk)}
@@ -4267,7 +4282,8 @@ const READER = (() => {
     if (LUXT[c.id]) return { text: LUXT[c.id][slow ? 1 : 0], why: `${short(c)} 카드가 원래 이 기간으로 읽혀요.` };
     if (c.type === 'major') {
       const n = reduce(c.num) || 1;
-      const unit = FAST_MAJ.includes(c.num) ? ['일', '주'] : SLOW_MAJ.includes(c.num) ? ['달', '달 넘게'] : ['주', '달'];
+      let unit = FAST_MAJ.includes(c.num) ? ['일', '주'] : SLOW_MAJ.includes(c.num) ? ['달', '달 넘게'] : ['주', '달'];
+      if (unit[0] === '달' && n >= 5) unit = ['주', '달'];
       const red = c.num > 9 ? `${c.num}번은 줄이면 ${n}${ira(n)} ` : '';
       if (n === 1 || c.num === 0) return { text: slow ? '생각보다 늦게' : '곧, 며칠 안에', why: `${red}${short(c)} 카드는 바로 움직이는 숫자예요.` };
       return { text: slow ? (unit[1].includes('넘게') ? `${n}${unit[1]}` : `길면 ${n}${unit[1]}`) : `빠르면 ${n}${unit[0]}, 길면 ${n}${unit[1]}`, why: `${red}숫자 ${n} 기준으로 봤어요.${slow ? ' 거꾸로라 긴 쪽으로 봐요.' : ''}` };
@@ -4278,7 +4294,8 @@ const READER = (() => {
     }
     const n = RN[c.rank] && c.rank !== 'Ace' ? null : (RN[c.rank] || +c.rank);
     if (n === 1) { const t = { wands: '며칠 안에', swords: '일주일 안팎', cups: '1~2주', pentacles: '한 달쯤' }[c.suit]; return { text: slow ? `${t}보다 늦게` : t, why: `에이스는 시작 카드라 ${SUIT_KO[c.suit]} 속도에서 제일 빠른 쪽이에요.` }; }
-    const U = { wands: ['일', '주'], swords: ['일', '주'], cups: ['주', '달'], pentacles: ['달', '달 넘게'] }[c.suit];
+    let U = { wands: ['일', '주'], swords: ['일', '주'], cups: ['주', '달'], pentacles: ['달', '달 넘게'] }[c.suit];
+    if (U[0] === '달' && n >= 5) U = ['주', '달'];
     if (n == null) { const t = { wands: '1~2주', swords: '2~3주', cups: '한두 달', pentacles: '두세 달' }[c.suit]; return { text: slow ? `${t}보다 늦게` : `${t}쯤`, why: `${SUIT_KO[c.suit]} 속도로 봤어요.` }; }
     return { text: slow ? (U[1].includes('넘게') ? `${n}${U[1]}` : `길면 ${n}${U[1]}`) : `빠르면 ${n}${U[0]}, 길면 ${n}${U[1]}`, why: `숫자 ${n} × ${SUIT_KO[c.suit]} 속도예요.${slow ? ' 거꾸로라 긴 쪽으로 봐요.' : ''}` };
   }
@@ -4382,7 +4399,31 @@ const READER = (() => {
     r.forEach(x => out.push(`<p>숫자 ${x.n}${iga(x.n)} ${x.v}번 겹쳐요. <b>${NUM_MEAN[x.n] || '같은 숫자'}</b>${eunN(NUM_MEAN[x.n] || '숫자')} 이번 질문에서 특히 중요해요.</p>`));
     return out.join('');
   }
-  return { bubble, line, joiner, final, numerology, timing, lifeCard, sumCard, solver, shape, revMode, lux, isTimeQ };
+  /* ---------- 세 줄 요약 (2026-11-17, 베타 "뭔 말인지 모르겠어, 간단히 말해주는 형식") ---------- */
+  const ICON = { yes: '👍', mid: '🤔', no: '⚠️' };
+  const textOf = (c, i) => (typeof POSLINE !== 'undefined' && POSLINE.get(c, i)) || keyText(c);
+  function quick(v, tk, G) {
+    const cards = chosen, key = cards[v.keyIdx], LV = v.level;
+    const tm = timing(key), timeQ = isTimeQ(v.q);
+    const actLine = layout.key === 'reunion' && cards[4] && typeof POSLINE !== 'undefined' ? POSLINE.get(cards[4], 4) : null;
+    const nm = short(key), pos = layout.positions[v.keyIdx].short;
+    const head = `${v.topic[LV.key]}${timeQ ? ` ${tm.text} 보여요.` : ''}`;
+    return `<div class="rd-quick">
+      <p class="rd-q1">${ICON[LV.key]} <b>${esc(head)}</b></p>
+      <p class="rd-q2"><span>왜?</span> ${esc(pos)} 카드가 ${esc(nm)}${ira(nm)} 그래요. ${esc(firstSentence(textOf(key, v.keyIdx)))}</p>
+      <p class="rd-q3"><span>그래서</span> ${esc(actLine || G.do[0])}</p>
+    </div>`;
+  }
+  function toneWord(sc) { return sc > 0.15 ? '좋아요 👍' : sc < -0.15 ? '조심해요 ⚠️' : '반반이에요 🤔'; }
+  function quickBubble(card, i) {
+    const pos = layout.positions[i].short, t = firstSentence(textOf(card, i));
+    const SUBJ = { 나: '내 마음은', 상대방: '상대 마음은', 상대: '그 사람 마음은', 관계: '두 사람 사이는', 재회: '재회 가능성은', 과거: '지나온 일은', 현재: '지금은', 미래: '앞으로는', '가까운 미래': '곧', '결과·조언': '결과는' };
+    if (pos === '이유' || pos === '조언') return `<b>${esc(t)}</b>`;
+    const base = card.type === 'major' ? CARD_POLARITY.major[card.num] : CARD_POLARITY[card.suit][card.rank];
+    const sc = card.isReversed && !card.lucky && base < 0 ? 0 : cardScore(card);
+    return `<b>${esc(SUBJ[pos] || pos + eunN(pos))} ${toneWord(sc)}</b><br><span class="rd-q-sub">${esc(t)}</span>`;
+  }
+  return { quick, quickBubble, bubble, line, joiner, final, numerology, timing, lifeCard, sumCard, solver, shape, revMode, lux, isTimeQ };
 })();
 
 function renderSummary() {
