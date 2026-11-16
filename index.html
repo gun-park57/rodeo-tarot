@@ -1000,6 +1000,44 @@ const SUIT_FLAVOR = {
   work: { wands: '도전적인 일', cups: '사람 중심의 일', swords: '기획·전략', pentacles: '실무·성과' },
   study: { wands: '도전 과목', cups: '좋아하는 과목', swords: '암기·논리', pentacles: '기본기' }
 };
+const ACE_TOPIC = {
+  love: {
+    wands: '끌리는 사람이 새로 생겨요. 확 끌리는 만남이라 진도가 빨라요.',
+    cups: '마음이 몽글몽글해지는 새 인연이 와요. 고백하거나 받기 좋아요.',
+    swords: '대화가 잘 통하는 사람이 생겨요. 톡 하다가 가까워져요.',
+    pentacles: '조건도 괜찮고 믿음 가는 사람이 들어와요. 오래 갈 만남이에요.'
+  },
+  money: {
+    wands: '부업이나 새로 시작한 일에서 돈이 들어오기 시작해요.',
+    cups: '아는 사람 덕분에 돈이 들어와요. 선물이나 용돈도 좋아요.',
+    swords: '정보나 아이디어가 돈이 돼요. 공부한 만큼 벌어요.',
+    pentacles: '월급이 오르거나 확실한 돈이 새로 들어와요. 종잣돈 만들기 딱 좋아요.'
+  },
+  work: {
+    wands: '새로 도전하는 일에 기회가 와요. 이직이나 새 프로젝트 제안이 들어와요.',
+    cups: '사람 상대하는 일(상담·서비스·교육) 쪽에서 새 자리가 생겨요. 아는 사람 소개로 올 수도 있어요.',
+    swords: '기획이나 아이디어로 인정받을 기회가 와요. 면접·발표에 강해요.',
+    pentacles: '연봉이 오르거나 돈 되는 일이 새로 들어와요. 합격·계약 소식도 좋아요.'
+  },
+  study: {
+    wands: '의욕이 확 올라와요. 지금 시작하면 끝까지 갈 힘이 있어요.',
+    cups: '좋아하는 과목부터 하면 공부가 술술 돼요. 재미가 붙어요.',
+    swords: '머리가 맑아져서 암기·이해가 잘 돼요. 시험 전에 정리하기 좋아요.',
+    pentacles: '기초부터 차근차근 하면 확실하게 붙어요. 계획표 짜기 좋아요.'
+  },
+  people: {
+    wands: '같이 놀거나 운동할 새 친구가 생겨요. 금방 친해져요.',
+    cups: '마음 터놓을 새 친구가 생겨요. 오래 갈 사이예요.',
+    swords: '말이 잘 통하는 사람을 만나요. 일이나 공부 모임에서 생겨요.',
+    pentacles: '믿고 도움 주고받을 사람이 생겨요. 일로 만나도 좋아요.'
+  },
+  health: {
+    wands: '운동 시작하기 좋아요. 몸에 힘이 다시 붙어요.',
+    cups: '마음이 편해지면서 컨디션이 올라와요. 잘 쉬는 게 약이에요.',
+    swords: '잠이랑 스트레스 관리부터 하면 확 좋아져요. 머리가 맑아져요.',
+    pentacles: '밥 잘 먹고 생활 습관 잡으면 몸이 회복돼요. 건강검진 받기 좋아요.'
+  }
+};
 function topicLine(card, key) {
   key = key || topicKey();
   if (!key) return '';
@@ -1010,6 +1048,8 @@ function topicLine(card, key) {
   // 5번 단계는 정방향 문장이 이미 '시행착오' 쪽이라 밝은/어두운 칸이 반대
   const bright = card.rank === '5' ? 1 : 0;
   const j = typeof cardScore === 'function' ? (cardScore(card) >= 0 ? bright : 1 - bright) : i;
+  // 에이스(새 시작)는 슈트마다 생활 예시로 풀어서 (2026-11-17, "사람 중심의 일 쪽에서… 어려워")
+  if (card.rank === 'Ace' && j === 0 && ACE_TOPIC[key] && ACE_TOPIC[key][card.suit]) return ACE_TOPIC[key][card.suit];
   return r ? r[j].replace('{s}', SUIT_FLAVOR[key][card.suit]) : '';
 }
 
