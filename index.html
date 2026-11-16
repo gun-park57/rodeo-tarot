@@ -495,10 +495,10 @@ header.top .mb-me { margin-left: auto; }
 .plain-frame { font-size: 13.5px; color: var(--sub); margin: 0; }
 .plain-main { font-size: 16px; font-weight: 700; color: var(--text); line-height: 1.55; margin: 2px 0 4px; }
 details.deep { margin-top: 6px; border-top: 1px solid rgba(201,164,106,.18); padding-top: 6px; }
-details.deep summary { font-size: 13px; color: var(--brass); cursor: pointer; list-style: none; padding: 4px 0; }
+details.deep summary { font-size: 15px; color: var(--brass); cursor: pointer; list-style: none; padding: 4px 0; }
 details.deep summary::-webkit-details-marker { display: none; }
 details.deep summary::before { content: '＋ '; } details.deep[open] summary::before { content: '－ '; }
-details.deep p { font-size: 13px; color: var(--sub); margin: 4px 0; line-height: 1.55; }
+details.deep p { font-size: 15px; color: var(--sub); margin: 6px 0; line-height: 1.65; }
 details.deep p b { color: var(--text); margin-right: 4px; font-weight: 700; }
 
 /* 처음으로: 결과를 보는 동안 항상 화면 아래에 떠 있음 */
@@ -620,6 +620,17 @@ details.deep p b { color: var(--text); margin-right: 4px; font-weight: 700; }
 .sh-slot em { font-style: normal; font-size: 11px; color: var(--sub); }
 .sh-fly { position: fixed; z-index: 9999; border-radius: 8px; border: 1.5px solid rgba(201,164,106,.9); box-shadow: 0 10px 30px rgba(0,0,0,.6); pointer-events: none; background-size: cover !important; transform-origin: center; }
 @media (prefers-reduced-motion: reduce) { .sh-pile { animation: none; } .sh-deck { transition: none; } }
+
+/* 2026-11-17 폰 피드백: 섞기 화면이 한눈에, 세 더미·고른 카드 자리 크게 */
+.sh-wrap { scroll-margin-top: 8px; }
+.sh-stage.cut { height: auto; padding: 14px 0 6px; }
+.sh-piles { gap: 14px; width: 100%; padding: 0 4px; }
+.sh-pile { flex: 1 1 0; max-width: 118px; width: auto; height: auto; aspect-ratio: 5 / 8; }
+.sh-slots { gap: 12px; padding: 6px 0 10px; }
+.sh-slot { flex: 1 1 0; max-width: 92px; }
+.sh-slot-c { width: 100%; height: auto; aspect-ratio: 5 / 8; border-radius: 8px; }
+.sh-slots.five { gap: 7px; }
+.sh-slot em { font-size: 13px; }
 
 </style>
 <script src="config.js" onerror="void 0"></script>
@@ -2963,6 +2974,14 @@ const SHX = (() => {
 })();
 
 const SH_N = 16; // 화면에 보이는 더미 장수
+// 섞기·나누기·고르기 화면은 카드가 주인공: 판 전체가 화면 위에서부터 보이게
+function shFocus() {
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const w = document.querySelector('#control-panel .glass-luxury'); if (!w) return;
+    w.style.scrollMarginTop = '8px';
+    w.scrollIntoView({ block: 'start', behavior: SHX.RM ? 'auto' : 'smooth' });
+  }));
+}
 let shEnergy = 0, shHolding = false, shTimer = null;
 
 function renderDeck() {
@@ -2992,6 +3011,7 @@ function renderDeck() {
     if (SHX.soundOn) SHX.flick();
   });
   bindHoldShuffle(document.getElementById('sh-stage'));
+  shFocus();
 }
 
 function shCards() { return [...document.querySelectorAll('#deck-stack .shc')]; }
@@ -3016,6 +3036,7 @@ function shDone(kind) {
     msg.textContent = '조금만 더 섞어요';
   }
   const st = document.getElementById('sh-stage'); if (st && !SHX.RM) { st.classList.remove('sh-pulse'); void st.offsetWidth; st.classList.add('sh-pulse'); }
+  shFocus();
 }
 
 /* ① 꾹 누르기 · 문지르기 = 오버핸드 셔플 (손 안에서 한 움큼씩 빼서 뒤로) */
@@ -3129,6 +3150,7 @@ async function doSpread() {
   SHX.flick(0.12, 0.9); setTimeout(() => SHX.flick(0.12), 120); setTimeout(() => SHX.flick(0.12, 1.1), 240);
   document.querySelectorAll('.sh-pile').forEach(b => b.addEventListener('click', () => cutPick(Number(b.dataset.pile)), { once: true }));
   busy = false;
+  shFocus();
 }
 async function cutPick(p) {
   if (busy) return;
@@ -3165,6 +3187,7 @@ function openFan() {
   fan.querySelectorAll('[data-card]').forEach(btn => {
     btn.addEventListener('click', () => pickCard(Number(btn.dataset.card), btn));
   });
+  shFocus();
 }
 function shFly(btn, slotIdx) {
   SHX.flick(0.16, 0.9); SHX.buzz(14);
