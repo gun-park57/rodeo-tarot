@@ -640,6 +640,55 @@ details.deep p b { color: var(--text); margin-right: 4px; font-weight: 700; }
 .sh-pile { flex: 0 0 auto; width: var(--pile-w, 100px); max-width: none; }
 .sh-slot { flex: 0 0 auto; width: var(--slot-w, 84px); max-width: none; }
 .sh-pick-tip { font-size: 13px !important; min-height: 20px; }
+.sh-stage.swirling .sh-glow { opacity: 1; transform: scale(1.7); transition: opacity .8s, transform 1.2s; }
+.sh-deck .shc { transition: filter .3s; }
+
+/* 카드 말풍선: 왼쪽 그림 · 오른쪽 풀이, 말풍선은 가로 꽉 (2026-11-17) */
+.glass-luxury:has(.cb-grid) { max-width: 100% !important; flex: 1 1 auto; }
+.cb-grid { display: grid; grid-template-columns: minmax(96px, 40%) 1fr; gap: 14px; align-items: start; margin-top: 4px; }
+.cb-grid .bubble-art { float: none; width: 100%; height: auto; aspect-ratio: 5 / 8; margin: 0; }
+.cb-text { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.cb-text p { margin: 0; }
+.rd-bub, .rd-bub b, .rd-q1, .rd-q2, .rd-q3, .rd-card { word-break: keep-all; overflow-wrap: anywhere; }
+.rd-bub b { font-size: 17px !important; line-height: 1.45; }
+.nw { white-space: nowrap; }
+
+/* ===== 모바일 꽉 차게 · 글씨 크게 (2026-11-17, 박건 "대부분 작은 모바일에서 본다고 생각해야 해") ===== */
+@media (max-width: 560px) {
+  #app-screen { height: calc(100dvh - 146px) !important; padding-left: 0 !important; padding-right: 0 !important; }
+  .wrap { padding-left: 10px !important; padding-right: 10px !important; }
+  /* 말풍선: 아바타 빼고 가로 꽉 */
+  #chat-stream .w-9.h-9 { display: none !important; }
+  #chat-stream > div { margin-left: 0 !important; }
+  #chat-stream > div > * + * { margin-left: 0 !important; }
+  #chat-stream .max-w-\[85\%\] { max-width: 100% !important; }
+  #chat-stream .glass-luxury.max-w-\[85\%\] { width: 100%; }
+  #chat-stream .rounded-tl-none { border-top-left-radius: 1rem !important; }
+  #chat-stream .p-4 { padding: 14px !important; }
+  /* 글씨 한 단계씩 크게 */
+  #chat-stream .text-sm, #control-panel .text-sm { font-size: 16px !important; line-height: 1.7 !important; }
+  #chat-stream .text-xs, #control-panel .text-xs { font-size: 14.5px !important; line-height: 1.6 !important; }
+  #chat-stream .text-\[10px\], #control-panel .text-\[10px\], #chat-stream .text-\[11px\], #control-panel .text-\[11px\] { font-size: 13px !important; }
+  #chat-stream .text-\[12px\], #control-panel .text-\[12px\] { font-size: 14px !important; }
+  #chat-stream .text-\[13px\], #control-panel .text-\[13px\] { font-size: 15px !important; }
+  #control-panel .glass-luxury { border-radius: 16px; }
+  #control-panel button { font-size: 15px; }
+  .rd-card, .rd-final p { font-size: 16.5px !important; }
+  .rd-q1 { font-size: 20px !important; } .rd-q2, .rd-q3 { font-size: 16.5px !important; }
+  .rp-title { font-size: 20px !important; }
+  .rp-q, .rp-empathy { font-size: 16px !important; }
+  .rp-card p, .rp p { font-size: 16px; }
+  details.deep p { font-size: 15.5px !important; }
+  details.deep summary, .rd-more > summary { font-size: 16px !important; }
+  .sh-hint, .sh-pick-tip { font-size: 14.5px !important; }
+  #deck-msg { font-size: 14.5px !important; }
+  .plain-frame, .rev-note { font-size: 14.5px !important; }
+  .mb-tip { font-size: 14.5px !important; }
+  .mb-home-btn { padding: 8px 13px !important; font-size: 14px !important; opacity: .94; }
+  .fan .fan-card { width: 64px !important; height: 104px !important; margin-left: -42px !important; }
+  .fan .fan-card:first-child { margin-left: 0 !important; }
+  .fan { padding-top: 34px !important; }
+}
 
 </style>
 <script src="config.js" onerror="void 0"></script>
@@ -2954,32 +3003,50 @@ const SHX = (() => {
       return ctx;
     } catch (e) { return null; }
   }
-  // 카드 한 장 스치는 소리: 짧은 잡음 + 대역 필터
-  function flick(vol = 0.16, pitch = 1) {
+  // 고급스럽게: 천천히 스치는 종이 소리 (부드러운 시작, 높은음 깎기)
+  function flick(vol = 0.08, pitch = 1) {
     const c = audio(); if (!c) return;
     try {
-      const s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
-      s.buffer = noiseBuf; s.playbackRate.value = 0.85 + Math.random() * 0.4;
-      f.type = 'bandpass'; f.frequency.value = (2200 + Math.random() * 1800) * pitch; f.Q.value = 0.9;
-      g.gain.setValueAtTime(vol, c.currentTime); g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.07);
-      s.connect(f); f.connect(g); g.connect(c.destination); s.start();
+      const t = c.currentTime, s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+      s.buffer = noiseBuf; s.playbackRate.value = 0.32 + Math.random() * 0.08; // 느리게 늘려서 '스으윽'
+      f.type = 'lowpass'; f.frequency.value = 1500 * pitch; f.Q.value = 0.4;
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.06); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.26);
+      s.connect(f); f.connect(g); g.connect(c.destination); s.start(t); s.stop(t + 0.3);
     } catch (e) { /* 무시 */ }
   }
-  // 덱을 탁 정리하는 소리: 낮고 둔탁하게
-  function thud() {
+  // 바람처럼 길게 '쉬이익' (카드가 떠오를 때·모일 때)
+  function whoosh(dur = 1.2, vol = 0.05) {
     const c = audio(); if (!c) return;
     try {
+      const t = c.currentTime, n = c.createBuffer(1, Math.ceil(c.sampleRate * dur), c.sampleRate), d = n.getChannelData(0);
+      let last = 0; for (let i = 0; i < d.length; i++) { last = last * 0.96 + (Math.random() * 2 - 1) * 0.04; d[i] = last * 6; } // 갈색 잡음 = 부드러움
       const s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
-      s.buffer = noiseBuf; s.playbackRate.value = 0.5; f.type = 'lowpass'; f.frequency.value = 600;
-      g.gain.setValueAtTime(0.35, c.currentTime); g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.12);
-      s.connect(f); f.connect(g); g.connect(c.destination); s.start();
+      s.buffer = n; f.type = 'bandpass'; f.Q.value = 0.6;
+      f.frequency.setValueAtTime(380, t); f.frequency.linearRampToValueAtTime(900, t + dur * 0.5); f.frequency.linearRampToValueAtTime(420, t + dur);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + dur * 0.4); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      s.connect(f); f.connect(g); g.connect(c.destination); s.start(t);
     } catch (e) { /* 무시 */ }
   }
+  // 다 섞였을 때 은은한 종소리 (싱잉볼 느낌: 배음 3개, 길게 사라짐)
+  function bell(vol = 0.06) {
+    const c = audio(); if (!c) return;
+    try {
+      const t = c.currentTime;
+      [[528, 1], [792, 0.5], [1188, 0.25]].forEach(([fq, a], k) => {
+        const o = c.createOscillator(), g = c.createGain();
+        o.type = 'sine'; o.frequency.value = fq; o.detune.value = k * 3;
+        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol * a, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 2.6 - k * 0.5);
+        o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + 2.7);
+      });
+    } catch (e) { /* 무시 */ }
+  }
+  // 카드가 내려앉는 소리: 아주 작고 부드럽게
+  function thud() { flick(0.05, 0.6); }
   function buzz(ms = 6) { const now = Date.now(); if (now - lastBuzz < 45) return; lastBuzz = now; try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) { /* 무시 */ } }
   function setSound(on) { soundOn = on; try { localStorage.setItem('rodeo_sound', on ? 'on' : 'off'); } catch (e) { /* 무시 */ } }
   const anim = (el, kf, opt) => (RM || !el.animate) ? { finished: Promise.resolve() } : el.animate(kf, Object.assign({ easing: 'cubic-bezier(.3,.7,.3,1)', fill: 'none' }, opt));
   const wait = ms => new Promise(r => setTimeout(r, RM ? 0 : ms));
-  return { flick, thud, buzz, setSound, get soundOn() { return soundOn; }, anim, wait, RM };
+  return { flick, whoosh, bell, thud, buzz, setSound, get soundOn() { return soundOn; }, anim, wait, RM };
 })();
 
 const SH_N = 16; // 화면에 보이는 더미 장수
@@ -3030,10 +3097,10 @@ function renderDeck() {
         <div class="sh-scale"><div class="sh-deck" id="deck-stack">${stk}</div></div>
         <span class="sh-glow" aria-hidden="true"></span>
       </div>
-      <div class="sh-row"><p class="sh-hint" id="sh-hint">👆 카드를 <b>꾹 누르거나 문질러서</b> 섞어요</p><button type="button" class="sh-sound" id="sh-sound" aria-pressed="${SHX.soundOn}">${SHX.soundOn ? '🔊' : '🔈'}</button></div>
+      <div class="sh-row"><p class="sh-hint" id="sh-hint">👆 카드를 <b>꾹 누르고 있으면</b> 떠올라 섞여요</p><button type="button" class="sh-sound" id="sh-sound" aria-pressed="${SHX.soundOn}">${SHX.soundOn ? '🔊' : '🔈'}</button></div>
       <div class="sh-meter" aria-hidden="true"><i id="sh-bar"></i></div>
       <div class="flex gap-2">
-        <button type="button" id="btn-shuffle" class="flex-1 bg-gradient-to-r from-amber-400 to-amber-600 text-black text-xs font-bold py-3 rounded-xl shadow-lg cursor-pointer">🔀 촤라락 섞기</button>
+        <button type="button" id="btn-shuffle" class="flex-1 bg-gradient-to-r from-amber-400 to-amber-600 text-black text-xs font-bold py-3 rounded-xl shadow-lg cursor-pointer">✨ 카드 섞기</button>
         <button type="button" id="btn-spread" disabled class="flex-1 bg-[#1F153A] border border-amber-400/40 text-xs font-bold py-3 rounded-xl text-amber-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">✂️ 카드 나누기</button>
       </div>
     </div>`);
@@ -3072,51 +3139,82 @@ function shDone(kind) {
   shFocus();
 }
 
-/* ① 꾹 누르기 · 문지르기 = 오버핸드 셔플 (손 안에서 한 움큼씩 빼서 뒤로) */
+/* ① 공중에 떠서 맴돌기 (2026-11-17, 박건 "도박장 느낌 말고") 
+ *  카드가 천천히 떠올라 타원을 그리며 별자리처럼 돌고, 다시 한 장씩 내려앉아 모인다.
+ *  꾹 누르고 있으면 계속 돌고, 손가락을 좌우로 움직이면 도는 방향·속도가 따라온다. */
+let shOrbit = null;
+function shSwirl(minMs) {
+  return new Promise(resolve => {
+    const stage = document.getElementById('sh-stage'), deck = document.getElementById('deck-stack');
+    if (!stage || !deck) { resolve(); return; }
+    const cards = shCards(), N = cards.length;
+    const W = stage.clientWidth, H = stage.clientHeight;
+    const sc = (stage.querySelector('.sh-scale') && parseFloat((stage.querySelector('.sh-scale').style.transform.match(/scale\(([\d.]+)/) || [0, 1])[1])) || 1;
+    // 카드가 판 밖(위 안내 문구)으로 나가지 않게: 위아래 남는 공간 안에서만 움직이기
+    const room = Math.max(6, H / 2 - 74 * sc * 0.9 - 6);
+    const RX = Math.min(W / 2 - 46 * sc, 150) / sc, RY = Math.min(room * 0.55, 46) / sc, LIFT = Math.min(room * 0.35, 26) / sc;
+    const seeds = cards.map((_, i) => ({ a: (i / N) * Math.PI * 2 + Math.random() * 0.3, r: 0.75 + Math.random() * 0.3, bob: Math.random() * Math.PI * 2 }));
+    stage.classList.add('swirling');
+    SHX.whoosh(1.4, 0.05);
+    const t0 = performance.now(); let last = t0, rot = 0, rise = 0, phase = 'up', downAt = 0, chime = 0;
+    shOrbit = { speed: 1, dir: 1, stop: false };
+    const frame = now => {
+      const dt = Math.min(50, now - last); last = now;
+      const o = shOrbit;
+      rot += dt * 0.0011 * o.speed * o.dir;
+      if (phase === 'up') { rise = Math.min(1, rise + dt / 700); if (rise >= 1) phase = 'spin'; }
+      if (phase === 'spin' && now - t0 > minMs && o.stop) { phase = 'down'; downAt = now; SHX.whoosh(1.1, 0.04); }
+      if (phase === 'down') rise = Math.max(0, 1 - (now - downAt) / 900);
+      const e = rise < 0.5 ? 2 * rise * rise : 1 - Math.pow(-2 * rise + 2, 2) / 2; // ease in-out
+      cards.forEach((c, i) => {
+        const sd = seeds[i];
+        // 내려앉을 때는 한 장씩 시차를 두고
+        const k = phase === 'down' ? Math.max(0, Math.min(1, e * 1.6 - (i / N) * 0.6)) : e;
+        const ang = sd.a + rot * (0.85 + sd.r * 0.3);
+        const x = Math.cos(ang) * RX * sd.r * k, y = Math.sin(ang) * RY * sd.r * k - LIFT * k + Math.sin(now / 600 + sd.bob) * 3 * k;
+        const depth = (Math.sin(ang) + 1) / 2; // 0 뒤 · 1 앞
+        const base = `translate(${(i - SH_N) * 0.6 * (1 - k)}px, ${-i * 1.6 * (1 - k)}px)`;
+        c.style.transform = `${base} translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) rotate(${(Math.cos(ang) * -14 * k).toFixed(1)}deg) scale(${(1 - 0.16 * k + depth * 0.2 * k).toFixed(3)})`;
+        c.style.zIndex = k > 0.05 ? Math.round(depth * 100) : i;
+        c.style.filter = k > 0.05 ? `brightness(${(0.7 + depth * 0.4).toFixed(2)})` : '';
+      });
+      if (phase === 'spin' && now - chime > 900) { chime = now; SHX.flick(0.035, 0.8); }
+      if (phase === 'down' && rise <= 0) {
+        stage.classList.remove('swirling');
+        cards.sort(() => Math.random() - 0.5).forEach(c => deck.appendChild(c));
+        cards.forEach(c => { c.style.filter = ''; });
+        shRestack(shCards());
+        SHX.bell(); SHX.buzz(12);
+        shOrbit = null; resolve(); return;
+      }
+      requestAnimationFrame(frame);
+    };
+    if (SHX.RM) { shOrbit.stop = true; cards.sort(() => Math.random() - 0.5).forEach(c => deck.appendChild(c)); shRestack(shCards()); stage.classList.remove('swirling'); SHX.bell(); shOrbit = null; resolve(); return; }
+    requestAnimationFrame(frame);
+  });
+}
 function bindHoldShuffle(stage) {
-  const deck = stage.querySelector('.sh-deck');
-  let lastX = 0, speed = 1;
-  const tick = () => {
-    if (!shHolding) return;
-    const cards = shCards(); if (!cards.length) return;
-    const n = 2 + Math.floor(Math.random() * 3); // 한 움큼
-    const top = cards.slice(-n);
-    const dir = Math.random() < 0.5 ? -1 : 1;
-    top.forEach((c, k) => {
-      SHX.anim(c, [
-        { transform: c.style.transform },
-        { transform: `translate(${dir * (46 + k * 6)}px, ${-34 - k * 5}px) rotate(${dir * (12 + k * 3)}deg)`, offset: 0.45 },
-        { transform: `translate(${(-SH_N) * 0.6}px, 8px) rotate(${dir * -2}deg)` }
-      ], { duration: 240 / speed, delay: k * 18 });
-    });
-    // 순서 바꾸기: 위 n장을 맨 아래로
-    setTimeout(() => { top.forEach(c => deck.prepend(c)); shRestack(shCards()); }, 200 / speed);
-    SHX.flick(0.12, 1 + speed * 0.1); SHX.buzz(5);
-    shAddEnergy(0.045 * speed);
-    shTimer = setTimeout(tick, 150 / speed);
-  };
+  let lastX = 0, holdPromise = null;
   const start = e => {
     if (busy || shHolding || stage.classList.contains('cut')) return;
     if (e.cancelable) e.preventDefault();
     try { stage.setPointerCapture(e.pointerId); } catch (er) { /* 무시 */ }
-    shHolding = true; speed = 1; lastX = e.clientX || 0;
+    shHolding = true; busy = true; lastX = e.clientX || 0;
     stage.classList.add('holding');
-    const msg = document.getElementById('deck-msg'); if (msg) msg.textContent = '🔀 섞는 중... 손을 떼면 멈춰요';
-    tick();
+    const msg = document.getElementById('deck-msg'); if (msg) msg.textContent = '✨ 카드가 떠올랐어요. 손을 떼면 내려앉아요';
+    holdPromise = shSwirl(1600).then(() => { busy = false; shAddEnergy(0.6); shDone('hold'); });
+    shTimer = setInterval(() => { if (shHolding) shAddEnergy(0.05); }, 250);
   };
   const move = e => {
-    if (!shHolding) return;
-    const x = e.clientX || 0, r = stage.getBoundingClientRect();
-    speed = Math.min(2.4, 1 + Math.abs(x - lastX) / 12); lastX = x;
-    const tilt = ((x - r.left) / r.width - 0.5) * 18;
-    deck.style.transform = `rotate(${tilt.toFixed(1)}deg) translateX(${(tilt * 1.2).toFixed(1)}px)`;
+    if (!shHolding || !shOrbit) return;
+    const x = e.clientX || 0, dx = x - lastX; lastX = x;
+    if (Math.abs(dx) > 1) { shOrbit.dir = dx > 0 ? 1 : -1; shOrbit.speed = Math.min(2.2, 1 + Math.abs(dx) / 14); }
   };
   const end = () => {
     if (!shHolding) return;
-    shHolding = false; clearTimeout(shTimer);
-    stage.classList.remove('holding'); deck.style.transform = '';
-    SHX.thud(); SHX.buzz(18);
-    shDone('hold');
+    shHolding = false; clearInterval(shTimer);
+    stage.classList.remove('holding');
+    if (shOrbit) { shOrbit.stop = true; shOrbit.speed = 1; }
   };
   stage.addEventListener('pointerdown', start);
   stage.addEventListener('pointermove', move);
@@ -3125,45 +3223,18 @@ function bindHoldShuffle(stage) {
   stage.addEventListener('contextmenu', e => e.preventDefault());
 }
 
-/* ② 버튼 = 리플 셔플: 반 갈라서 → 엇갈려 합치기 → 브리지 → 정리 */
+/* ② 버튼 = 한 번 떠올라 두 바퀴쯤 돌고 내려앉기 */
 async function doShuffle() {
   if (busy || shHolding) return;
   busy = true;
   const msg = document.getElementById('deck-msg');
-  msg.textContent = '🔀 촤라락...';
-  const deck = document.getElementById('deck-stack'), cards = shCards();
-  const L = cards.filter((_, i) => i % 2 === 0), R = cards.filter((_, i) => i % 2 === 1);
-  // 1) 반으로 가르기
-  const split = (arr, dir) => arr.map((c, k) => SHX.anim(c, [
-    { transform: c.style.transform },
-    { transform: `translate(${dir * 58}px, ${-k * 1.6 + 6}px) rotate(${dir * 9}deg)` }
-  ], { duration: 260, delay: k * 6, fill: 'forwards' }));
-  split(L, -1); split(R, 1);
-  SHX.flick(0.1, 0.8);
-  await SHX.wait(300);
-  // 2) 엇갈려 떨어지기 (위로 살짝 휘었다가 한 장씩)
-  const order = []; for (let k = 0; k < Math.max(L.length, R.length); k++) { if (R[k]) order.push([R[k], 1]); if (L[k]) order.push([L[k], -1]); }
-  order.forEach(([c, dir], k) => {
-    setTimeout(() => {
-      SHX.anim(c, [
-        { transform: `translate(${dir * 58}px, ${-k * 0.8 + 6}px) rotate(${dir * 9}deg)` },
-        { transform: `translate(${dir * 30}px, ${-k * 1.6 - 22}px) rotate(${dir * 18}deg)`, offset: 0.4 },
-        { transform: `translate(${(k - SH_N) * 0.6}px, ${-k * 1.6}px) rotate(0deg)` }
-      ], { duration: 220, fill: 'forwards' });
-      c.style.zIndex = k;
-      SHX.flick(0.13); SHX.buzz(4);
-    }, k * 34);
-  });
-  await SHX.wait(order.length * 34 + 240);
-  // 3) 브리지 (덱이 휘었다가 펴짐)
-  order.forEach(([c], k) => deck.appendChild(c));
-  shCards().forEach(c => c.getAnimations && c.getAnimations().forEach(a => a.cancel()));
-  shRestack(shCards());
-  await SHX.anim(deck, [{ transform: 'scale(1,1)' }, { transform: 'scale(1.06,.9) translateY(6px)', offset: 0.5 }, { transform: 'scale(1,1)' }], { duration: 360 }).finished;
-  SHX.thud(); SHX.buzz(20);
-  shAddEnergy(0.5);
+  msg.textContent = '✨ 질문을 떠올리는 동안 카드가 섞여요...';
+  const p = shSwirl(2400);
+  if (shOrbit) shOrbit.stop = true;
+  await p;
+  shAddEnergy(0.6);
   busy = false;
-  shDone('riffle');
+  shDone('swirl');
 }
 
 /* ③ 컷: 세 더미로 나누고, 끌리는 더미 하나 고르기 */
@@ -3180,7 +3251,7 @@ async function doSpread() {
   document.querySelector('.sh-meter').style.visibility = 'hidden';
   ['btn-shuffle', 'btn-spread'].forEach(id => { const b = document.getElementById(id); if (b) b.disabled = true; });
   const row = document.getElementById('btn-shuffle'); if (row) row.parentElement.style.display = 'none';
-  SHX.flick(0.12, 0.9); setTimeout(() => SHX.flick(0.12), 120); setTimeout(() => SHX.flick(0.12, 1.1), 240);
+  SHX.whoosh(0.8, 0.04);
   document.querySelectorAll('.sh-pile').forEach(b => b.addEventListener('click', () => cutPick(Number(b.dataset.pile)), { once: true }));
   busy = false;
   shFocus();
@@ -3215,7 +3286,7 @@ function openFan() {
   const fan = document.getElementById('fan');
   requestAnimationFrame(() => requestAnimationFrame(() => fan.classList.add('open')));
   // 펼치는 소리: 드르륵
-  for (let k = 0; k < 14; k++) setTimeout(() => SHX.flick(0.07, 1.2), 40 + k * 45);
+  SHX.whoosh(1.0, 0.045);
   setTimeout(() => fan.querySelectorAll('.fan-card').forEach(c => { c.style.transitionDelay = '0ms'; }), 78 * 12 + 400);
   fan.querySelectorAll('[data-card]').forEach(btn => {
     btn.addEventListener('click', () => pickCard(Number(btn.dataset.card), btn));
@@ -3223,7 +3294,7 @@ function openFan() {
   shFocus();
 }
 function shFly(btn, slotIdx) {
-  SHX.flick(0.16, 0.9); SHX.buzz(14);
+  SHX.flick(0.06, 0.9); SHX.buzz(10);
   const slot = document.getElementById('sh-slot-' + slotIdx); if (!slot) return;
   const tgt = slot.querySelector('.sh-slot-c');
   const a = btn.getBoundingClientRect(), b = tgt.getBoundingClientRect();
@@ -3309,10 +3380,13 @@ function cardBubble(card, posIndex) {
         <span class="text-[12px] text-purple-300/80">${esc(layout.positions[posIndex].label)}</span>
         <span class="tone ${tone[1]}">${tone[0]}</span>
       </div>
+      <div class="cb-grid">
       ${CARD_IMG[card.id] ? `<img class="bubble-art ${card.isReversed ? 'rev' : ''}" src="${CARD_IMG[card.id]}" alt="" data-dict="${card.id}" title="카드 사전 보기" onerror="this.remove()">` : ''}
+      <div class="cb-text">
       <p class="font-bold gold-text">${esc(name)}${card.isReversed ? ' <span class="rev-word">거꾸로</span>' : ''}</p>
       <p class="plain-main rd-bub">${typeof READER !== 'undefined' ? READER.quickBubble(card, posIndex) : esc(plain || r.text)}</p>
       ${card.isReversed && card.lucky ? '<p class="rev-note">🔄 거꾸로 나왔지만, 이 카드는 거꾸로일 때 오히려 좋은 뜻이에요.</p>' : ''}
+      </div></div>
       <details class="deep"><summary>더 깊이 보기</summary>
         ${typeof READER !== 'undefined' ? `<p>${READER.bubble(card, posIndex)}</p>` : ''}
         ${plain ? `<p><b>카드 키워드</b> ${esc(r.text)}</p>` : ''}
@@ -4721,7 +4795,7 @@ const READER = (() => {
     if (pos === '이유' || pos === '조언') return `<b>${esc(t)}</b>`;
     const base = card.type === 'major' ? CARD_POLARITY.major[card.num] : CARD_POLARITY[card.suit][card.rank];
     const sc = card.isReversed && !card.lucky && base < 0 ? 0 : cardScore(card);
-    return `<b>${esc(SUBJ[pos] || pos + eunN(pos))} ${toneWord(sc)}</b><br><span class="rd-q-sub">${esc(t)}</span>`;
+    return `<b>${esc(SUBJ[pos] || pos + eunN(pos))} <span class="nw">${toneWord(sc)}</span></b><br><span class="rd-q-sub">${esc(t)}</span>`;
   }
   return { quick, quickBubble, bubble, line, joiner, final, numerology, timing, lifeCard, sumCard, solver, shape, revMode, lux, isTimeQ };
 })();
