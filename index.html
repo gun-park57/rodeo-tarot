@@ -3028,7 +3028,7 @@ function shDone(kind) {
   shuffleCount += 1;
   const msg = document.getElementById('deck-msg'), sp = document.getElementById('btn-spread'), hint = document.getElementById('sh-hint');
   if (!msg) return;
-  if (shEnergy >= 0.35) {
+  if (true) {
     sp.disabled = false;
     msg.textContent = shEnergy >= 1 ? '✨ 충분히 섞였어요. 질문을 한 번 더 떠올리고 카드를 나눠요' : `${shuffleCount}번 섞었어요. 더 섞어도 되고, 준비되면 카드를 나눠요`;
     if (hint) hint.innerHTML = '마음이 가라앉을 때까지 더 섞어도 돼요';
