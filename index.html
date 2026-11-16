@@ -701,6 +701,17 @@ details.deep p b { color: var(--text); margin-right: 4px; font-weight: 700; }
 @keyframes tpRiseRev { from { opacity: 0; transform: rotate(180deg) translateY(-16px) scale(.94); } to { opacity: 1; transform: rotate(180deg); } }
 @media (prefers-reduced-motion: reduce) { .tp-daily > .mini-card { animation: none; } }
 
+/* 내가 고른 카드: 3장이 가로를 꽉 채우게 크게 (5장은 3+2) (2026-11-17) */
+#chat-stream .glass-luxury:has(.flip) { max-width: 100% !important; width: 100%; }
+#chat-stream .glass-luxury:has(.flip) > .flex.justify-center { flex-wrap: wrap; gap: 10px !important; }
+#chat-stream .glass-luxury:has(.flip) > .flex.justify-center > div { flex: 0 0 calc((100% - 20px) / 3); margin: 0 !important; }
+#chat-stream .glass-luxury:has(.flip) .flip, #chat-stream .glass-luxury:has(.flip) .flip.sm { width: 100%; height: auto; aspect-ratio: 5 / 8; }
+#chat-stream .glass-luxury:has(.flip) .flip.sm .front-content { transform: none; }
+#chat-stream .glass-luxury:has(.flip) .flip.sm .front-content.rev { transform: rotate(180deg); }
+#chat-stream .glass-luxury:has(.flip) .flip .face { border-radius: 10px; }
+#chat-stream .glass-luxury:has(.flip) [id^="flip-label"] { font-size: 14px !important; margin-top: 2px; }
+#chat-stream .glass-luxury:has(.flip) .rev-badge { font-size: 12px; padding: 3px 6px; }
+
 </style>
 <script src="config.js" onerror="void 0"></script>
 </head>
