@@ -632,6 +632,15 @@ details.deep p b { color: var(--text); margin-right: 4px; font-weight: 700; }
 .sh-slots.five { gap: 7px; }
 .sh-slot em { font-size: 13px; }
 
+/* 화면 맞춤 (2026-11-17, 폰 인앱 브라우저에서 버튼이 아래로 밀림) */
+.sh-stage { touch-action: pan-y; }
+.sh-scale { transform-origin: center center; }
+.sh-row { display: flex; align-items: center; justify-content: center; gap: 6px; }
+.sh-row .sh-sound { margin: 0; padding: 2px 6px; font-size: 15px; }
+.sh-pile { flex: 0 0 auto; width: var(--pile-w, 100px); max-width: none; }
+.sh-slot { flex: 0 0 auto; width: var(--slot-w, 84px); max-width: none; }
+.sh-pick-tip { font-size: 13px !important; min-height: 20px; }
+
 </style>
 <script src="config.js" onerror="void 0"></script>
 </head>
@@ -2974,10 +2983,35 @@ const SHX = (() => {
 })();
 
 const SH_N = 16; // 화면에 보이는 더미 장수
+// 화면 높이에 맞춰 카드 크기 조절 (작은 폰·인앱 브라우저에서 버튼까지 한 화면에)
+function shFit() {
+  const box = document.querySelector('#control-panel .glass-luxury'); if (!box) return;
+  const avail = (typeof app !== 'undefined' && app.clientHeight) || window.innerHeight;
+  const stage = box.querySelector('.sh-stage'), scale = box.querySelector('.sh-scale');
+  if (stage && scale && !stage.classList.contains('cut')) {
+    const others = box.offsetHeight - stage.offsetHeight;
+    const h = Math.max(120, Math.min(210, avail - others - 16));
+    stage.style.height = h + 'px'; scale.style.transform = `scale(${Math.min(1, (h - 20) / 180).toFixed(3)})`;
+  }
+  const piles = box.querySelector('.sh-piles');
+  if (piles) {
+    const others = box.offsetHeight - piles.offsetHeight;
+    const h = Math.max(90, Math.min(190, avail - others - 24));
+    piles.style.setProperty('--pile-w', Math.round(Math.min(h * 5 / 8, (piles.clientWidth - 36) / 3, 120)) + 'px');
+  }
+  const slots = box.querySelector('.sh-slots');
+  if (slots) {
+    const others = box.offsetHeight - slots.offsetHeight;
+    const h = Math.max(56, Math.min(150, avail - others - 36));
+    const n = slots.children.length || 3, gap = n > 3 ? 7 : 12;
+    slots.style.setProperty('--slot-w', Math.round(Math.min(h * 5 / 8, (slots.clientWidth - gap * (n - 1)) / n, 92)) + 'px');
+  }
+}
 // 섞기·나누기·고르기 화면은 카드가 주인공: 판 전체가 화면 위에서부터 보이게
 function shFocus() {
   requestAnimationFrame(() => requestAnimationFrame(() => {
     const w = document.querySelector('#control-panel .glass-luxury'); if (!w) return;
+    shFit();
     w.style.scrollMarginTop = '8px';
     w.scrollIntoView({ block: 'start', behavior: SHX.RM ? 'auto' : 'smooth' });
   }));
@@ -2990,24 +3024,23 @@ function renderDeck() {
   chosen = [];
   const stk = Array.from({ length: SH_N }, (_, i) => `<div class="shc card-back" style="--i:${i};z-index:${i};transform:translate(${(i - SH_N) * 0.6}px, ${-i * 1.6}px) rotate(${(Math.random() * 3 - 1.5).toFixed(1)}deg)"></div>`).join('');
   setPanel(`
-    <div class="glass-luxury p-4 rounded-2xl border border-amber-400/40 space-y-3 sh-wrap">
+    <div class="glass-luxury p-3 rounded-2xl border border-amber-400/40 space-y-2 sh-wrap">
       <div class="text-center text-xs gold-text font-semibold" id="deck-msg">🔀 질문을 떠올리며 카드를 섞어주세요</div>
       <div class="sh-stage" id="sh-stage" role="button" tabindex="0" aria-label="카드 더미. 꾹 누르거나 문지르면 섞여요">
-        <div class="sh-deck" id="deck-stack">${stk}</div>
+        <div class="sh-scale"><div class="sh-deck" id="deck-stack">${stk}</div></div>
         <span class="sh-glow" aria-hidden="true"></span>
       </div>
-      <p class="sh-hint" id="sh-hint">👆 카드를 <b>꾹 누르거나 문질러서</b> 섞어요</p>
+      <div class="sh-row"><p class="sh-hint" id="sh-hint">👆 카드를 <b>꾹 누르거나 문질러서</b> 섞어요</p><button type="button" class="sh-sound" id="sh-sound" aria-pressed="${SHX.soundOn}">${SHX.soundOn ? '🔊' : '🔈'}</button></div>
       <div class="sh-meter" aria-hidden="true"><i id="sh-bar"></i></div>
       <div class="flex gap-2">
         <button type="button" id="btn-shuffle" class="flex-1 bg-gradient-to-r from-amber-400 to-amber-600 text-black text-xs font-bold py-3 rounded-xl shadow-lg cursor-pointer">🔀 촤라락 섞기</button>
         <button type="button" id="btn-spread" disabled class="flex-1 bg-[#1F153A] border border-amber-400/40 text-xs font-bold py-3 rounded-xl text-amber-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">✂️ 카드 나누기</button>
       </div>
-      <button type="button" class="sh-sound" id="sh-sound" aria-pressed="${SHX.soundOn}">${SHX.soundOn ? '🔊 소리 켜짐' : '🔈 소리 꺼짐'}</button>
     </div>`);
   document.getElementById('btn-shuffle').addEventListener('click', doShuffle);
   document.getElementById('btn-spread').addEventListener('click', doSpread);
   document.getElementById('sh-sound').addEventListener('click', e => {
-    SHX.setSound(!SHX.soundOn); e.currentTarget.textContent = SHX.soundOn ? '🔊 소리 켜짐' : '🔈 소리 꺼짐'; e.currentTarget.setAttribute('aria-pressed', SHX.soundOn);
+    SHX.setSound(!SHX.soundOn); e.currentTarget.textContent = SHX.soundOn ? '🔊' : '🔈'; e.currentTarget.setAttribute('aria-label', SHX.soundOn ? '소리 끄기' : '소리 켜기'); e.currentTarget.setAttribute('aria-pressed', SHX.soundOn);
     if (SHX.soundOn) SHX.flick();
   });
   bindHoldShuffle(document.getElementById('sh-stage'));
@@ -3142,7 +3175,7 @@ async function doSpread() {
   const stage = document.getElementById('sh-stage');
   stage.classList.add('cut');
   const piles = [0, 1, 2].map(p => `<button type="button" class="sh-pile" id="sh-pile-${p}" data-pile="${p}" aria-label="${p + 1}번째 더미" style="--p:${p - 1}">${[0, 1, 2, 3, 4].map(k => `<span class="card-back" style="transform:translate(${k * 0.8}px, ${-k * 1.8}px)"></span>`).join('')}</button>`).join('');
-  document.getElementById('deck-stack').outerHTML = `<div class="sh-piles" id="sh-piles">${piles}</div>`;
+  document.querySelector('.sh-scale').outerHTML = `<div class="sh-piles" id="sh-piles">${piles}</div>`;
   const hint = document.getElementById('sh-hint'); if (hint) hint.innerHTML = '왼손으로 고르면 더 좋대요 🤚';
   document.querySelector('.sh-meter').style.visibility = 'hidden';
   ['btn-shuffle', 'btn-spread'].forEach(id => { const b = document.getElementById(id); if (b) b.disabled = true; });
@@ -3176,7 +3209,7 @@ function openFan() {
   setPanel(`
     <div class="glass-luxury p-3.5 rounded-2xl border border-amber-400/40 space-y-1">
       <div class="sh-slots${layout.count > 3 ? ' five' : ''}">${slots}</div>
-      <div class="text-center text-xs gold-text font-semibold">👇 좌우로 넘기며 끌리는 카드 ${layout.count}장을 골라주세요 <span id="pick-count">(0/${layout.count})</span></div>
+      <div class="text-center text-xs gold-text font-semibold sh-pick-tip" id="sh-pick-tip">👇 좌우로 넘기며 끌리는 카드 ${layout.count}장을 골라주세요 <span id="pick-count">(0/${layout.count})</span></div>
       <div class="fan" id="fan">${cards}</div>
     </div>`);
   const fan = document.getElementById('fan');
@@ -3219,7 +3252,10 @@ function pickCard(idx, btn) {
   const n = chosen.length;
   const left = L.count - n;
   if (left > 0) {
+    const tip = document.getElementById('sh-pick-tip');
+    if (tip) { tip.innerHTML = `${ORDINAL[n - 1]} 번째 <b>${esc(L.positions[n - 1].short)}</b> 카드를 골랐어요. ${left === 1 ? '마지막 한 장!' : `${left}장 더 골라주세요`} <span id="pick-count">(${n}/${L.count})</span>`; } else {
     botMsg(`${ORDINAL[n - 1]} 번째 카드 <span class="text-purple-300/70">(${esc(L.positions[n - 1].short)})</span>를 골랐어요. ${left === 1 ? '마지막 카드를 골라주세요.' : `${left}장을 더 골라주세요.`}`);
+    }
     return;
   }
   busy = true;
