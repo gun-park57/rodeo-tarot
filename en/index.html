@@ -68,13 +68,18 @@ label { display: block; font-size: 14px; color: var(--sub); margin-bottom: 6px; 
 .cy { background: var(--panel-2); border-radius: 10px; padding: 8px 2px; text-align: center; font-size: 12.5px; color: var(--sub); }
 .cy.now { outline: 2px solid var(--brass); color: var(--text); }
 .cy .h { font-family: var(--han); font-size: 22px; font-weight: 800; }
-.actions { display: grid; grid-template-columns: 1.3fr 1fr; gap: 8px; margin-top: 24px; }
+.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 24px; }
 .btn2 { border: 1px solid var(--brass); background: transparent; color: var(--brass-hi); border-radius: 12px; padding: 13px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; }
 .btn2.solid { background: var(--brass); color: #1B1014; }
 .btn2:disabled { opacity: .6; cursor: wait; }
 footer { margin-top: 48px; font-size: 13px; color: var(--sub); border-top: 1px solid var(--line); padding-top: 16px; }
 @media (max-width: 380px) { h1 { font-size: 38px; } .pl .h { font-size: 28px; } .type .big { font-size: 72px; } }
 @media (prefers-reduced-motion: no-preference) { #result.show { animation: rise .5s ease-out; } @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } } }
+.dh{font-family:var(--serif);font-size:24px;color:var(--brass-hi);margin:22px 0 6px}
+.gifts{margin:4px 0 10px 18px;padding:0}.gifts li{margin:4px 0}
+.months{display:grid;grid-template-columns:1fr;gap:6px;margin-top:8px}.months div{font-size:15px;line-height:1.5;padding:8px 10px;border:1px solid rgba(201,164,106,.25);border-radius:10px}
+.months b{display:inline-block;width:42px;color:var(--brass-hi)}.months span{display:inline-block;min-width:96px;color:var(--sub);font-size:13px}
+.actions #share{grid-column:1/-1}
 </style>
 <script src="../config.js" onerror="void 0"></script>
 </head>
@@ -537,6 +542,44 @@ const EN = {
   },
   PILLAR_ROLE: { year: 'Year · roots & family', month: 'Month · career & parents', day: 'Day · you & partner', hour: 'Hour · future & children' }
 };
+/* ===== Longer report (2026-11-17, foreign beta users love Saju) ===== */
+EN.DM2 = [
+  { gifts: ['You keep going when others quit', 'People trust your word', 'You build things that last'], recharge: 'Time in nature, long walks, a slow morning with no plans.', need: 'Someone who respects your independence and grows with you.', avoid: 'Bending so long you snap. Ask for help before you are exhausted.' },
+  { gifts: ['You read a room in seconds', 'You turn strangers into allies', 'You find the side door when the front is locked'], recharge: 'Beautiful spaces, plants, a good playlist and one close friend.', need: 'A partner who notices the small things you do for them.', avoid: 'Saying yes to everyone. Your energy is not unlimited.' },
+  { gifts: ['You light up any room', 'You say what you mean', 'Your optimism is contagious'], recharge: 'Sunlight, movement, laughter. A day outside fixes almost anything.', need: 'Someone who claps for you and still keeps you honest.', avoid: 'Burning out by saying yes to every invitation.' },
+  { gifts: ['Laser focus', 'Deep loyalty', 'You notice what everyone else misses'], recharge: 'Candles, quiet music, a book, one deep conversation.', need: 'A calm partner who makes you feel safe to open up.', avoid: 'Overthinking every word someone said. Ask instead.' },
+  { gifts: ['You stay calm in a crisis', 'People feel safe around you', 'You are patient with long goals'], recharge: 'Good food, good sleep, a familiar place.', need: 'Someone steady who does not play games.', avoid: 'Holding on to things, places or people long after they stopped working.' },
+  { gifts: ['You make people feel cared for', 'You turn chaos into order', 'You remember what matters to others'], recharge: 'Cooking, gardening, tidying your space, a bath.', need: 'A partner who takes care of you back, without being asked.', avoid: 'Worrying about everyone else first. You are on the list too.' },
+  { gifts: ['You make hard decisions fast', 'You protect your people', 'You are honest even when it costs you'], recharge: 'Exercise, competition, a clean and organized space.', need: 'Someone who can handle your directness and match your loyalty.', avoid: 'Cutting people off too fast. Not every mistake is betrayal.' },
+  { gifts: ['Impeccable taste', 'You polish ideas until they shine', 'You notice quality instantly'], recharge: 'Beauty, art, a well-made coffee, a quiet room.', need: 'A partner who admires your standards instead of fighting them.', avoid: 'Taking criticism as a verdict on your worth.' },
+  { gifts: ['You see the big picture', 'You adapt anywhere', 'You connect ideas and people across borders'], recharge: 'Travel, the sea, new cities, freedom of schedule.', need: 'Someone who gives you space and is still there when you return.', avoid: 'Drifting from plan to plan without landing anywhere.' },
+  { gifts: ['Deep intuition', 'You comfort people without words', 'Quiet creativity that surprises everyone'], recharge: 'Rain sounds, writing, music, a long shower, solitude.', need: 'A gentle partner who understands silence is not distance.', avoid: 'Absorbing everyone\'s moods as your own.' }
+];
+EN.GOD2 = {
+  비견: 'You trust yourself first. You do best as your own boss or with full ownership of your work.',
+  겁재: 'You are competitive and brave with risk. Partnerships work only when the money rules are written down.',
+  식신: 'You are a maker. Food, craft, content and comfort are where your talent flows easily.',
+  상관: 'You are a performer and a rule-breaker. You shine when you have a stage and freedom to speak.',
+  편재: 'You are a dealmaker. Money and people move around you. Side hustles and travel suit you.',
+  정재: 'You are a keeper. Steady income, savings and loyalty in love are your strength.',
+  편관: 'You grow under pressure. Tough jobs, crises and big responsibility bring out the leader in you.',
+  정관: 'You value status and doing things properly. Organizations, titles and commitment suit you.',
+  편인: 'You are a specialist. Unusual skills, research and intuition set you apart.',
+  정인: 'You are a learner. Mentors, study, certificates and support follow you through life.'
+};
+EN.LUCKY = [
+  { color: 'Green', num: '3 and 8', dir: 'East', season: 'Spring' },
+  { color: 'Red and orange', num: '2 and 7', dir: 'South', season: 'Summer' },
+  { color: 'Yellow and beige', num: '5 and 10', dir: 'Center (stay close to home)', season: 'Late summer' },
+  { color: 'White and gold', num: '4 and 9', dir: 'West', season: 'Autumn' },
+  { color: 'Black and navy', num: '1 and 6', dir: 'North', season: 'Winter' }
+];
+EN.MONTHS = ['Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan'];
+EN.MONTH_TIP = {
+  비견: 'Back yourself. Start the solo project.', 겁재: 'Bold moves, but guard your wallet.', 식신: 'Create, cook, enjoy. Good vibes.', 상관: 'Speak up and show your work. Mind the boss.',
+  편재: 'Money in waves. Network and say yes to deals.', 정재: 'Steady gains. Budget and save.', 편관: 'Pressure month. Pace yourself, ask for help.', 정관: 'Recognition and commitments. Dress for the job.',
+  편인: 'Study something odd. Trust your gut.', 정인: 'Help arrives. Great for learning and paperwork.'
+};
 
 </script>
 <script>
@@ -621,13 +664,42 @@ const EN = {
         <div><b>${EN.ANIMAL[animal]} ${BRANCHES_H[animal]}</b>${esc(EN.ANIMAL_TRAIT[animal])}${r.sajuYear !== Number(d.slice(0, 4)) ? ` <span class="note">(Born before the Korean solar new year, so your animal follows ${r.sajuYear}.)</span>` : ''}</div>
         ${stars.map(s => `<div><b>✦ ${EN.STAR[s.name].en}</b>${esc(EN.STAR[s.name].text)}</div>`).join('') || '<div><b>✦ Clean chart</b>No special stars. Your story is written by your own choices.</div>'}
       </div></section>`;
+    const D2 = EN.DM2[ds];
+    // 차트에서 가장 많은 십신 (일간 제외)
+    const gc = {}; Object.entries(r.gods).forEach(([k, g]) => { if (!P[k]) return; if (k !== 'day') gc[g.stem] = (gc[g.stem] || 0) + 1; gc[g.branch] = (gc[g.branch] || 0) + 1; });
+    const topGod = Object.entries(gc).filter(([g]) => EN.GOD[g]).sort((a, b) => b[1] - a[1])[0];
+    // 궁합: 나를 살리는 원소(인성) · 내가 살리는 원소(식상)
+    const myEl = STEM_EL[ds], feedMe = (myEl + 4) % 5, iFeed = (myEl + 1) % 5;
+    const dmOf = el => [EN.DM[el * 2].name, EN.DM[el * 2 + 1].name];
+    const luckyEl = lack.length ? lack[0] : cnt.indexOf(Math.min(...cnt));
+    const LK = EN.LUCKY[luckyEl];
+    // 올해 월별 (입춘 기준 2월 시작)
+    const mStart = ((yP.stem % 5) * 2 + 2) % 10;
+    const months = EN.MONTHS.map((m, i) => ({ m, god: tenGod(ds, (mStart + i) % 10) }));
     const deep = `
-      <div class="kv">
-        <div><b>Love</b>${esc(DM.love)}</div><div><b>Work</b>${esc(DM.work)}</div><div><b>Money</b>${esc(DM.money)}</div>
-      </div>
+      <h3 class="dh">Your gifts</h3>
+      <ul class="gifts">${D2.gifts.map(g => `<li>${esc(g)}</li>`).join('')}</ul>
+      <p><b>How you recharge:</b> ${esc(D2.recharge)}</p>
+      <p><b>Your growth edge:</b> ${esc(D2.avoid)}</p>
+      ${topGod ? `<p><b>Your chart's main theme is ${esc(EN.GOD[topGod[0]].en)}.</b> ${esc(EN.GOD2[topGod[0]])}</p>` : ''}
+      <h3 class="dh">Love</h3>
+      <p>${esc(DM.love)}</p>
+      <p><b>What you need:</b> ${esc(D2.need)}</p>
+      <p><b>Best matches:</b> ${dmOf(feedMe).join(' and ')} (${EN.ELEMENT[feedMe]} feeds your ${EN.ELEMENT[myEl]}), and ${dmOf(iFeed).join(' and ')} (your ${EN.ELEMENT[myEl]} feeds their ${EN.ELEMENT[iFeed]}).</p>
+      <h3 class="dh">Work</h3>
+      <p>${esc(DM.work)}</p>
+      ${P.month ? `<p>Your month pillar says you show up at work as <b>${esc(EN.GOD[r.gods.month.stem].en)}</b>: ${esc(EN.GOD[r.gods.month.stem].chart)}.</p>` : ''}
+      <h3 class="dh">Money</h3>
+      <p>${esc(DM.money)}</p>
+      <h3 class="dh">Your lucky charms</h3>
+      <div class="kv"><div><b>Color</b>${LK.color}</div><div><b>Numbers</b>${LK.num}</div><div><b>Direction</b>${LK.dir}</div><div><b>Season</b>${LK.season}</div></div>
+      <p class="note">Picked from the element your chart needs most: ${EN.ELEMENT[luckyEl]}.</p>
       <h3 style="font-family:var(--serif);font-size:24px;color:var(--brass-hi);margin:22px 0 6px">${now.getFullYear()} · Year of the ${yP.stem % 2 === 0 ? 'Yang' : 'Yin'} ${EN.ELEMENT[STEM_EL[yP.stem]]} ${EN.ANIMAL[yP.branch]} ${yP.han}</h3>
       <p><b>${esc(EN.GOD[yGodS].en)}</b> leads the first half: ${esc(EN.GOD[yGodS].year)}</p>
       <p><b>${esc(EN.GOD[yGodB].en)}</b> shapes the second half: ${esc(EN.GOD[yGodB].year)}</p>
+      <h3 class="dh">Your ${now.getFullYear()} month by month</h3>
+      <div class="months">${months.map(x => `<div><b>${x.m}</b><span>${esc(EN.GOD[x.god].en.replace('The ', ''))}</span>${esc(EN.MONTH_TIP[x.god])}</div>`).join('')}</div>
+      <p class="note">Korean months start around the 4th to 8th of each solar month.</p>
       <h3 style="font-family:var(--serif);font-size:24px;color:var(--brass-hi);margin:22px 0 6px">Your 10-year luck cycles</h3>
       <div class="cycles">${du.list.map(x => `<div class="cy${x === cur ? ' now' : ''}"><div>${x.startAge}</div><div class="h" style="color:${EN.EL_COLOR[STEM_EL[x.stem]]}">${x.han}</div><div>${EN.GOD[x.stemGod].en.replace('The ', '')}</div></div>`).join('')}</div>
       ${cur ? `<p style="margin-top:12px">You are now in your <b>${esc(EN.GOD[cur.stemGod].en.replace(/^The /, ""))}</b> decade (from age ${cur.startAge}). The theme is ${esc(EN.GOD[cur.stemGod].chart)}, turning toward ${esc(EN.GOD[cur.branchGod].chart)} in the second half.</p>` : `<p style="margin-top:12px">Your first luck cycle begins at age ${du.num}.</p>`}`;
@@ -635,10 +707,12 @@ const EN = {
       <div class="cta"><h3>Love, work, money &amp; your ${now.getFullYear()}</h3><p class="note">Plus your ten-year luck cycles, decoded.</p>
       <button class="go" type="button" id="unlock" style="width:100%;margin-top:10px">${CFG.BETA ? '🎁 Unlock for free <s style="opacity:.6;font-weight:500">$2.99</s> $0' : 'Unlock full reading · $2.99'}</button>
       <p class="note" style="margin-top:8px">${CFG.BETA ? 'Free during our beta. No payment is taken.' : ''}</p></div></div>`}</section>
-      <div class="actions"><button class="btn2 solid" type="button" id="save">Save my Saju card</button><button class="btn2" type="button" id="share">Share</button></div>`;
+      <div class="actions"><button class="btn2 solid" type="button" id="save">Story image (9:16)</button><button class="btn2 solid" type="button" id="post">Instagram post (4:5)</button><button class="btn2" type="button" id="share">Share link</button></div>
+      <p class="note" style="text-align:center;margin-top:8px">Post it and tag a friend to find their type ✨</p>`;
     $('result').innerHTML = h;
     const u = $('unlock'); if (u) u.addEventListener('click', () => { track('pay_click', { product: 'saju_en' }); if (CFG.BETA) toast('Free during beta 🎁'); setTimeout(() => { unlocked = true; render(); }, 450); });
-    $('save').addEventListener('click', e => { track('image_save'); saveCard(e); });
+    $('save').addEventListener('click', e => { track('image_save', { kind: 'story' }); saveCard(e, 'story'); });
+    $('post').addEventListener('click', e => { track('image_save', { kind: 'post' }); saveCard(e, 'post'); });
     $('share').addEventListener('click', () => { track('share'); shareText(); });
   }
 
@@ -686,16 +760,45 @@ const EN = {
     x.fillText(/^https?:/.test(location.href) ? location.host : 'Korean Saju · Seoul', W / 2, H - 92);
     return new Promise(res => cv.toBlob(res, 'image/png'));
   }
-  async function saveCard(e) {
+  /* 인스타 피드용 (1080×1350, 4:5) */
+  function wrapText(x, text, maxW) { const words = text.split(' '), lines = []; let l = ''; words.forEach(w => { const t = l ? l + ' ' + w : w; if (x.measureText(t).width > maxW && l) { lines.push(l); l = w; } else l = t; }); if (l) lines.push(l); return lines; }
+  async function postBlob() {
+    const { r } = state, P = r.pillars, ds = P.day.stem, DM = EN.DM[ds], D2 = EN.DM2[ds], W = 1080, H = 1350;
+    try { await Promise.all([document.fonts.load("800 300px 'Nanum Myeongjo'"), document.fonts.load("700 80px 'Cormorant Garamond'")]); } catch (e) { /* 기본 서체 */ }
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const x = cv.getContext('2d');
+    const col = EN.EL_COLOR[STEM_EL[ds]];
+    const g = x.createRadialGradient(W / 2, 360, 60, W / 2, 520, 1000); g.addColorStop(0, '#2A1620'); g.addColorStop(1, '#170D13');
+    x.fillStyle = g; x.fillRect(0, 0, W, H);
+    x.strokeStyle = '#C9A46A'; x.lineWidth = 3; x.strokeRect(34, 34, W - 68, H - 68); x.globalAlpha = .45; x.lineWidth = 1.5; x.strokeRect(50, 50, W - 100, H - 100); x.globalAlpha = 1;
+    x.textAlign = 'center';
+    x.fillStyle = '#C2B4A8'; x.font = "500 32px system-ui, sans-serif"; x.fillText('My Korean Saju type is', W / 2, 140);
+    x.fillStyle = col; x.font = "800 280px 'Nanum Myeongjo', serif"; x.fillText(STEMS_H[ds], W / 2, 440);
+    x.fillStyle = '#E2C48F'; x.font = "700 96px 'Cormorant Garamond', Georgia, serif"; x.fillText(DM.name, W / 2, 590);
+    x.fillStyle = '#C2B4A8'; x.font = "500 34px system-ui, sans-serif"; x.fillText(`${yy(ds)} · ${EN.STEM_ROMAN[ds]}`, W / 2, 648);
+    // 세 단어 칩
+    x.font = "600 34px system-ui, sans-serif"; const ws = DM.words, pads = ws.map(w => x.measureText(w).width + 56), tw = pads.reduce((a, b) => a + b, 0) + 20 * (ws.length - 1); let cx = (W - tw) / 2;
+    ws.forEach((w, i) => { x.strokeStyle = col; x.lineWidth = 2; x.beginPath(); x.roundRect ? x.roundRect(cx, 690, pads[i], 64, 32) : x.rect(cx, 690, pads[i], 64); x.stroke(); x.fillStyle = '#F3ECE4'; x.fillText(w, cx + pads[i] / 2, 734); cx += pads[i] + 20; });
+    // 한 줄 성격
+    x.fillStyle = '#F3ECE4'; x.font = "500 38px system-ui, sans-serif";
+    wrapText(x, DM.nature, 860).slice(0, 3).forEach((l, i) => x.fillText(l, W / 2, 840 + i * 54));
+    // 재능 세 개
+    x.fillStyle = '#E2C48F'; x.font = "600 32px system-ui, sans-serif";
+    D2.gifts.forEach((t, i) => x.fillText('✦ ' + t, W / 2, 1040 + i * 48));
+    x.strokeStyle = 'rgba(201,164,106,.4)'; x.beginPath(); x.moveTo(90, H - 180); x.lineTo(W - 90, H - 180); x.stroke();
+    x.fillStyle = '#E2C48F'; x.font = "700 46px 'Cormorant Garamond', Georgia, serif"; x.fillText("What's yours? Find your type", W / 2, H - 112);
+    x.fillStyle = '#C2B4A8'; x.font = "500 28px system-ui, sans-serif"; x.fillText(/^https?:/.test(location.href) ? location.host + location.pathname.replace(/\/$/, '') : 'Korean Saju · Seoul', W / 2, H - 68);
+    return new Promise(res => cv.toBlob(res, 'image/png'));
+  }
+  async function saveCard(e, kind) {
     const b = e.currentTarget, old = b.textContent; b.disabled = true; b.textContent = 'Making your card...';
     try {
-      const blob = await cardBlob(), name = `my_saju_type_${Date.now()}.png`, file = new File([blob], name, { type: 'image/png' });
+      const blob = kind === 'post' ? await postBlob() : await cardBlob(), name = `my_saju_${kind === 'post' ? 'post' : 'story'}_${Date.now()}.png`, file = new File([blob], name, { type: 'image/png' });
       if (navigator.canShare && navigator.canShare({ files: [file] }) && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) await navigator.share({ files: [file], title: 'My Korean Saju type' });
       else { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
     } catch (err) { /* 취소 */ }
     b.disabled = false; b.textContent = old;
   }
-  window.__saju = { cardBlob, get state() { return state; } };
+  window.__saju = { cardBlob, postBlob, get state() { return state; } };
 })();
 
 </script>
