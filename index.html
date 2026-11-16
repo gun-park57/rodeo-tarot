@@ -732,6 +732,12 @@ details.deep p b { color: var(--text); margin-right: 4px; font-weight: 700; }
 .hk-free { text-align: center; font-size: 14px; color: var(--brass-hi); padding: 12px; border: 1px solid rgba(201,164,106,.4); border-radius: 12px; }
 .hk-out { font-size: 13px; font-weight: 700; color: var(--brass-hi); margin: 0 0 4px; }
 .hk-out ~ div .rounded-full { white-space: nowrap; }
+/* 사람이 말해주듯 (호리AI 말투 참고) */
+.rd-tell { margin: 14px 0 6px; }
+.rd-tell p { font-size: 15.5px; line-height: 1.8; margin: 0 0 12px; word-break: keep-all; overflow-wrap: anywhere; }
+.rd-tell .rd-h { font-size: 16.5px !important; font-weight: 800; color: var(--text); margin: 16px 0 4px !important; }
+.rd-tell .rd-open { font-size: 16px !important; }
+.rd-tell .rd-close { color: var(--brass-hi); font-weight: 700; }
 
 </style>
 <script src="config.js" onerror="void 0"></script>
@@ -4052,7 +4058,7 @@ function renderReport() {
   const tk = topicKey(v.q) || 'general';
   const key = chosen[v.keyIdx];
   const dom = typeof INFER !== 'undefined' ? INFER.domainOf(v.q) : null;
-  const G = ((dom && dom.key !== 'time') ? GUIDE.general : (GUIDE[tk] || GUIDE.general))[LV.key];
+  const G = ((dom && dom.key !== 'time' && tk !== 'biz') ? GUIDE.general : (GUIDE[tk] || GUIDE.general))[LV.key];
   const domAns = dom && dom.key !== 'time' ? (INFER.one(key, v.q) || '').split('👉 ')[1] : '';
   const flow = summaryLines(), combo = comboLines(chosen).filter(l => !/정방향|역방향/.test(l));
   // 타로사처럼: 카드마다 질문이랑 이어서 한두 문장
@@ -4061,15 +4067,11 @@ function renderReport() {
     <p class="rp-title">${esc((TOPIC_NAME[tk] || '전체 운'))} 점사</p>
     ${v.q ? `<p class="rp-q">“${esc(v.q.replace(/\s*\([^)]*\)\s*$/, ''))}”</p>` : ''}
     ${READER.quick(v, tk, G)}
+    ${READER.tell(v, tk, G)}
     ${tk === 'health' ? '<p class="rp-health">타로는 컨디션 참고용이에요. 아프거나 걱정되는 증상이 있으면 꼭 병원에서 확인해요.</p>' : ''}
     ${dom && domAns ? `<p class="rp-pick"><b>${esc(dom.label)}</b>는 ${domAns}</p>` : ''}
-    <details class="deep rd-more"><summary>자세히 보기 · 카드 한 장씩 + 제 점사</summary>
-    <p class="rp-empathy">${esc((EMPATHY[tk] || EMPATHY.general)[LV.key])}</p>
+    <details class="deep rd-more"><summary>카드 한 장씩 자세히 보기</summary>
     <div class="rd-reads">${reads}</div>
-    <div class="rd-final">
-      <p class="rd-final-h">제 점사는요</p>
-      ${READER.final(v, tk, G)}
-    </div>
     <div class="rd-num">${READER.numerology(chosen)}</div>
     <details class="deep"><summary>카드 설명 더 보기</summary>
       ${chosen.map((c, i) => reportCard(c, i, tk, v.scores[i])).join('')}
@@ -4318,6 +4320,83 @@ const QC = (() => {
   };
   TEASE.health = ['몸이 약해지기 쉬운 해와 달', '태어난 날 하늘로 본 몸 관리 포인트'];
   QC.SUGGEST.health = ['이번 달 내 컨디션은 어떨까?', '지금 하는 다이어트, 3개월 안에 효과 볼까?', '스트레스를 줄이려면 뭘 바꿔야 할까?'];
+})();
+
+/* =========================================================
+ * 사업 주제 (2026-11-17, 베타 "1년 안에 타로앱 사업이 대박날까" → 결론은 돈, 이유·조언은 직장인 말투로 갈라짐)
+ *  - 사업·창업·대박·앱·가게·출시 질문은 결론·이유·할 일을 전부 사업 말로
+ *  - 결론 주제는 topicKey 하나로 통일 (결론과 카드 풀이가 다른 주제로 갈라지지 않게)
+ * ========================================================= */
+(function () {
+  const KEYS = ['사업', '창업', '대박', '앱', '어플', '가게', '런칭', '론칭', '출시', '매출', '스토어', '쇼핑몰', '장사', '브랜드', '스타트업', '아이템', '팔릴', '잘 팔', '유튜브 채널', '구독자'];
+  const li = TOPIC_DEF.findIndex(d => d.key === 'love');
+  TOPIC_DEF.splice(li + 1, 0, { key: 'biz', ko: '사업', keys: KEYS });
+  TOPIC_LABEL.biz = '💼 사업으로 보면';
+  const MB = [
+    ['일단 내보는 게 답이에요. 작게라도 출시해요.', '준비 없이 질러서 돈만 날려요.'],
+    ['내 기술이 바로 상품이 돼요. 만들 실력은 충분해요.', '말만 크고 실행이 안 따라와요.'],
+    ['아직 안 알려졌지만 찾는 사람이 있어요. 조용히 다듬어요.', '시장 정보가 부족해요. 고객 얘기부터 들어봐요.'],
+    ['키우는 만큼 쑥쑥 커요. 매출이 불어나는 카드예요.', '버는 것보다 나가는 게 많아요. 비용부터 잡아요.'],
+    ['구조를 잘 짜면 오래 가는 사업이 돼요.', '혼자 다 쥐고 있다가 막혀요. 맡길 건 맡겨요.'],
+    ['검증된 방식, 좋은 멘토를 따르면 안전해요.', '남들 하는 거 따라 해서는 차별점이 없어요.'],
+    ['좋은 파트너랑 손잡으면 커져요. 고객 반응도 좋아요.', '동업자나 파트너랑 방향이 어긋나요.'],
+    ['밀어붙이면 시장을 먼저 잡아요. 속도가 무기예요.', '방향 없이 달리면 지쳐서 멈춰요.'],
+    ['꾸준히 버티면 팬이 생겨요. 존버가 답이에요.', '자신감이 떨어졌어요. 작은 성공부터 쌓아요.'],
+    ['한 분야를 깊게 파면 그게 무기가 돼요.', '혼자 만들기만 하고 알리질 않아요.'],
+    ['타이밍이 와요. 올라타면 확 커져요.', '타이밍이 엇갈려요. 출시 시기를 다시 봐요.'],
+    ['한 만큼 정직하게 돌아와요. 계약도 깔끔해요.', '계약, 정산, 약관 문제 조심해요.'],
+    ['지금은 멈춰서 방향을 다시 볼 때예요.', '멈춰 있던 일이 다시 굴러가요.'],
+    ['지금 방식은 접고 새 판을 짜야 살아요.', '안 되는 걸 붙잡고 있어요. 정리가 필요해요.'],
+    ['천천히 맞춰가면 오래 가요. 대신 시간이 걸려요.', '이것저것 섞다가 내 색깔이 흐려져요.'],
+    ['확 끌리는 상품이에요. 빠져드는 재미가 무기예요.', '쉽게 벌려는 유혹은 피해요. 신뢰가 먼저예요.'],
+    ['갑자기 판이 바뀌어요. 변수에 대비해요.', '큰 위기는 넘겼어요. 수습하고 다시 가요.'],
+    ['입소문 날 카드예요. SNS에서 터질 수 있어요.', '기대가 너무 커요. 숫자부터 냉정하게 봐요.'],
+    ['아직 안개 속이에요. 확인 안 된 건 믿지 마요.', '불안하던 게 걷히고 방향이 보여요.'],
+    ['대박 카드예요. 널리 알려지고 성과가 나요.', '반응은 오는데 생각보다 작아요.'],
+    ['좋은 소식이 와요. 한 번 더 도전할 때예요.', '기다리는 소식이 늦어져요.'],
+    ['한 단계 완성돼요. 더 큰 시장으로 나갈 수 있어요.', '거의 다 왔는데 마무리가 덜 됐어요.']
+  ];
+  MB.forEach((x, i) => { MAJOR_TOPIC[i].biz = x; });
+  RANK_TOPIC.biz = {
+    Ace: ['{s} 쪽에서 새 기회가 열려요.', '시작하려던 게 자꾸 밀려요.'], 2: ['두 방향 중에 고르는 중이에요.', '결정을 못 해서 제자리예요.'], 3: ['같이 하는 사람이 있으면 성과가 나와요.', '같이 하는 사람과 손발이 안 맞아요.'],
+    4: ['기반이 잡혀요. 버틸 힘이 생겨요.', '안정적인데 성장이 멈췄어요.'], 5: ['경쟁이 붙어요. 시행착오는 각오해요.', '부딪히던 게 정리돼요.'], 6: ['반응이 오고 술술 풀려요.', '반응이 기대보다 약해요. 고객 눈높이부터 다시 봐요.'],
+    7: ['혼자 결단할 때예요. 내 색깔 지켜요.', '버티다 지쳐요. 작전을 바꿔요.'], 8: ['일이 빠르게 진행돼요. 속도가 붙어요.', '진행이 막히고 늦어져요.'], 9: ['목표 직전이에요. 끝까지 가요.', '마지막 고비에서 흔들려요.'],
+    10: ['한 단계 끝내고 다음 판으로 가요.', '일을 너무 벌려서 버거워요.'], Page: ['새 아이디어나 첫 고객 소식이 와요.', '준비가 덜 돼서 실수 나와요.'], Knight: ['밀어붙여서 성과 내요.', '너무 급하게 움직이다 사고 나요.'],
+    Queen: ['꼼꼼하게 챙겨서 고객을 붙잡아요.', '혼자 다 챙기다 지쳐요.'], King: ['사장 그릇이에요. 크게 키울 수 있어요.', '내 방식만 고집하다 놓쳐요.']
+  };
+  SUIT_FLAVOR.biz = { wands: '홍보·마케팅', cups: '고객·팬', swords: '기획·전략', pentacles: '매출·운영' };
+  if (typeof ACE_TOPIC !== 'undefined') ACE_TOPIC.biz = { wands: '새 아이템이나 홍보 기회가 와요. 일단 올려봐요.', cups: '첫 팬, 첫 단골이 생겨요. 반응 좋아요.', swords: '막혀 있던 기획이 확 풀려요. 좋은 아이디어가 나와요.', pentacles: '첫 매출이 들어와요. 작아도 시작이에요.' };
+
+  // 결론 문장: 사업은 따로, 돈·자리에서 '사업'·'창업' 빼기
+  const BIZ_V = { keys: KEYS, subject: '사업', yes: '잘될 가능성이 높아요. 키워볼 만해요.', mid: '망하진 않아요. 근데 대박까진 시간이 더 걸려요.', no: '지금 방식 그대로면 대박은 어려워요. 방향을 손봐야 해요.' };
+  VERDICT_TOPIC.forEach(t => { t.keys = t.keys.filter(k => k !== '사업' && k !== '창업'); });
+  const WORK_V = { subject: '일', yes: '일이 잘 풀리는 쪽이에요.', mid: '크게 나쁘진 않은데 손이 한 번 더 가요.', no: '지금은 일이 뜻대로 안 풀려요.' };
+  const find = s => VERDICT_TOPIC.find(t => t.subject === s);
+  ADVICE.biz = { yes: '지금 반응 좋은 거 하나에 힘을 몰아줘요.', mid: '돈 크게 안 쓰고 작게 테스트하면서 고쳐요.', no: '안 되는 건 빼고 제일 잘하는 하나만 남겨요.' };
+  POS_Q.three.forEach((p, i) => { p.biz = ['지금 사업을 만든 바탕', '지금 사업이 놓인 상황', '앞으로 사업이 풀릴 방향'][i]; });
+  TOPIC_NAME.biz = '사업';
+  GUIDE.biz = {
+    yes: { do: ['지금 반응 좋은 거 하나에 힘을 몰아줘요.', '방문, 결제 숫자를 매주 적어두고 봐요.'], dont: '잘된다고 한 번에 판부터 키우지 마요.' },
+    mid: { do: ['돈 크게 안 쓰고 작게 테스트하면서 고쳐요.', '실제 써본 사람 10명한테 솔직한 후기를 받아봐요.'], dont: '혼자 확신으로 돈부터 쏟아붓지 마요.' },
+    no: { do: ['안 되는 기능은 과감히 빼고 제일 잘하는 하나만 남겨요.', '3개월 단위로 목표 숫자를 정하고 점검해요.'], dont: '조급해서 광고비부터 크게 쓰지 마요.' }
+  };
+  EMPATHY.biz = { yes: '오래 준비한 게 빛을 볼 때예요.', mid: '만드는 사람은 늘 불안하죠. 그래도 길은 보여요.', no: '애쓴 만큼 답답하죠. 방향만 잡으면 돼요.' };
+  TEASE.biz = ['사업운이 크게 열리는 해와 달', '태어난 날 하늘로 본 돈 버는 방식'];
+  if (typeof QC !== 'undefined') QC.SUGGEST.biz = ['내 사업, 올해 매출이 오를까?', '지금 아이템 계속 밀어도 될까?', '동업, 해도 괜찮을까?'];
+
+  // '이직하면 연봉' 같은 질문은 돈보다 일 (옮기는 말이 있으면 일 질문)
+  const _tk = topicKey;
+  topicKey = function (q) { const k = _tk.apply(this, arguments); const s = q || (typeof userContext !== 'undefined' ? userContext.customQuery : '') || ''; return k === 'money' && /(이직|취업|퇴사|채용|합류)/.test(s) ? 'work' : k; };
+  // 결론 주제 = 카드 풀이 주제 (topicKey 하나로)
+  const MOVE = /(이직|취업|퇴사|채용|합류|면접|옮길|옮겨)/;
+  const _vi = verdictInfo;
+  verdictInfo = function () {
+    const v = _vi.apply(this, arguments);
+    const tk = topicKey(v.q);
+    const map = { biz: BIZ_V, health: find('컨디션'), study: find('결과'), love: find('관계'), money: find('돈 흐름'), work: MOVE.test(v.q) ? find('자리') : WORK_V };
+    if (tk && map[tk]) v.topic = map[tk];
+    return v;
+  };
 })();
 
 /* =========================================================
@@ -4749,16 +4828,33 @@ const READER = (() => {
     }
     if (c.rank === 'Knight') {
       const t = { swords: '며칠 안에', wands: '1~2주 안에', cups: '1개월쯤', pentacles: '몇 개월, 천천히' }[c.suit];
-      return { text: slow ? `${t}보다 늦게` : t, why: `기사는 소드가 제일 빠르고 펜타클이 제일 느려요.` };
+      return { text: slow ? `${t.replace(/ 안에$/, '')}보다 늦게` : t, why: `기사는 소드가 제일 빠르고 펜타클이 제일 느려요.` };
     }
     const n = RN[c.rank] && c.rank !== 'Ace' ? null : (RN[c.rank] || +c.rank);
-    if (n === 1) { const t = { wands: '며칠 안에', swords: '일주일 안팎', cups: '1~2주', pentacles: '1개월쯤' }[c.suit]; return { text: slow ? `${t}보다 늦게` : t, why: `에이스는 시작 카드라 ${SUIT_KO[c.suit]} 속도에서 제일 빠른 쪽이에요.` }; }
+    if (n === 1) { const t = { wands: '며칠 안에', swords: '일주일 안팎', cups: '1~2주', pentacles: '1개월쯤' }[c.suit]; return { text: slow ? `${t.replace(/ 안에$/, '')}보다 늦게` : t, why: `에이스는 시작 카드라 ${SUIT_KO[c.suit]} 속도에서 제일 빠른 쪽이에요.` }; }
     let U = { wands: ['일', '주'], swords: ['일', '주'], cups: ['주', '개월'], pentacles: ['개월', '개월 넘게'] }[c.suit];
     if (U[0] === '개월' && n >= 5) U = ['주', '개월'];
     if (n == null) { const t = { wands: '1~2주', swords: '2~3주', cups: '1~2개월', pentacles: '2~3개월' }[c.suit]; return { text: slow ? `${t}보다 늦게` : `${t}쯤`, why: `${SUIT_KO[c.suit]} 속도로 봤어요.` }; }
     return { text: slow ? (U[1].includes('넘게') ? `${n}${U[1]}` : `길면 ${n}${U[1]}`) : `빠르면 ${n}${U[0]}, 길면 ${n}${U[1]}`, why: `숫자 ${n} × ${SUIT_KO[c.suit]} 속도예요.${slow ? ' 거꾸로라 긴 쪽으로 봐요.' : ''}` };
   }
-  const isTimeQ = q => /(언제|며칠|몇\s?월|몇\s?주|몇\s?달|시기|타이밍|얼마나 걸|올까)/.test(q || '');
+  const WIN_RE = /(\d+|한|두|세|반)\s?(년|개월|달|주)\s?(안|이내|내|까지)/;
+  const isTimeQ = q => /(언제|며칠|몇\s?월|몇\s?주|몇\s?달|시기|타이밍|얼마나 걸|올까|올해 안|연내|연말까지)/.test(q || '') || WIN_RE.test(q || '');
+  /* "1년 안에", "3개월 안에" → 카드 시기가 그 안에 들어오는지 */
+  function deadline(q, tm, lv) {
+    const m = String(q || '').match(WIN_RE); let win = null, label = '';
+    const NUM = { 한: 1, 두: 2, 세: 3, 반: 0.5 };
+    if (m) { const n = NUM[m[1]] != null ? NUM[m[1]] : +m[1]; win = m[2] === '년' ? n * 12 : m[2] === '주' ? n / 4.3 : n; label = `${m[1] === '반' ? '반' : m[1]}${m[2] === '달' ? '개월' : m[2]}`; label = m[1] === '반' ? (m[2] === '년' ? '반년' : '보름') : label; }
+    else if (/올해 안|연내|연말까지/.test(q || '')) { win = 12 - new Date().getMonth(); label = '올해'; }
+    if (win == null) return '';
+    let max = null;
+    String(tm.text).replace(/(\d+)(?:~(\d+))?\s?(일|주|개월)/g, (_, a, b, u) => { const v = +(b || a); const mo = u === '일' ? v / 30 : u === '주' ? v / 4.3 : v; max = Math.max(max || 0, mo); });
+    if (max == null) max = /며칠|곧/.test(tm.text) ? 0.2 : /몇 개월/.test(tm.text) ? 4 : null;
+    const t2 = `첫 변화는 ${tm.text} 보여요.`;
+    if (max != null && /넘게|늦게/.test(tm.text)) max *= 1.5;
+    const inside = max != null && max <= win;
+    if (!inside) return `${label} 안엔 빠듯해요. ${t2}`;
+    return lv === 'yes' ? `${label} 안에 충분히 가능해요. ${t2}` : lv === 'mid' ? `${label} 안에 가능성은 있어요. ${t2}` : `${label} 안에 바뀔 여지는 있어요. ${t2}`;
+  }
 
   /* ---------- 수비학 ---------- */
   function stability(c) {
@@ -4868,11 +4964,11 @@ const READER = (() => {
     const tm = timing(key), timeQ = isTimeQ(v.q);
     const actLine = layout.key === 'reunion' && cards[4] && typeof POSLINE !== 'undefined' ? POSLINE.get(cards[4], 4) : null;
     const nm = short(key), pos = layout.positions[v.keyIdx].short;
-    const head = `${v.topic[LV.key]}${timeQ ? ` ${tm.text} 보여요.` : ''}`;
+    const head = `${v.topic[LV.key]}${timeQ ? ` ${deadline(v.q, tm, LV.key) || tm.text + ' 보여요.'}` : ''}`;
     return `<div class="rd-quick">
       <p class="rd-q1"><span class="rd-tag t-${LV.key}">${ICON[LV.key]}</span><b>${esc(head)}</b></p>
       <p class="rd-q2"><span>왜?</span> ${esc(pos)} 카드가 ${esc(nm)}${ira(nm)} 그래요. ${esc(firstSentence(textOf(key, v.keyIdx)))} ${csrc(key)}</p>
-      <p class="rd-q3"><span>그래서</span> ${esc(actLine || G.do[0])}</p>
+      <p class="rd-q3"><span>그래서</span> ${esc(polite(actLine ? softAct(actLine, LV.key) : G.do[0]))}</p>
     </div>`;
   }
   function toneWord(sc) { const k = sc > 0.15 ? 'yes' : sc < -0.15 ? 'no' : 'mid'; return `<i class="tw t-${k}">${{ yes: '좋아요', no: '조심해요', mid: '반반이에요' }[k]}</i>`; }
@@ -4883,6 +4979,71 @@ const READER = (() => {
     const base = card.type === 'major' ? CARD_POLARITY.major[card.num] : CARD_POLARITY[card.suit][card.rank];
     const sc = card.isReversed && !card.lucky && base < 0 ? 0 : cardScore(card);
     return `<b>${esc(SUBJ[pos] || pos + eunN(pos))} <span class="nw">${toneWord(sc)}</span></b><br><span class="rd-q-sub">${esc(t)}</span>`;
+  }
+  /* ---------- 호리AI 말투 (2026-11-17, "말투를 똑같이 해줘")
+   *  인사+한 줄 결론("~하고 계시는군요! … 것으로 보여요") → 굵은 소제목 3개(지금까지 / 앞으로 시기 / 현실적인 조언)
+   *  → 근거 설명 뒤 꼬리표 → "다만," 주의 → 응원 + "혹시 ~ 있으신가요?" ---------- */
+  const SEAT = { 과거: '처음 자리', 현재: '지금 자리', 미래: '앞으로의 자리', 나: '{n} 마음 자리', 상대방: '상대 마음 자리', 상대: '그분 마음 자리', 관계: '두 분 사이 자리', '가까운 미래': '가까운 미래 자리', '결과·조언': '결과 자리', 이유: '헤어진 이유 자리', 재회: '재회 자리', 조언: '조언 자리' };
+  const DOING = { biz: '사업이라는 멋진 도전을', love: '한 사람을 향한 깊은 고민을', money: '돈에 대한 현실적인 고민을', work: '진로에 대한 중요한 고민을', study: '합격을 향한 긴 준비를', health: '몸과 마음을 돌보는 고민을', people: '사람 사이의 고민을', general: '마음속 중요한 고민을' };
+  const SUM = {
+    biz: { yes: '이 사업은 {n}의 실력이 제대로 빛을 보는 계기가 될 것으로 보여요.', mid: '당장의 대박보다는, 다듬을수록 단단해지는 사업이 될 것으로 보여요.', no: '지금 방식 그대로보다는, 방향을 한 번 손보실 때 기회가 열릴 것으로 보여요.' },
+    love: { yes: '두 분 사이는 좋은 쪽으로 가까워질 것으로 보여요.', mid: '마음은 남아 있지만, 누군가 한 걸음 내디뎌야 움직이는 관계로 보여요.', no: '지금 당장은 거리를 두고 {n} 마음부터 챙기시는 게 좋은 때로 보여요.' },
+    money: { yes: '돈이 들어오는 쪽으로 기울어 있는 것으로 보여요.', mid: '크게 흔들리진 않지만, 큰돈보다는 조금씩 남는 쪽으로 보여요.', no: '지금은 늘리기보다 지키는 쪽이 훨씬 유리한 때로 보여요.' },
+    work: { yes: '그동안 애쓰신 게 좋은 자리로 이어질 것으로 보여요.', mid: '움직일 수는 있지만, 조건을 꼼꼼히 따져보셔야 하는 때로 보여요.', no: '지금 바로 움직이기보다는 힘을 모아두시는 게 좋은 때로 보여요.' },
+    study: { yes: '쌓아오신 노력이 합격 쪽으로 이어질 것으로 보여요.', mid: '합격선에 딱 걸쳐 있어서, 마지막 한 끗이 결과를 가를 것으로 보여요.', no: '이번엔 조금 빠듯하지만, 다음 기회를 단단하게 만드는 시간이 될 것으로 보여요.' },
+    health: { yes: '컨디션이 좋아지는 쪽으로 보여요.', mid: '관리하시기에 따라 충분히 좋아질 수 있는 상태로 보여요.', no: '지금은 무리하지 마시고 쉬어가셔야 하는 때로 보여요.' },
+    general: { yes: '원하시는 쪽으로 풀릴 가능성이 높은 것으로 보여요.', mid: '아직 어느 쪽으로도 기울지 않아서, {n}의 선택이 결과를 정할 것으로 보여요.', no: '지금은 서두르기보다 한 번 숨을 고르실 때로 보여요.' }
+  };
+  const HD1 = { good: { biz: '{n}이 쌓아온 실력과 그릇', love: '이미 닿아 있는 두 분의 마음', _: '지금까지 쌓아온 단단한 힘' }, mid: { biz: '아직 정해지지 않은 사업의 판', love: '서로 눈치를 보는 두 분의 마음', _: '아직 정해지지 않은 지금 상황' }, bad: { biz: '지금 발목을 잡고 있는 것', love: '조금 엇갈려 있는 두 분의 마음', _: '지금 마음에 걸리는 부분' } };
+  const HD2 = { yes: { biz: '노력이 결실을 보는 시기', love: '마음이 가까워지는 시기', _: '좋은 쪽으로 열리는 시기' }, mid: { biz: '다듬을수록 커지는 시기', love: '한 걸음이 필요한 시기', _: '선택이 결과를 정하는 시기' }, no: { biz: '방향을 다시 잡는 시기', love: '거리를 두고 지켜볼 시기', _: '버티면서 다듬는 시기' } };
+  const HD3 = { biz: '성공을 위한 현실적인 조언', love: '마음을 얻기 위한 현실적인 조언', money: '돈을 지키기 위한 현실적인 조언', work: '좋은 자리를 위한 현실적인 조언', study: '합격을 위한 현실적인 조언', health: '컨디션을 위한 현실적인 조언', _: '잘 풀리기 위한 현실적인 조언' };
+  const CHEER = {
+    yes: '{n} 앞에 좋은 카드가 펼쳐져서 저도 무척 기대되네요!',
+    mid: '아직 정해진 게 아니라서, 오히려 {n}이 바꿀 수 있는 부분이 많아요. 저도 응원할게요!',
+    no: '카드가 미리 알려준 만큼, 지금부터 하나씩 바꾸시면 충분히 달라질 수 있어요. 저도 진심으로 응원할게요!'
+  };
+  const ASK = { biz: '혹시 출시 시기나 같이 일하는 사람 문제로 고민되는 부분이 더 있으신가요?', love: '혹시 그분의 진짜 속마음이나 연락 시기가 더 궁금하신가요?', money: '혹시 돈이 들어올 시기나 새는 곳이 더 궁금하신가요?', work: '혹시 옮길 타이밍이나 함께 일하는 사람 문제로 고민되는 부분이 더 있으신가요?', study: '혹시 결과가 나오는 시기나 공부 방법이 더 궁금하신가요?', health: '혹시 이번 달 컨디션이 더 궁금하신가요?', _: '혹시 이어서 더 궁금한 부분이 있으신가요?' };
+  const pickT = (m, tk) => m[tk] || m._;
+  function myName() { try { const p = JSON.parse(localStorage.getItem('rodeo_profile_v1') || 'null'); return p && p.name ? String(p.name).trim() : ''; } catch (e) { return ''; } }
+  const ige = w => jong(w) ? '이' : '가';
+  // 할 일 문장을 "~하세요"로 (해요→하세요, 봐요→보세요, 마요→마세요 …)
+  const POL = [['해요', '하세요'], ['봐요', '보세요'], ['둬요', '두세요'], ['줘요', '주세요'], ['춰요', '추세요'], ['워요', '우세요'], ['놔요', '놓으세요'], ['가요', '가세요'], ['와요', '오세요'], ['겨요', '기세요'], ['여요', '이세요'], ['쳐요', '치세요'], ['켜요', '키세요'], ['텨요', '티세요'], ['려요', '리세요'], ['셔요', '시세요'], ['써요', '쓰세요'], ['골라요', '고르세요'], ['넣어요', '넣으세요'], ['잡아요', '잡으세요'], ['찾아요', '찾으세요'], ['남겨요', '남기세요'], ['마요', '마세요'], ['내요', '내세요'], ['꺼요', '끄세요'], ['래요', '래세요'], ['뤄요', '루세요'], ['눠요', '누세요'], ['춰요', '추세요'], ['펴요', '피세요'], ['배워요', '배우세요'], ['봐요', '보세요']];
+  function polite(t) {
+    return String(t).split(/(?<=[.!?])\s+/).map(x => {
+      const m = x.match(/^(.*?)([가-힣]+요)([.!?]?)$/); if (!m) return x;
+      for (const [a, b] of POL.sort((p, q) => q[0].length - p[0].length)) if (m[2].endsWith(a)) return m[1] + m[2].slice(0, -a.length) + b + m[3];
+      return x;
+    }).join(' ');
+  }
+  function softAct(act, lv) { return lv === 'no' && /(연락|전해|다가|만나|고백|먼저|말해|표현|톡)/.test(act) ? `지금 당장은 말고, 시간이 조금 지나면 ${act}` : act; }
+  function tell(v, tk, G) {
+    const cards = chosen, k = layout.key, P = layout.positions, LV = v.level;
+    const nm = myName(), N = nm ? `${nm}님` : '고객님';
+    const fill = s => s.replace(/\{n\}/g, N);
+    const split = k === 'five' ? [[0, 1, 2], [3, 4], null] : k === 'reunion' ? [[0, 1, 2], [3], 4] : [[0, 1], [2], null];
+    const seat = i => fill(SEAT[P[i].short] || `${P[i].short} 자리`);
+    const got = c => `<b>${esc(short(c))}</b>${c.isReversed ? ' 카드가 거꾸로' : ` 카드${ige('카드')}`} 나왔어요`;
+    const say = idx => idx.filter(i => cards[i]).map((i, n) => {
+      const prev = n ? cardScore(cards[idx[n - 1]]) : null, cur = cardScore(cards[i]);
+      const sg = x => x > 0.15 ? 1 : x < -0.15 ? -1 : 0; const j = !n ? '' : (sg(prev) * sg(cur) < 0 ? '그런데 ' : '그리고 ');
+      return `${j}${esc(seat(i))}에는 ${got(cards[i])}. ${esc(firstSentence(textOf(cards[i], i)))} ${csrc(cards[i])}`;
+    }).join(' ');
+    const a1 = split[0].reduce((s, i) => s + cardScore(cards[i]), 0) / split[0].length;
+    const h1 = fill(pickT(HD1[a1 > 0.15 ? 'good' : a1 < -0.15 ? 'bad' : 'mid'], tk));
+    const key = cards[v.keyIdx], tm = timing(key), timeQ = isTimeQ(v.q), dl = timeQ ? deadline(v.q, tm, LV.key) : '';
+    const when = dl ? `질문하신 시기로 보면, <b>${esc(dl)}</b>` : `특히 첫 변화는 <b>${esc(tm.text)}</b> 보이니까, 그때를 눈여겨보세요.`;
+    const advCard = split[2] != null && cards[split[2]];
+    const adv = advCard ? `${esc(seat(split[2]))}에는 ${got(cards[split[2]])}. ${esc(polite(softAct(firstSentence(textOf(cards[split[2]], split[2])), LV.key)))} ${csrc(cards[split[2]])}` : `${esc(polite(G.do[0]))} ${esc(polite(G.do[1] || ''))}`;
+    const sol = solver(cards, v.worst);
+    const caution = v.worst >= 0 && v.worst !== split[2] ? `다만, ${esc(seat(v.worst))}의 ${esc(short(cards[v.worst]))} 카드가 말하는 "${esc(firstSentence(textOf(cards[v.worst], v.worst)).replace(/[.!?]$/, ''))}" 이 부분은 꼭 챙기셔야 해요.${sol ? ` 풀 열쇠는 ${esc(short(cards[sol.i]))} 카드예요. ${esc(sol.how)} ${csrc(cards[sol.i])}` : ''}` : '다만,';
+    const dont = esc(polite(G.dont));
+    return `<div class="rd-tell">
+      <p class="rd-open">${esc(N)}이 ${esc(DOING[tk] || DOING.general)} 하고 계시는군요! 카드 ${cards.length}장을 종합해 보면, ${esc(fill((SUM[tk] || SUM.general)[LV.key]))}</p>
+      <p class="rd-h">${esc(h1)}</p><p>${say(split[0])}</p>
+      <p class="rd-h">앞으로, ${esc(pickT(HD2[LV.key], tk))}</p><p>${say(split[1])} ${when}</p>
+      <p class="rd-h">${esc(pickT(HD3, tk))}</p><p>${adv} ${caution === '다만,' ? `다만, ${dont}` : `${caution} 그리고 ${dont}`}</p>
+      <p class="rd-close">${esc(fill(CHEER[LV.key]))} ${esc(pickT(ASK, tk))}</p>
+    </div>`;
   }
   /* 더 깊이 보기 쉬운 말 (2026-11-17) */
   const NUM_PLAIN = { Ace: '새로 시작되는 때', 2: '두 가지 사이에서 고르는 때', 3: '사람이 모이고 모양이 잡히는 때', 4: '자리 잡고 숨 고르는 때', 5: '삐걱거리고 부딪히는 때', 6: '맞춰지고 나아지는 때', 7: '혼자 결정해야 하는 때', 8: '절차대로 착착 진행되는 때', 9: '거의 다 온 때', 10: '한 단계가 끝나고 다음으로 넘어가는 때' };
@@ -4895,7 +5056,7 @@ const READER = (() => {
     return `${n}${c.rank === 'Ace' ? '는' : eunN(c.rank)} <b>${NUM_PLAIN[c.rank]}</b>예요. ${SUIT_KO[c.suit]}${jong(SUIT_KO[c.suit]) ? '은' : '는'} ${SUIT_PLAIN[c.suit]} 카드라서, ${SUIT_PLAIN[c.suit]} 쪽 이야기예요.`;
   }
   function revPlain(c) { const m = revMode(c); return m ? REV_TEXT[m] : (c.isReversed && c.lucky ? '거꾸로지만 이 카드는 오히려 좋게 읽어요.' : ''); }
-  return { minorPlain, revPlain, quick, quickBubble, bubble, line, joiner, final, numerology, timing, lifeCard, sumCard, solver, shape, revMode, lux, isTimeQ };
+  return { tell, deadline, minorPlain, revPlain, quick, quickBubble, bubble, line, joiner, final, numerology, timing, lifeCard, sumCard, solver, shape, revMode, lux, isTimeQ };
 })();
 
 /* =========================================================
@@ -4923,6 +5084,7 @@ const HOOK = (() => {
   const Q = {
     love: ['그 사람, 지금 내 생각 하고 있을까요?', '그 사람이 나한테 숨기는 마음이 있을까요?', '우리 사이, 3개월 뒤엔 어떻게 돼 있을까요?', '그 사람이 먼저 연락할까요?'],
     reunion: ['그 사람도 나랑 다시 만나고 싶어할까요?', '연락은 언제쯤 올까요?', '다시 만나면 이번엔 잘될까요?', '그 사람 옆에 지금 다른 사람이 있을까요?'],
+    biz: ['출시하면 사람들이 좋아할까요?', '같이 할 사람을 구하는 게 좋을까요?', '지금 아이템 계속 밀어도 될까요?', '올해 매출이 오를까요?'],
     money: ['올해 안에 돈 들어올 일이 있을까요?', '지금 돈이 새는 곳이 어디일까요?', '지금 하려는 투자, 해도 될까요?', '부업 시작하면 잘될까요?'],
     work: ['지금 회사, 버티는 게 맞을까요?', '올해 안에 좋은 제안이 올까요?', '이직하면 지금보다 나아질까요?', '윗사람이 나를 어떻게 보고 있을까요?'],
     study: ['이번 시험, 붙을 수 있을까요?', '지금 공부 방법이 맞을까요?', '결과는 언제쯤 나올까요?', '끝까지 버틸 힘이 남아 있을까요?'],
@@ -4941,9 +5103,9 @@ const HOOK = (() => {
   function line(v) {
     if (v && v.worst >= 0 && chosen[v.worst]) {
       const pos = layout.positions[v.worst].short, nm = cardLabel(chosen[v.worst]);
-      return `근데 하나 걸리는 게 있어요. <b>${esc(pos)}</b> 자리 <b>${esc(nm)}</b>가 아직 할 말이 남은 것 같아요.`;
+      return `그런데 하나 마음에 걸리는 부분이 있어요. <b>${esc(pos)}</b> 자리 <b>${esc(nm)}</b>가 아직 할 말이 남은 것 같아요.`;
     }
-    return '근데 카드가 하나 더 보여주는 게 있어요.';
+    return '그런데 카드가 하나 더 보여주는 게 있어요.';
   }
   function html(v, tk) {
     const [a, b] = pickQs(tk, v && v.q);
