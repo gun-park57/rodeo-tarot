@@ -690,6 +690,17 @@ details.deep p b { color: var(--text); margin-right: 4px; font-weight: 700; }
   .fan { padding-top: 34px !important; }
 }
 
+/* 오늘의 카드·예/아니오: 카드 그림을 크게, 내용은 아래로 (2026-11-17) */
+.tp-daily { flex-direction: column; align-items: stretch; gap: 10px; }
+.tp-daily > .mini-card { align-self: center; width: min(64vw, 250px); height: auto; aspect-ratio: 5 / 8; border-radius: 14px; border-width: 2px;
+  box-shadow: 0 14px 34px rgba(0,0,0,.55), 0 0 26px rgba(226,196,143,.25); animation: tpRise .7s cubic-bezier(.3,.7,.3,1) both; }
+.tp-daily > .mini-card.rev { animation-name: tpRiseRev; }
+.tp-daily > div { text-align: center; }
+.tp-daily > div .verdict { justify-content: center; }
+@keyframes tpRise { from { opacity: 0; transform: translateY(16px) scale(.94); } to { opacity: 1; transform: none; } }
+@keyframes tpRiseRev { from { opacity: 0; transform: rotate(180deg) translateY(-16px) scale(.94); } to { opacity: 1; transform: rotate(180deg); } }
+@media (prefers-reduced-motion: reduce) { .tp-daily > .mini-card { animation: none; } }
+
 </style>
 <script src="config.js" onerror="void 0"></script>
 </head>
