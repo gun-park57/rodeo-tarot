@@ -684,7 +684,8 @@ details.deep p b { color: var(--text); margin-right: 4px; font-weight: 700; }
   #deck-msg { font-size: 14.5px !important; }
   .plain-frame, .rev-note { font-size: 14.5px !important; }
   .mb-tip { font-size: 14.5px !important; }
-  .mb-home-btn { padding: 8px 13px !important; font-size: 14px !important; opacity: .94; }
+  .mb-home-btn { width: 44px; height: 44px; padding: 0 !important; font-size: 19px !important; display: grid; place-items: center; opacity: .9; }
+  .mb-home-btn .hb-t { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   .fan .fan-card { width: 64px !important; height: 104px !important; margin-left: -42px !important; }
   .fan .fan-card:first-child { margin-left: 0 !important; }
   .fan { padding-top: 34px !important; }
@@ -826,6 +827,13 @@ details.deep p b { color: var(--text); margin-right: 4px; font-weight: 700; }
 .st-cross b { color: #F0A95A; } .st-cross .st-hbtn { margin-top: 10px; }
 .st-foot { font-size: 12px; color: var(--sub); margin: 12px 0 0 !important; }
 #chat-stream .glass-luxury:has(.st-ans) { max-width: 100%; }
+
+/* 처음으로 버튼: 읽는 동안 비켜주기 */
+.mb-home-btn { transition: transform .25s ease, opacity .25s ease; }
+.mb-home-btn .hb-i { margin-right: 4px; }
+.mb-home-btn.hb-hide { transform: translateY(90px); opacity: 0; pointer-events: none; }
+@media (max-width: 560px) { .mb-home-btn .hb-i { margin-right: 0; } }
+@media (prefers-reduced-motion: reduce) { .mb-home-btn { transition: none; } }
 
 </style>
 <script src="config.js" onerror="void 0"></script>
@@ -3699,7 +3707,7 @@ const INFER = (() => {
   const NUM = { 1: ['시작', '새로운 것, 처음 해보는 것'], 2: ['선택·둘', '두 가지 중 고르기, 둘이 함께'], 3: ['사람·셋', '여럿이 함께, 사람이 모이는'], 4: ['안정', '늘 하던 것, 익숙하고 편한'], 5: ['변화·갈등', '평소와 다른 것, 시행착오'], 6: ['조화·공간', '모두가 좋아하는 무난한 것'], 7: ['혼자 결정', '혼자서, 내 취향대로'], 8: ['체계·정밀', '정해진 대로, 검증된 것'], 9: ['거의 완성', '거의 다 왔어요, 하나만 더'], 10: ['완성·과잉', '끝판왕, 넘치도록 많이'] };
   const NUMADJ = { 1: '처음 해보는', 2: '둘이 나누는', 3: '여럿이 함께하는', 4: '늘 하던 익숙한', 5: '평소와 다른', 6: '무난하고 다들 좋아하는', 7: '내 취향대로 고른', 8: '검증된', 9: '거의 완벽한', 10: '푸짐하고 꽉 찬' };
   const RANKN = { Ace: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8, 9: 9, 10: 10 };
-  const COURT = { Page: ['시종', '어리고 새로운, 작게 시작하는'], Knight: ['기사', '움직이는, 이동하는, 빠른'], Queen: ['여왕', '돌보는, 안쪽의, 섬세한'], King: ['왕', '크고 확실한, 리더의'] };
+  const COURT = { Page: ['시종은', '어리고 새롭게, 작게 시작하는 사람'], Knight: ['기사는', '빠르게 움직이고 밀고 나가는 사람'], Queen: ['여왕은', '안쪽을 섬세하게 돌보는 사람'], King: ['왕은', '크고 확실하게 이끄는 리더'] };
   // 메이저 상징 → 질문 대상별 힌트
   const MAJ = ['처음 가보는 새로운', '내 손으로 직접 만드는', '조용하고 비밀스러운', '풍성하고 화려한', '격식 있고 확실한', '전통 있고 검증된', '둘이 함께 하는', '빠르고 이동하는', '부드럽지만 힘 있는', '혼자, 조용한', '운에 맡기는, 돌고 도는', '공정하게 반반', '평소와 거꾸로', '완전히 새로 바꾸는', '적당히 섞은, 균형 잡힌', '끌리지만 과한', '확 뒤집는, 자극적인', '희망적이고 반짝이는', '밤, 몽환적인', '밝고 환한, 햇빛 드는', '예전에 좋았던 것 다시', '완성된, 해외·세계'];
   const DOMAIN = [
@@ -3719,7 +3727,7 @@ const INFER = (() => {
     const e = EL[elOf(c)] || EL.Earth;
     const t = [`${e.ko}의 카드라 <b>${e.core}</b> 성질`];
     if (c.type === 'major') t.push(`메이저 상징은 <b>${MAJ[c.num]}</b>`);
-    else if (COURT[c.rank]) t.push(`${COURT[c.rank][0]}은 <b>${COURT[c.rank][1]}</b>`);
+    else if (COURT[c.rank]) t.push(`${COURT[c.rank][0]} <b>${COURT[c.rank][1]}</b>`);
     else { const n = NUM[RANKN[c.rank]]; if (n) t.push(`숫자 ${RANKN[c.rank]}${NUMJ[RANKN[c.rank]]} <b>${n[0]}</b> (${n[1]})`); }
     if (c.isReversed) t.push(c.lucky ? '거꾸로지만 오히려 좋게 읽히는 카드' : '거꾸로라서 <b>과하거나 모자란 쪽</b>');
     return { e, text: t.join(', ') };
@@ -3778,6 +3786,20 @@ const INFER = (() => {
     }
     return a;
   }
+  // 받침 확인 (가=없음)
+  const jong = ch => { const c = (ch || '').charCodeAt(0) - 0xAC00; return c >= 0 && c < 11172 ? c % 28 : -1; };
+  // 끝 조사 이/가/은/는 떼기 (받침 맞을 때만)
+  function dropJosa(x) { x = x.trim(); const L = x.slice(-1), P = x.slice(-2, -1); if (x.length < 2) return x;
+    if ((L === '이' || L === '은') && jong(P) > 0) return x.slice(0, -1).trim();
+    if ((L === '가' || L === '는') && jong(P) === 0) return x.slice(0, -1).trim();
+    if (/[이가은는]/.test(L) && /[A-Za-z0-9]/.test(P)) return x.slice(0, -1).trim(); return x; }
+  // "~ㄹ지"로 끝나는지
+  function rjI(x) { const P = x.slice(-2, -1); return jong(P) === 8; }
+  // "이직할지"→이직, "남을지"→남기, "갈지"→가기, "카페로 할지"→카페
+  function jiStem(x) { x = x.trim();
+    let m = x.match(/^(.+?)\s*(?:으로|로)?\s*할지$/); if (m && m[1]) return dropJosa(m[1]).replace(/(으로|로)$/, '').trim();
+    m = x.match(/^(.+?)(?:을|를)지$/); if (m) return m[1] + '기';
+    const P = x.slice(-2, -1), c = P.charCodeAt(0) - 8; return x.slice(0, -2) + String.fromCharCode(c) + '기'; }
   function parseChoice(q) {
     const s = String(q || '').replace(/[?？!]/g, '').trim();
     let m = s.match(/^(.+?)\s*(?:아니면|vs|VS|or|또는)\s*(.+)$/);
@@ -3787,6 +3809,10 @@ const INFER = (() => {
     if (!m) { const k = s.match(/(?:^|\s)((?:이|그|저)\s)?(\S+?)(?:이랑|랑|하고|과|와)\s+(\S+?(?:\s\S+?)?)\s*중(?:에서|에)?(?=\s*(?:언제|뭐|뭘|무엇|어디|어느|어떤|어떻|누|하나|골라|선택|더|나을|나은|낫|좋을|괜찮|맞을|잘될|잘 될|유리|성공|대박|돈 될|돈이 될)|\s*$)/); if (k) m = [k[0], widen(s, k), k[3]]; }
     // "점심과 저녁 뭘로 해", "A랑 B 어느 쪽" (중 없이)
     if (!m) { const k = s.match(/(?:^|\s)((?:이|그|저)\s)?(\S+?)(?:이랑|랑|하고|과|와)\s+(\S+?)\s*(?=(?:뭘로|뭐로|뭐가|뭘|무엇이|어떤\s?게|어떤게|어떤\s?쪽|어느\s?게|어느\s?쪽|어디가|언제가|둘\s?중|중\s?(?:어떤|어느|뭐|뭘)))/); if (k) m = [k[0], widen(s, k), k[3]]; }
+    // "A가 좋은지 B가 좋은지", "A가 나을까 B가 나을까" (같은 말 반복, 2026-11-17)
+    if (!m) { const k = s.match(/^(.+?)\s*(좋은지|나은지|맞는지|괜찮은지|좋을지|나을지|맞을지|괜찮을지|좋을까|나을까|맞을까|괜찮을까|잘될까|잘 될까|잘될지|잘 될지)\s+(.+?)\s*\2(?:\s.*)?$/); if (k) m = [k[0], dropJosa(k[1]), dropJosa(k[3])]; }
+    // "이직할지 남을지", "A로 할지 B로 할지"
+    if (!m) { const k = s.match(/^(.+?지)\s+(.+?지)(?:\s*(?:고민|모르겠|궁금|헷갈|정해|골라|알려).*)?$/); if (k && rjI(k[1]) && rjI(k[2])) { const a = jiStem(k[1]); m = [k[0], a, k[2].trim() === '말지' ? '안 ' + a : jiStem(k[2])]; } }
     if (!m) return null;
     const clean = x => x.replace(/\s*(할까|갈까|먹을까|살까|입을까|볼까|탈까|만날까|이야|야)$/, '').replace(/^(오늘|점심|저녁|이번에|그냥)\s+/, '').trim();
     const a = clean(m[1]), b = clean(m[2]);
@@ -6467,10 +6493,15 @@ const MB = (() => {
   }
   function toChat(fn) {
     show('home'); $('mb-hero').hidden = true; $('app-screen').classList.remove('mb-chat-off');
-    if (!document.querySelector('.mb-home-btn')) $('app-screen').insertAdjacentHTML('beforebegin', '<button type="button" class="mb-home-btn" data-go="home">🏠 처음으로</button>');
+    if (!document.querySelector('.mb-home-btn')) $('app-screen').insertAdjacentHTML('beforebegin', '<button type="button" class="mb-home-btn" data-go="home" aria-label="처음으로"><span class="hb-i" aria-hidden="true">🏠</span><span class="hb-t">처음으로</span></button>');
     inApp();
     fn();
   }
+  // 처음으로 버튼: 아래로 읽는 동안 숨고, 위로 올리거나 멈추면 다시 보임 (2026-11-17)
+  (function () { let y = window.scrollY, t;
+    window.addEventListener('scroll', () => { const b = document.querySelector('.mb-home-btn'); if (!b) return;
+      const ny = window.scrollY; b.classList.toggle('hb-hide', ny > y + 4); y = ny;
+      clearTimeout(t); t = setTimeout(() => b.classList.remove('hb-hide'), 900); }, { passive: true }); })();
   // 폰 뒤로가기: 앱을 나가지 않고 처음 화면으로 (열린 창은 닫기)
   function inApp() { try { if (!(history.state && history.state.rodeo)) history.pushState({ rodeo: 1 }, ''); } catch (e) { /* 무시 */ } }
   window.addEventListener('popstate', () => {
