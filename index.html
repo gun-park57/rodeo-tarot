@@ -3685,6 +3685,8 @@ const INFER = (() => {
     let m = s.match(/^(.+?)\s*(?:아니면|vs|VS|or|또는)\s*(.+)$/);
     if (!m) m = s.match(/^(.+?(?:할까|갈까|먹을까|살까|입을까|볼까|탈까|만날까))\s+(.+?(?:할까|갈까|먹을까|살까|입을까|볼까|탈까|만날까))$/);
     if (!m) m = s.match(/^(.+?)(?:이야|야)\s+(.+?)(?:이야|야)$/);
+    // "점심과 저녁 중 언제", "A랑 B 중에 뭐가", "A하고 B 중 어디" (2026-11-17)
+    if (!m) { const k = s.match(/(?:^|\s)((?:이|그|저)\s)?(\S+?)(?:이랑|랑|하고|과|와)\s+(\S+?(?:\s\S+?)?)\s*중(?:에서|에)?(?=\s*(?:언제|뭐|뭘|어디|어느|누|하나|골라|선택|더|나을|나은|좋을|괜찮|맞을)|\s*$)/); if (k) m = [k[0], (k[1] || '') + k[2], k[3]]; }
     if (!m) return null;
     const clean = x => x.replace(/\s*(할까|갈까|먹을까|살까|입을까|볼까|탈까|만날까|이야|야)$/, '').replace(/^(오늘|점심|저녁|이번에|그냥)\s+/, '').trim();
     const a = clean(m[1]), b = clean(m[2]);
@@ -4526,8 +4528,8 @@ const QC = (() => {
   const FOOD_MAJOR = ['안 먹어본 새 메뉴 도전', '집에서 직접 해먹기', '조용히 혼밥, 초밥', '브런치나 파스타로 플렉스', '고기 먹어요. 삼겹살', '늘 가던 단골집', '둘이 나눠 먹는 피자나 치킨', '빨리 나오는 김밥이나 편의점', '든든하게 삼계탕 같은 보양식', '배달시켜서 혼밥', '회전초밥, 아니면 룰렛 돌리기', '반반 메뉴 (반반치킨)', '오늘은 가볍게, 죽이나 샐러드', '평소 안 먹던 걸로 갈아타기', '비빔밥 같은 건강식', '치킨에 맥주, 길티 플레저', '아주 매운 거, 불닭이나 엽떡', '디저트 맛집 카페', '야식은 라면', '햇빛 드는 테라스 브런치', '예전에 맛있었던 그 집 다시 가기', '태국, 멕시칸, 인도 커리 같은 세계 음식'];
   const RANK_IDX = { Ace: 0, 2: 1, 3: 2, 4: 3, 5: 0, 6: 1, 7: 2, 8: 3, 9: 0, 10: 1, Page: 2, Knight: 3, Queen: 0, King: 1 };
   const COLOR_EL = { Fire: ['레드나 오렌지', '포인트 하나만 줘도 자신감 올라가요.'], Water: ['블루나 네이비', '차분하고 다정해 보여요.'], Air: ['화이트나 하늘색', '깔끔하고 똑똑해 보여요.'], Earth: ['베이지나 브라운', '편안하고 믿음직해 보여요.'] };
-  const FOOD_RE = /(뭐\s?먹|뭘\s?먹|메뉴|점심|저녁|아침|야식|배달|간식|먹을까|먹지)/;
-  const NOT_DAILY = /(그 사람|그사람|친구|같이|데이트|고백|썸|애인|남친|여친|창업|가게|사업)/;
+  const FOOD_RE = /(뭐\s?먹|뭘\s?먹|메뉴|야식|배달|간식|먹을까|먹지|맛집|식당|(점심|저녁|아침)\s?(뭐|메뉴|추천))/; // 점심·저녁만으로는 안 켬 (2026-11-17)
+  const NOT_DAILY = /(그 사람|그사람|친구|같이|데이트|고백|썸|애인|남친|여친|창업|가게|사업|생일|기념일|약속|모임|회식|파티|결혼|여행|언제)/;
   const WEAR_RE = /(뭐\s?입|옷|코디|입을까|입지|색깔|컬러)/;
   function draw() {
     const c = Object.assign({}, FULL_TAROT_DECK[Math.floor(Math.random() * FULL_TAROT_DECK.length)]);
@@ -4574,15 +4576,19 @@ const QC = (() => {
       const ca = draw(); let cb = draw(); while (cb.id === ca.id) cb = draw();
       const sa = typeof cardScore === 'function' ? cardScore(ca) : 0, sb = typeof cardScore === 'function' ? cardScore(cb) : 0;
       const win = sa === sb ? null : sa > sb ? 0 : 1;
+      const tag = s => s > 0.15 ? '<span class="rd-tag t-yes">좋아요</span>' : s >= -0.15 ? '<span class="rd-tag t-mid">반반</span>' : '<span class="rd-tag t-no">조심</span>';
       const row = (c, name, s) => `<div class="ch-col"><p class="ch-name">${esc(name)}</p>${art(c)}<p class="font-bold gold-text">${esc(nm(c))}</p>
-        <p class="text-[13px]">${s >= 0.7 ? '😆 아주 좋은 카드' : s > 0.15 ? '🙂 괜찮은 카드' : s >= -0.15 ? '😐 애매한 카드' : '😕 걸리는 카드'}</p>
-        <p class="rp-infer">🔍 ${INFER.traits(c).text}</p></div>`;
-      const verdict = win == null ? `둘 다 비슷해요. 이럴 땐 <b>지금 더 끌리는 쪽</b>이 정답이에요.`
-        : `<b>${esc(pair[win])}</b> 쪽이에요. ${esc(nm(win ? cb : ca))} 카드가 더 힘이 있어요.`;
-      botMsg(`<div class="space-y-1.5"><p class="text-xs gold-text font-bold">⚖️ 양자택일 타로</p>
+        <p class="text-[13px]">${tag(s)}</p>
+        <p class="rp-infer">${INFER.traits(c).text}</p></div>`;
+      let N = '고객님'; try { const p = JSON.parse(localStorage.getItem('rodeo_profile_v1') || 'null'); if (p && p.name) N = String(p.name).trim() + '님'; } catch (e) { /* 무시 */ }
+      const jong = w => { const x = String(w).slice(-1).charCodeAt(0) - 0xAC00; return x >= 0 && x < 11172 && x % 28 !== 0; };
+      const open = `${esc(N)}, <b>${esc(pair[0])}</b>${jong(pair[0]) ? '과' : '와'} <b>${esc(pair[1])}</b> 사이에서 고민하고 계시는군요! 두 장을 비교해 보면,`;
+      const verdict = win == null ? `${open} 둘 다 비슷해요. 이럴 땐 <b>지금 더 끌리는 쪽</b>을 고르시면 돼요.`
+        : `${open} <b>${esc(pair[win])}</b> 쪽이 더 좋아 보여요. ${esc(nm(win ? cb : ca))} 카드가 더 힘이 있어요.`;
+      botMsg(`<div class="space-y-1.5"><p class="text-xs gold-text font-bold">양자택일 타로</p>
         <div class="ch-grid">${row(ca, pair[0], sa)}${row(cb, pair[1], sb)}</div>
-        <p class="plain-main" style="margin-top:8px">👉 ${verdict}</p>
-        <p class="text-[11px] text-purple-300/70">각 선택지에 카드 한 장씩 뽑아서 어느 쪽 카드가 더 좋은지 비교했어요.</p></div>`);
+        <p class="plain-main" style="margin-top:8px">${verdict}</p>
+        <p class="text-[11px] text-purple-300/70">선택지마다 카드를 한 장씩 뽑아서, 어느 쪽 카드가 더 좋은지 비교했어요.</p></div>`);
       if (typeof BETA !== 'undefined') BETA.track('choice_pick');
       setPanel(`<div class="flex flex-col gap-2.5"><button type="button" class="qc-sug" data-again>🔄 다시 뽑기</button>
         <button type="button" class="mb-home-row" data-go="home">🏠 처음으로 · 새 질문하기</button></div>`);
