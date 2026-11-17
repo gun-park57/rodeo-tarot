@@ -750,6 +750,22 @@ details.deep p b { color: var(--text); margin-right: 4px; font-weight: 700; }
 .ch-pick b { color: var(--brass-hi); font-size: 24px; }
 .ch-why { font-size: 15px; line-height: 1.75; word-break: keep-all; }
 .ch-why-h { display: inline-block; font-size: 12px; font-weight: 800; color: var(--brass-hi); border: 1px solid var(--brass); border-radius: 6px; padding: 0 7px; margin-right: 6px; vertical-align: 2px; }
+/* 양자택일 6장 후킹 (2026-11-17) */
+.ch-hook { margin: 14px 0 4px; padding: 14px; border-radius: 14px; border: 1.5px dashed var(--brass); background: rgba(201,164,106,.08); }
+.ch-hook p { font-size: 15px; line-height: 1.7; margin: 0 0 10px; word-break: keep-all; }
+.ch-hook-h { font-size: 16.5px !important; font-weight: 800; color: var(--brass-hi); }
+.ch-hook-n { font-size: 12.5px !important; color: var(--sub); margin: 4px 0 0 !important; }
+.ch-deep { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 14px; margin: 0 0 8px; border-radius: 12px; border: 0; background: var(--brass); color: #1B1014; font-size: 15.5px; font-weight: 800; cursor: pointer; text-align: left; word-break: keep-all; }
+.ch-deep i { font-style: normal; font-size: 12px; background: #1B1014; color: var(--brass-hi); border-radius: 6px; padding: 2px 8px; flex: 0 0 auto; }
+.ch-deep2 { background: transparent; border: 1px solid var(--brass); color: var(--text); }
+.ch-deep2 i { background: var(--brass); color: #1B1014; }
+.ch-deep:disabled { opacity: .5; }
+.ch6-head { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: center; font-size: 17px; font-weight: 800; color: var(--text); }
+.ch6-r { margin: 12px 0 6px !important; font-size: 14px; color: var(--sub); text-align: center; }
+.ch6-r b { color: var(--brass-hi); }
+.ch6-c { position: relative; border: 1px solid rgba(201,164,106,.3); border-radius: 12px; padding: 8px; text-align: center; }
+.ch6-c .bubble-art { float: none; width: 70%; height: auto; aspect-ratio: 5 / 8; margin: 0 auto 6px; display: block; }
+.ch6-c.ch-win { border: 2px solid var(--brass); box-shadow: 0 0 14px rgba(201,164,106,.3); background: rgba(201,164,106,.08); }
 
 </style>
 <script src="config.js" onerror="void 0"></script>
@@ -4593,6 +4609,83 @@ const QC = (() => {
     }, 700);
   }
 
+  /* ---------- 3-2. 중요한 양자택일 → 6장 깊은 비교 후킹 (2026-11-17, 호리AI처럼 궁금하게 만들고 답은 꼭 준다) ---------- */
+  const IMPORTANT = /(사업|창업|이직|회사|직장|퇴사|진로|학교|대학|전공|결혼|이사|투자|주식|코인|유튜브|채널|매출|계약|가게|앱|부업|플레이리스트|브랜드|쇼핑몰|집|아파트|전세|월세)/;
+  const SURPRISE = { wands: '사람들이 먼저 찾아오는 순간', cups: '진짜 팬이 생기는 순간', swords: '판을 바꾸는 소식', pentacles: '처음으로 돈이 들어오는 시점' };
+  let LAST = null;
+  const jgD = w => { const l = String(w).slice(-1); if (/\d/.test(l)) return '0136780'.includes(l); const x = l.charCodeAt(0) - 0xAC00; return x >= 0 && x < 11172 && x % 28 !== 0; };
+  const roD = w => { const x = String(w).slice(-1).charCodeAt(0) - 0xAC00; return x >= 0 && x < 11172 && x % 28 && x % 28 !== 8 ? '으로' : '로'; };
+  const baseD = c => c.type === 'major' ? c.ko : c.name.replace(/^\S+\s/, '');
+  function surprise(c) { return c.type === 'major' ? '생각보다 큰 변화' : SURPRISE[c.suit]; }
+  function deepHook(pair, win, c) {
+    const w = pair[win], l = pair[1 - win], cn = baseD(c);
+    return `<div class="ch-hook">
+      <p class="ch-hook-h">그런데 <b>${esc(w)}</b>${roD(w)} 정했을 때, 앞으로 생기는 놀라운 일이 하나 보여요.</p>
+      <p>${esc(cn)} 카드가 ${esc(w)} 쪽에 나왔다는 건, <b>${esc(surprise(c))}</b>${jgD(surprise(c)) ? '이' : '가'} 가까이 와 있다는 뜻이거든요. 궁금하세요?</p>
+      <button type="button" class="ch-deep" data-deep="win"><span>${esc(w)}의 3개월 뒤 보기</span><i>${QUOTA_TAG()}</i></button>
+      <button type="button" class="ch-deep ch-deep2" data-deep="lose"><span>${esc(l)}${jgD(l) ? '이' : '가'} 밀린 진짜 이유 보기</span><i>${QUOTA_TAG()}</i></button>
+      <p class="ch-hook-n">카드 6장(각 3장)으로 지금 · 3개월 뒤 · 결과를 자리별로 비교해요.</p>
+    </div>`;
+  }
+  function QUOTA_TAG() { const n = typeof QUOTA !== 'undefined' ? QUOTA.left() : 1; return n > 0 ? '무료' : (!(window.RODEO_CONFIG && window.RODEO_CONFIG.BETA === false) ? '0원' : '2,500원'); }
+  // 비교 규칙 하나로: ① 정방향 > 거꾸로 ② 메이저 > 마이너 ③ 카드 점수
+  function duel(a, b) {
+    const up = c => !c.isReversed || c.lucky, sc = c => (typeof cardScore === 'function' ? cardScore(c) : 0);
+    if (up(a) !== up(b)) return { win: up(a) ? 0 : 1, why: '정방향' };
+    if ((a.type === 'major') !== (b.type === 'major')) return { win: a.type === 'major' ? 0 : 1, why: '메이저' };
+    if (Math.abs(sc(a) - sc(b)) > 0.05) return { win: sc(a) > sc(b) ? 0 : 1, why: '카드 뜻' };
+    return { win: null, why: '' };
+  }
+  function deep6(focus) {
+    const S = LAST; if (!S) return;
+    userContext = { customQuery: S.q }; // 카드 풀이를 질문 주제(사업 등) 말로
+    const used = new Set(); const pick = () => { let c; do { c = draw(); } while (used.has(c.id)); used.add(c.id); return c; };
+    const A = [pick(), pick(), pick()], B = [pick(), pick(), pick()];
+    const ROWS = ['지금', '3개월 뒤', '결과'];
+    const res = ROWS.map((_, i) => duel(A[i], B[i]));
+    const pts = [0, 0]; res.forEach((r, i) => { if (r.win != null) pts[r.win] += i === 2 ? 2 : 1; });
+    let fin = pts[0] === pts[1] ? (res[2].win != null ? res[2].win : S.win) : (pts[0] > pts[1] ? 0 : 1);
+    const P = S.pair, w = P[fin], l = P[1 - fin];
+    let N = '고객님'; try { const p = JSON.parse(localStorage.getItem('rodeo_profile_v1') || 'null'); if (p && p.name) N = String(p.name).trim() + '님'; } catch (e) { /* 무시 */ }
+    const kt = c => esc(String(typeof keyText === 'function' ? keyText(c) : '').split(/(?<=[.!?])\s/)[0]);
+    const tagOf = c => `<span class="src">${c.type === 'major' ? '메이저' : '마이너'}</span> <span class="src">${!c.isReversed ? '정방향' : c.lucky ? '거꾸로·좋은 뜻' : '거꾸로'}</span>`;
+    const cell = (c, on) => `<div class="ch6-c${on ? ' ch-win' : ''}">${art(c)}<p class="font-bold gold-text">${esc(nm(c))}</p><p>${tagOf(c)}</p></div>`;
+    const rows = ROWS.map((r, i) => `<p class="ch6-r">${r}${res[i].win != null ? ` · <b>${esc(P[res[i].win])}</b> 승` : ' · 무승부'}</p><div class="ch-grid">${cell(A[i], res[i].win === 0)}${cell(B[i], res[i].win === 1)}</div>`).join('');
+    const rowSay = ROWS.map((r, i) => `${r}${r === '지금' ? '은' : '는'} ${res[i].win != null ? esc(P[res[i].win]) : '비김'}`).join(', ');
+    // 후킹에서 한 약속에 답하기: 2장에서 이긴 쪽(H)의 카드가 말한 '놀라운 일'이 언제 오는지 + 그 쪽 3개월 뒤 카드
+    const H = P[S.win], H3 = (S.win === 0 ? A : B)[1], h3good = (typeof cardScore === 'function' ? cardScore(H3) : 0) > -0.15;
+    const when = typeof READER !== 'undefined' ? READER.timing(S.card).text : '';
+    const reveal = `아까 <b>${esc(H)}</b> 쪽 ${esc(baseD(S.card))} 카드가 <b>${esc(surprise(S.card))}</b>${jgD(surprise(S.card)) ? '을' : '를'} 말한다고 했죠. 그 시기는 <b>${esc(when)}</b> 보여요. `
+      + (h3good ? `3개월 뒤 자리에도 <b>${esc(nm(H3))}</b> 카드가 나와서 힘을 실어줘요. ${kt(H3)}` : `다만 3개월 뒤 자리에 <b>${esc(nm(H3))}</b> 카드가 나왔어요. ${kt(H3)} 이 부분은 미리 대비하셔야 해요.`);
+    // '밀린 이유' 버튼은 처음 2장에서 진 쪽(IL)에 답한다
+    const IL = P[1 - S.win], ILr = (S.win === 0 ? B : A)[2];
+    const loseWhy = fin === 1 - S.win
+      ? `처음엔 <b>${esc(IL)}</b>${jgD(IL) ? '이' : '가'} 밀렸지만, 6장으로 보니 결과 자리의 <b>${esc(nm(ILr))}</b> 카드가 받쳐줘서 뒤집혔어요. ${kt(ILr)}`
+      : `<b>${esc(IL)}</b>${jgD(IL) ? '이' : '가'} 밀린 진짜 이유는 결과 자리의 <b>${esc(nm(ILr))}</b> 카드예요. ${kt(ILr)}`;
+    const changed = fin !== S.win ? ` 처음 2장에서는 ${esc(P[S.win])} 쪽이었는데, 깊게 보니 ${esc(w)} 쪽이 더 단단해요.` : '';
+    botMsg(`<div class="space-y-1.5"><p class="text-xs gold-text font-bold">양자택일 깊은 비교 · 6장</p>
+      <div class="ch6-head"><span>${esc(P[0])}</span><span>${esc(P[1])}</span></div>
+      ${rows}
+      <p class="ch-pick">최종 추천은 <b>${esc(w)}</b>${jgD(w) ? '이에요' : '예요'}</p>
+      <p class="ch-why">${esc(N)}, 6장을 자리별로 비교해 보면 ${rowSay} 쪽이 이겼어요.${changed} 결과 자리에 점수를 두 배로 줘서 최종 추천은 <b>${esc(w)}</b>${jgD(w) ? '이에요' : '예요'}.</p>
+      <p class="ch-why">${focus === 'lose' ? loseWhy + '</p><p class="ch-why">' + reveal : reveal + '</p><p class="ch-why">' + loseWhy}</p>
+      <p class="text-[11px] text-purple-300/70">자리마다 정방향 → 메이저 → 카드 뜻 순서로 비교했어요. 재미와 참고용이에요.</p></div>`);
+    if (typeof BETA !== 'undefined') BETA.track('choice_deep_open', { focus });
+    setPanel(`<div class="flex flex-col gap-2.5"><button type="button" class="mb-home-row" data-go="home">🏠 처음으로 · 새 질문하기</button></div>`);
+    if (typeof readFrom === 'function') { readFrom(); setTimeout(() => typeof readDone === 'function' && readDone(), 800); }
+  }
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-deep]'); if (!b || !LAST || busy) return;
+    const focus = b.dataset.deep;
+    document.querySelectorAll('[data-deep]').forEach(x => { x.disabled = true; });
+    if (typeof BETA !== 'undefined') BETA.track('choice_deep_click', { focus });
+    userMsg(focus === 'lose' ? `${LAST.pair[1 - LAST.win]}가 밀린 이유 보여줘` : `${LAST.pair[LAST.win]}의 3개월 뒤 보여줘`);
+    const go = () => { loadingPanel('6장 뽑는 중...'); setTimeout(() => deep6(focus), 900); };
+    if (typeof QUOTA !== 'undefined' && QUOTA.left() > 0) { QUOTA.use(); go(); }
+    else if (typeof BETA !== 'undefined') BETA.pay('choice_deep', go);
+    else go();
+  });
+
   /* ---------- 3. 양자택일: "짜장 먹을까 짬뽕 먹을까" ---------- */
   function choose(q, pair) {
     userMsg(q); loadingPanel('두 장 뽑는 중...');
@@ -4623,8 +4716,10 @@ const QC = (() => {
       botMsg(`<div class="space-y-1.5"><p class="text-xs gold-text font-bold">양자택일 타로</p>
         <div class="ch-grid">${row(ca, pair[0], sa, 0)}${row(cb, pair[1], sb, 1)}</div>
         ${verdict}
-        <p class="text-[11px] text-purple-300/70">먼저 말한 쪽이 왼쪽 카드예요. 정방향인지, 메이저 카드인지 순서로 비교했어요.</p></div>`);
+        <p class="text-[11px] text-purple-300/70">먼저 말한 쪽이 왼쪽 카드예요. 정방향인지, 메이저 카드인지 순서로 비교했어요.</p>
+        ${win != null && IMPORTANT.test(q) ? deepHook(pair, win, win ? cb : ca) : ''}</div>`);
       if (typeof BETA !== 'undefined') BETA.track('choice_pick');
+      if (win != null && IMPORTANT.test(q)) { LAST = { q, pair, win, card: win ? cb : ca }; if (typeof BETA !== 'undefined') BETA.track('choice_hook_view'); }
       setPanel(`<div class="flex flex-col gap-2.5"><button type="button" class="qc-sug" data-again>🔄 다시 뽑기</button>
         <button type="button" class="mb-home-row" data-go="home">🏠 처음으로 · 새 질문하기</button></div>`);
       panel.querySelector('[data-again]').addEventListener('click', () => choose(q, pair));
