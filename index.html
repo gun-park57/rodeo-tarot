@@ -743,6 +743,13 @@ details.deep p b { color: var(--text); margin-right: 4px; font-weight: 700; }
 .ch-col .bubble-art { float: none; width: 100%; max-width: none; height: auto; aspect-ratio: 5 / 8; margin: 6px 0 8px; }
 .ch-col .ch-name { font-size: 17px; font-weight: 800; color: var(--text); margin: 0; }
 .ch-col .rp-infer { text-align: left; }
+.ch-col { position: relative; }
+.ch-col.ch-win { border: 2px solid var(--brass); box-shadow: 0 0 18px rgba(201,164,106,.35); background: rgba(201,164,106,.08); }
+.ch-badge { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--brass); color: #1B1014; font-size: 12px; font-weight: 800; border-radius: 999px; padding: 2px 10px; }
+.ch-pick { margin: 14px 0 8px !important; padding: 14px; border-radius: 14px; border: 1.5px solid var(--brass); background: rgba(201,164,106,.14); color: var(--brass-hi); font-size: 21px; font-weight: 800; text-align: center; word-break: keep-all; }
+.ch-pick b { color: var(--brass-hi); font-size: 24px; }
+.ch-why { font-size: 15px; line-height: 1.75; word-break: keep-all; }
+.ch-why-h { display: inline-block; font-size: 12px; font-weight: 800; color: var(--brass-hi); border: 1px solid var(--brass); border-radius: 6px; padding: 0 7px; margin-right: 6px; vertical-align: 2px; }
 
 </style>
 <script src="config.js" onerror="void 0"></script>
@@ -4594,17 +4601,18 @@ const QC = (() => {
       else if (Math.abs(sa - sb) > 0.05) { win = sa > sb ? 0 : 1; why = `둘 다 ${ma ? '메이저' : '마이너'} 카드에 ${fa ? '정방향이라서' : '거꾸로라서'}, 카드 뜻으로 비교했어요. ${esc(base(win ? cb : ca))} 쪽 뜻이 더 좋아요.`; }
       const compare = `<b>${esc(pair[0])}</b>에는 ${desc(ca, fa, ma)} 나왔고, <b>${esc(pair[1])}</b>에는 ${desc(cb, fb, mb)} 나왔어요.`;
       const tag = s => s > 0.15 ? '<span class="rd-tag t-yes">좋아요</span>' : s >= -0.15 ? '<span class="rd-tag t-mid">반반</span>' : '<span class="rd-tag t-no">조심</span>';
-      const row = (c, name, s) => `<div class="ch-col"><p class="ch-name">${esc(name)}</p>${art(c)}<p class="font-bold gold-text">${esc(nm(c))}</p>
+      const row = (c, name, s, k) => `<div class="ch-col${win === k ? ' ch-win' : ''}">${win === k ? '<span class="ch-badge">추천</span>' : ''}<p class="ch-name">${esc(name)}</p>${art(c)}<p class="font-bold gold-text">${esc(nm(c))}</p>
         <p class="text-[13px]"><span class="src">${c.type === 'major' ? '메이저' : '마이너'}</span> <span class="src">${!c.isReversed ? '정방향' : c.lucky ? '거꾸로·좋은 뜻' : '거꾸로'}</span> ${tag(s)}</p>
         <p class="rp-infer">${INFER.traits(c).text}</p></div>`;
       let N = '고객님'; try { const p = JSON.parse(localStorage.getItem('rodeo_profile_v1') || 'null'); if (p && p.name) N = String(p.name).trim() + '님'; } catch (e) { /* 무시 */ }
       const jong = w => { const x = String(w).slice(-1).charCodeAt(0) - 0xAC00; return x >= 0 && x < 11172 && x % 28 !== 0; };
       const open = `${esc(N)}, <b>${esc(pair[0])}</b>${jong(pair[0]) ? '과' : '와'} <b>${esc(pair[1])}</b> 사이에서 고민하고 계시는군요! 두 장을 비교해 보면, ${compare}`;
-      const verdict = win == null ? `${open} 둘 다 비슷해요. 이럴 땐 <b>지금 더 끌리는 쪽</b>을 고르시면 돼요.`
-        : `${open} ${why} 그래서 <b>${esc(pair[win])}</b> 쪽을 추천드려요.`;
+      const yo = w => jong(w) ? '이에요' : '예요';
+      const pick = win == null ? '둘 다 비슷해요. 지금 더 끌리는 쪽이 정답이에요' : `제 추천은 <b>${esc(pair[win])}</b>${yo(pair[win])}`;
+      const verdict = `<p class="ch-pick">${pick}</p><p class="ch-why"><span class="ch-why-h">이유</span>${compare} ${win == null ? '두 카드 힘이 거의 같아요.' : why}</p>`;
       botMsg(`<div class="space-y-1.5"><p class="text-xs gold-text font-bold">양자택일 타로</p>
-        <div class="ch-grid">${row(ca, pair[0], sa)}${row(cb, pair[1], sb)}</div>
-        <p class="plain-main" style="margin-top:8px">${verdict}</p>
+        <div class="ch-grid">${row(ca, pair[0], sa, 0)}${row(cb, pair[1], sb, 1)}</div>
+        ${verdict}
         <p class="text-[11px] text-purple-300/70">먼저 말한 쪽이 왼쪽 카드예요. 정방향인지, 메이저 카드인지 순서로 비교했어요.</p></div>`);
       if (typeof BETA !== 'undefined') BETA.track('choice_pick');
       setPanel(`<div class="flex flex-col gap-2.5"><button type="button" class="qc-sug" data-again>🔄 다시 뽑기</button>
