@@ -766,6 +766,7 @@ details.deep p b { color: var(--text); margin-right: 4px; font-weight: 700; }
 .ch6-c { position: relative; border: 1px solid rgba(201,164,106,.3); border-radius: 12px; padding: 8px; text-align: center; }
 .ch6-c .bubble-art { float: none; width: 70%; height: auto; aspect-ratio: 5 / 8; margin: 0 auto 6px; display: block; }
 .ch6-c.ch-win { border: 2px solid var(--brass); box-shadow: 0 0 14px rgba(201,164,106,.3); background: rgba(201,164,106,.08); }
+.ch-deep i s { opacity: .65; margin-right: 3px; font-weight: 600; }
 
 </style>
 <script src="config.js" onerror="void 0"></script>
@@ -4627,7 +4628,8 @@ const QC = (() => {
       <p class="ch-hook-n">카드 6장(각 3장)으로 지금 · 3개월 뒤 · 결과를 자리별로 비교해요.</p>
     </div>`;
   }
-  function QUOTA_TAG() { const n = typeof QUOTA !== 'undefined' ? QUOTA.left() : 1; return n > 0 ? '무료' : (!(window.RODEO_CONFIG && window.RODEO_CONFIG.BETA === false) ? '0원' : '2,500원'); }
+  // 6장 비교는 항상 유료 상품 (2026-11-17 박건). 무료 질문 개수와 상관없음. 베타는 정가에 줄 긋고 0원
+  function QUOTA_TAG() { return !(window.RODEO_CONFIG && window.RODEO_CONFIG.BETA === false) ? '<s>2,500원</s> 0원' : '2,500원'; }
   // 비교 규칙 하나로: ① 정방향 > 거꾸로 ② 메이저 > 마이너 ③ 카드 점수
   function duel(a, b) {
     const up = c => !c.isReversed || c.lucky, sc = c => (typeof cardScore === 'function' ? cardScore(c) : 0);
@@ -4681,8 +4683,7 @@ const QC = (() => {
     if (typeof BETA !== 'undefined') BETA.track('choice_deep_click', { focus });
     userMsg(focus === 'lose' ? `${LAST.pair[1 - LAST.win]}가 밀린 이유 보여줘` : `${LAST.pair[LAST.win]}의 3개월 뒤 보여줘`);
     const go = () => { loadingPanel('6장 뽑는 중...'); setTimeout(() => deep6(focus), 900); };
-    if (typeof QUOTA !== 'undefined' && QUOTA.left() > 0) { QUOTA.use(); go(); }
-    else if (typeof BETA !== 'undefined') BETA.pay('choice_deep', go);
+    if (typeof BETA !== 'undefined') { BETA.track('paywall_view', { spread: 'choice_deep' }); BETA.pay('choice_deep', go); }
     else go();
   });
 
