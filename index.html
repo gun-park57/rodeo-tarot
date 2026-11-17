@@ -3687,6 +3687,8 @@ const INFER = (() => {
     if (!m) m = s.match(/^(.+?)(?:이야|야)\s+(.+?)(?:이야|야)$/);
     // "점심과 저녁 중 언제", "A랑 B 중에 뭐가", "A하고 B 중 어디" (2026-11-17)
     if (!m) { const k = s.match(/(?:^|\s)((?:이|그|저)\s)?(\S+?)(?:이랑|랑|하고|과|와)\s+(\S+?(?:\s\S+?)?)\s*중(?:에서|에)?(?=\s*(?:언제|뭐|뭘|어디|어느|누|하나|골라|선택|더|나을|나은|좋을|괜찮|맞을)|\s*$)/); if (k) m = [k[0], (k[1] || '') + k[2], k[3]]; }
+    // "점심과 저녁 뭘로 해", "A랑 B 어느 쪽" (중 없이)
+    if (!m) { const k = s.match(/(?:^|\s)((?:이|그|저)\s)?(\S+?)(?:이랑|랑|하고|과|와)\s+(\S+?)\s*(?=(?:뭘로|뭐로|뭐가|뭘|어떤\s?게|어느\s?게|어느\s?쪽|어디가|언제가|둘\s?중))/); if (k) m = [k[0], (k[1] || '') + k[2], k[3]]; }
     if (!m) return null;
     const clean = x => x.replace(/\s*(할까|갈까|먹을까|살까|입을까|볼까|탈까|만날까|이야|야)$/, '').replace(/^(오늘|점심|저녁|이번에|그냥)\s+/, '').trim();
     const a = clean(m[1]), b = clean(m[2]);
@@ -4575,20 +4577,30 @@ const QC = (() => {
     setTimeout(() => {
       const ca = draw(); let cb = draw(); while (cb.id === ca.id) cb = draw();
       const sa = typeof cardScore === 'function' ? cardScore(ca) : 0, sb = typeof cardScore === 'function' ? cardScore(cb) : 0;
-      const win = sa === sb ? null : sa > sb ? 0 : 1;
+      // 비교 순서 (2026-11-17 박건): ① 정방향 > 거꾸로 ② 둘 다 같으면 메이저 > 마이너 ③ 그래도 같으면 카드 점수
+      const up = c => !c.isReversed || c.lucky, maj = c => c.type === 'major';
+      let win = null, why = '';
+      const fa = up(ca), fb = up(cb), ma = maj(ca), mb = maj(cb);
+      const base = c => c.type === 'major' ? c.ko : c.name.replace(/^\S+\s/, '');
+      const jg = w => { const l = String(w).slice(-1); if (/\d/.test(l)) return '0136780'.includes(l); const x = l.charCodeAt(0) - 0xAC00; return x >= 0 && x < 11172 && x % 28 !== 0; };
+      const desc = (c, f, m) => `${m ? '메이저' : '마이너'} 카드 <b>${esc(base(c))}</b>${jg(base(c)) ? '이' : '가'} ${!c.isReversed ? '정방향으로' : f ? '거꾸로(이 카드는 거꾸로가 좋은 뜻)' : '거꾸로'}`;
+      if (fa !== fb) { win = fa ? 0 : 1; why = '정방향 카드가 거꾸로 나온 카드보다 힘이 세요.'; }
+      else if (ma !== mb) { win = ma ? 0 : 1; why = fa ? '둘 다 정방향이라, 더 큰 힘을 가진 메이저 카드 쪽이 이겨요.' : '둘 다 거꾸로라, 그래도 힘이 큰 메이저 카드 쪽이 나아요.'; }
+      else if (Math.abs(sa - sb) > 0.05) { win = sa > sb ? 0 : 1; why = `둘 다 ${ma ? '메이저' : '마이너'} 카드에 ${fa ? '정방향이라서' : '거꾸로라서'}, 카드 뜻으로 비교했어요. ${esc(base(win ? cb : ca))} 쪽 뜻이 더 좋아요.`; }
+      const compare = `<b>${esc(pair[0])}</b>에는 ${desc(ca, fa, ma)} 나왔고, <b>${esc(pair[1])}</b>에는 ${desc(cb, fb, mb)} 나왔어요.`;
       const tag = s => s > 0.15 ? '<span class="rd-tag t-yes">좋아요</span>' : s >= -0.15 ? '<span class="rd-tag t-mid">반반</span>' : '<span class="rd-tag t-no">조심</span>';
       const row = (c, name, s) => `<div class="ch-col"><p class="ch-name">${esc(name)}</p>${art(c)}<p class="font-bold gold-text">${esc(nm(c))}</p>
-        <p class="text-[13px]">${tag(s)}</p>
+        <p class="text-[13px]"><span class="src">${c.type === 'major' ? '메이저' : '마이너'}</span> <span class="src">${!c.isReversed ? '정방향' : c.lucky ? '거꾸로·좋은 뜻' : '거꾸로'}</span> ${tag(s)}</p>
         <p class="rp-infer">${INFER.traits(c).text}</p></div>`;
       let N = '고객님'; try { const p = JSON.parse(localStorage.getItem('rodeo_profile_v1') || 'null'); if (p && p.name) N = String(p.name).trim() + '님'; } catch (e) { /* 무시 */ }
       const jong = w => { const x = String(w).slice(-1).charCodeAt(0) - 0xAC00; return x >= 0 && x < 11172 && x % 28 !== 0; };
-      const open = `${esc(N)}, <b>${esc(pair[0])}</b>${jong(pair[0]) ? '과' : '와'} <b>${esc(pair[1])}</b> 사이에서 고민하고 계시는군요! 두 장을 비교해 보면,`;
+      const open = `${esc(N)}, <b>${esc(pair[0])}</b>${jong(pair[0]) ? '과' : '와'} <b>${esc(pair[1])}</b> 사이에서 고민하고 계시는군요! 두 장을 비교해 보면, ${compare}`;
       const verdict = win == null ? `${open} 둘 다 비슷해요. 이럴 땐 <b>지금 더 끌리는 쪽</b>을 고르시면 돼요.`
-        : `${open} <b>${esc(pair[win])}</b> 쪽이 더 좋아 보여요. ${esc(nm(win ? cb : ca))} 카드가 더 힘이 있어요.`;
+        : `${open} ${why} 그래서 <b>${esc(pair[win])}</b> 쪽을 추천드려요.`;
       botMsg(`<div class="space-y-1.5"><p class="text-xs gold-text font-bold">양자택일 타로</p>
         <div class="ch-grid">${row(ca, pair[0], sa)}${row(cb, pair[1], sb)}</div>
         <p class="plain-main" style="margin-top:8px">${verdict}</p>
-        <p class="text-[11px] text-purple-300/70">선택지마다 카드를 한 장씩 뽑아서, 어느 쪽 카드가 더 좋은지 비교했어요.</p></div>`);
+        <p class="text-[11px] text-purple-300/70">먼저 말한 쪽이 왼쪽 카드예요. 정방향인지, 메이저 카드인지 순서로 비교했어요.</p></div>`);
       if (typeof BETA !== 'undefined') BETA.track('choice_pick');
       setPanel(`<div class="flex flex-col gap-2.5"><button type="button" class="qc-sug" data-again>🔄 다시 뽑기</button>
         <button type="button" class="mb-home-row" data-go="home">🏠 처음으로 · 새 질문하기</button></div>`);
