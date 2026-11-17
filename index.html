@@ -4609,7 +4609,7 @@ const QC = (() => {
       const open = `${esc(N)}, <b>${esc(pair[0])}</b>${jong(pair[0]) ? '과' : '와'} <b>${esc(pair[1])}</b> 사이에서 고민하고 계시는군요! 두 장을 비교해 보면, ${compare}`;
       const yo = w => jong(w) ? '이에요' : '예요';
       const pick = win == null ? '둘 다 비슷해요. 지금 더 끌리는 쪽이 정답이에요' : `제 추천은 <b>${esc(pair[win])}</b>${yo(pair[win])}`;
-      const verdict = `<p class="ch-pick">${pick}</p><p class="ch-why"><span class="ch-why-h">이유</span>${compare} ${win == null ? '두 카드 힘이 거의 같아요.' : why}</p>`;
+      const verdict = `<p class="ch-pick">${pick}</p><p class="ch-why">${open} ${win == null ? '두 카드 힘이 거의 같아요. 지금 더 끌리는 쪽을 고르시면 돼요.' : `${why} 그래서 <b>${esc(pair[win])}</b> 쪽을 추천드려요.`}</p>`;
       botMsg(`<div class="space-y-1.5"><p class="text-xs gold-text font-bold">양자택일 타로</p>
         <div class="ch-grid">${row(ca, pair[0], sa, 0)}${row(cb, pair[1], sb, 1)}</div>
         ${verdict}
