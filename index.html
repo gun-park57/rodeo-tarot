@@ -845,6 +845,30 @@ details.deep p b { color: var(--text); margin-right: 4px; font-weight: 700; }
 .ch-tn { color: var(--brass-hi); margin-bottom: 2px !important; }
 .ch-tc + .ch-th { margin-top: 12px !important; }
 
+/* 근거 칩: 형광 테두리 + 빛 (2026-11-19 박건 C안) — 타로 노랑 · 사주 빨강 · 별자리 파랑 · 숫자 보라 */
+.sc, .src { background: transparent !important; border: 1.5px solid currentColor !important; box-shadow: 0 0 7px currentColor; font-weight: 800; }
+.sc-t, .src { color: #FFE14D !important; }
+.sc-sj { color: #FF5C7A !important; }
+.sc-as { color: #55B4FF !important; }
+.sc-nm { color: #C08BFF !important; }
+/* 오늘의 카드: 고민 먼저 고르기 */
+.dq-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.dq-grid button { padding: 13px 10px; border-radius: 12px; border: 1px solid rgba(201,164,106,.4); background: rgba(11,7,9,.6); color: var(--text); font-weight: 700; font-size: 15px; text-align: left; cursor: pointer; }
+.dq-grid button:focus-visible { outline: 2px solid var(--brass-hi); outline-offset: 2px; }
+.dq-guide { text-align: center; font-size: 15.5px; line-height: 1.7; margin: 0 0 10px; }
+.dq-guide b { color: var(--brass-hi); }
+.dq-flip { display: block; margin: 0 auto; width: 120px; aspect-ratio: 5 / 8; border-radius: 10px; border: 1px solid rgba(201,164,106,.5); box-shadow: 0 12px 26px rgba(0,0,0,.5); cursor: pointer; }
+.dq-topic { display: inline-block; font-size: 12.5px; font-weight: 800; color: #1B1014; background: var(--brass); border-radius: 999px; padding: 2px 10px; margin-bottom: 8px; }
+.dq-head { margin: 8px 0 10px; padding: 13px; border-radius: 14px; border: 1.5px solid var(--brass); background: rgba(201,164,106,.13); text-align: center; font-size: 17px; font-weight: 800; color: var(--brass-hi); word-break: keep-all; line-height: 1.5; }
+.dq-p { font-size: 15px; line-height: 1.8; margin: 0 0 8px; word-break: keep-all; }
+.dq-todo { margin: 4px 0 10px; padding: 10px 12px; border-radius: 10px; background: rgba(201,164,106,.1); font-size: 15px; }
+.dq-todo b { color: var(--brass-hi); }
+.dq-more { border-top: 1px solid rgba(201,164,106,.25); padding-top: 10px; margin-top: 6px; }
+.dq-more p { margin: 0 0 8px; font-size: 14.5px; }
+.dq-more .row { display: flex; flex-wrap: wrap; gap: 6px; }
+.dq-more button { padding: 8px 12px; border-radius: 999px; border: 1px solid var(--brass); background: transparent; color: var(--text); font-weight: 700; font-size: 14px; cursor: pointer; }
+.dq-free { font-size: 12px; color: #8FD6A0; margin-left: 4px; }
+
 </style>
 <script src="config.js" onerror="void 0"></script>
 </head>
@@ -2873,7 +2897,7 @@ const TP = (() => {
   }
 
   /* 오늘의 카드: 기기마다 다르고, 같은 날엔 같은 카드 */
-  function daily() {
+  function dailyOld() {
     userMsg('🌙 오늘의 카드 한 장');
     let salt = '';
     try { salt = localStorage.getItem('rodeo_salt') || ''; if (!salt) { salt = String(Math.random()).slice(2, 10); localStorage.setItem('rodeo_salt', salt); } } catch (e) { /* 무시 */ }
@@ -2896,6 +2920,103 @@ const TP = (() => {
         ${shareBtn(`[오늘의 카드] ${cardName(c)} ${dir(c)}\n${meaning(c)}`, { title: '오늘의 카드', cards: [c], head: meaning(c),
           lines: ['love', 'money', 'work'].map(k => TOPIC_LABEL[k].replace(/^\S+\s/, '') + ' · ' + topicLine(c, k)).concat(c.isReversed ? [] : []) })}`);
       if (!already) record('daily', '오늘의 카드', [c], '', { day: today() });
+      showResult();
+    }, 700);
+  }
+
+  /* 오늘의 카드 + 고민 먼저 고르기 (2026-11-19 박건: 뽑기 전에 질문부터, 전부 무료로 데이터 쌓기) */
+  const DQ = [['love', '💕', '연애'], ['money', '💰', '금전'], ['biz', '🏪', '사업'], ['work', '💼', '직업'], ['study', '📚', '공부'], ['health', '🌿', '건강']];
+  const DQ_NAME = { love: '연애', money: '금전', biz: '사업', work: '직업', study: '공부', health: '건강', general: '오늘 하루' };
+  const DQ_ICON = { love: '💕', money: '💰', biz: '🏪', work: '💼', study: '📚', health: '🌿', general: '☀️' };
+  const STEM_IMG = ['큰 나무', '풀꽃', '태양', '촛불', '큰 산', '논밭', '바위', '보석', '큰 바다', '빗물'];
+  const EL_KO = ['나무', '불', '흙', '쇠', '물'];
+  const CARD_EL = { '불': 1, '물': 4, '흙': 2, '공기': 3 };
+  const ro = w => { const x = String(w).slice(-1).charCodeAt(0) - 0xAC00; return x >= 0 && x < 11172 && x % 28 && x % 28 !== 8 ? '으로' : '로'; };
+  const jg = w => { const x = String(w).slice(-1).charCodeAt(0) - 0xAC00; return x >= 0 && x < 11172 && x % 28 !== 0; };
+  function todayCard() {
+    let salt = '';
+    try { salt = localStorage.getItem('rodeo_salt') || ''; if (!salt) { salt = String(Math.random()).slice(2, 10); localStorage.setItem('rodeo_salt', salt); } } catch (e) { /* 무시 */ }
+    const h = hash(today() + salt);
+    return { ...FULL_TAROT_DECK[h % FULL_TAROT_DECK.length], isReversed: ((h >> 8) % 4) === 0 };
+  }
+  function dailyAsk() {
+    botMsg(`<p class="font-bold gold-text" style="font-size:16px">오늘 어떤 고민을 떠올리며 뽑을까요?</p><p class="text-[13px] text-purple-300/80">고민을 정하고 뽑으면 카드가 그 고민에 답해줘요</p>`);
+    setPanel(`<div class="dq-grid">${DQ.map(([k, i, n]) => `<button type="button" data-dq="${k}">${i} ${n}</button>`).join('')}
+      <button type="button" data-dq="general">☀️ 그냥 오늘 하루</button><button type="button" data-dq="custom">✏️ 직접 쓰기</button></div>`);
+    panel.querySelectorAll('[data-dq]').forEach(b => b.addEventListener('click', () => {
+      const k = b.dataset.dq;
+      if (k !== 'custom') return dailyPick(k, '');
+      setPanel(`<form id="dq-form" class="flex gap-2"><input id="dq-q" class="flex-1 bg-black/30 border border-amber-400/30 rounded-xl px-3 py-3 text-sm text-white" maxlength="60" placeholder="예: 이번 주 면접 잘 볼까?" required>
+        <button type="submit" class="px-4 text-xs font-bold rounded-xl bg-gradient-to-r from-amber-400 to-amber-600 text-black cursor-pointer">다음</button></form>`);
+      document.getElementById('dq-form').addEventListener('submit', e => {
+        e.preventDefault(); const q = document.getElementById('dq-q').value.trim(); if (!q) return;
+        const tk = typeof topicKey === 'function' ? topicKey(q) : 'general';
+        dailyPick(DQ_NAME[tk] ? tk : 'general', q);
+      });
+    }));
+  }
+  function dailyPick(tk, q) {
+    const label = q || `${DQ_ICON[tk]} ${DQ_NAME[tk]}`;
+    userMsg(label);
+    if (typeof BETA !== 'undefined') BETA.track('daily_topic', { topic: tk, custom: q ? 1 : 0 });
+    const what = q ? `"${q}"` : `"${DQ_NAME[tk]}"`;
+    setPanel(`<p class="dq-guide"><b>${esc(what)}</b>${tk === 'general' && !q ? '를' : jg(q || DQ_NAME[tk]) ? '을' : '를'} 마음속으로 떠올리면서<br>카드를 눌러주세요</p>
+      <button type="button" class="dq-flip card-back" data-dflip aria-label="카드 뒤집기"></button>`);
+    panel.querySelector('[data-dflip]').addEventListener('click', () => daily(tk, q));
+  }
+  function sajuLine(c) {
+    try {
+      const p = JSON.parse(localStorage.getItem('rodeo_profile_v1') || 'null');
+      if (!p || !p.date || typeof sajuPillars !== 'function') return '';
+      const ds = sajuPillars({ dateStr: p.date, timeStr: p.notime ? '' : p.time }).pillars.day.stem;
+      const me = [0, 0, 1, 1, 2, 2, 3, 3, 4, 4][ds];
+      const M = typeof CARD_META !== 'undefined' && CARD_META[c.id]; const ce = M ? CARD_EL[M.el] : null;
+      if (ce == null) return '';
+      const d = (ce - me + 5) % 5; // 0 같음, 1 내가 낳음, 2 내가 다스림, 3 나를 다스림, 4 나를 낳음
+      const say = ['같은 기운이라 든든하게 밀어줘요', '내 힘을 밖으로 펼치는 날이에요', '내가 주도해서 거두는 날이에요', '조금 눌리는 날이라 무리하지 마요', '힘을 받는 날이에요'][d];
+      const nm = (p.name ? String(p.name).trim() + '님' : '고객님');
+      return `<p class="dq-p">${esc(nm)}은 ${STEM_IMG[ds]}(${STEMS[ds]}${EL_KO[me] === '나무' ? '목' : EL_KO[me] === '불' ? '화' : EL_KO[me] === '흙' ? '토' : EL_KO[me] === '쇠' ? '금' : '수'})이고 오늘 카드는 ${EL_KO[ce]} 기운이에요. ${say} <span class="sc sc-sj">사주</span></p>`;
+    } catch (e) { return ''; }
+  }
+  function daily(tk, q) {
+    tk = tk || 'general';
+    const c = todayCard();
+    const arr0 = load(), already = arr0.some(x => x.kind === 'daily' && x.day === today());
+    const days = new Set(arr0.filter(x => x.kind === 'daily' && x.day).map(x => x.day)); days.add(today());
+    let streak = 0; for (let k = 0; k < 400; k++) { const dd = new Date(); dd.setDate(dd.getDate() - k); const key = `${dd.getFullYear()}-${String(dd.getMonth() + 1).padStart(2, '0')}-${String(dd.getDate()).padStart(2, '0')}`; if (days.has(key)) streak++; else break; }
+    const M = typeof CARD_META !== 'undefined' && CARD_META[c.id];
+    const good = !c.isReversed || c.lucky;
+    const pair = M ? (good ? M.up : M.rv) : null;
+    let head = '';
+    try { head = tk === 'general' ? (pair ? pair[1] : meaning(c)) : topicLine(c, tk); } catch (e) { head = pair ? pair[1] : meaning(c); }
+    const sc = typeof cardScore === 'function' ? cardScore(c) : 0;
+    const lvl = sc > 0.15 ? 'yes' : sc >= -0.15 ? 'mid' : 'no';
+    const G = typeof GUIDE !== 'undefined' ? (GUIDE[tk] || GUIDE.general) : null;
+    const todo = G && G[lvl] && G[lvl].do ? G[lvl].do[0] : '';
+    const word = (typeof DAILY_WORD !== 'undefined' && DAILY_WORD[c.id] ? DAILY_WORD[c.id][c.isReversed ? 1 : 0] : '') || '';
+    const others = DQ.filter(([k]) => k !== tk).slice(0, 3);
+    loadingPanel('카드를 뒤집는 중...');
+    setTimeout(() => {
+      botMsg(`<div><span class="dq-topic">${DQ_ICON[tk]} ${esc(q ? q : DQ_NAME[tk] + ro(DQ_NAME[tk]) + ' 본 오늘')}</span></div>
+        <div class="tp-daily">${miniCard(c)}<div>
+        <p class="text-xs gold-text font-bold mb-1">🌙 ${today().slice(5).replace('-', '월 ')}일 오늘의 카드</p>
+        <p class="font-bold gold-text">${esc(plainName(c))}${c.isReversed ? (c.lucky ? ' <span class="rev-word">거꾸로 · 좋은 뜻</span>' : ' <span class="rev-word">거꾸로</span>') : ''}</p></div></div>
+        <p class="dq-head">${esc(head)}</p>
+        ${pair ? `<p class="dq-p">${esc(pair[0])} <span class="sc sc-t">타로</span></p>` : ''}
+        ${sajuLine(c)}
+        ${todo ? `<p class="dq-todo"><b>오늘 할 일</b> · ${esc(todo)}</p>` : ''}
+        ${word ? `<p class="text-[12.5px] text-sky-200/90 mt-1">💡 오늘의 한마디: ${esc(word)}</p>` : ''}
+        <div class="dq-more"><p>같은 카드를 <b class="gold-text">다른 고민</b>으로 보면 어떨까요? <span class="dq-free">모두 무료</span></p>
+          <div class="row">${others.map(([k, i, n]) => `<button type="button" data-dmore="${k}">${i} ${n}${ro(n)} 보기</button>`).join('')}</div></div>
+        <p class="tp-streak">🔥 ${streak}일 연속 확인 중${streak >= 7 ? ' · 일주일 달성!' : streak >= 3 ? ' · 좋은 습관이에요' : ''}</p>
+        <p class="text-[11px] text-purple-300/70 mt-1">오늘의 카드는 하루 동안 바뀌지 않아요. 고민을 바꿔도 같은 카드로 풀어요.</p>
+        ${shareBtn(`[오늘의 카드 · ${DQ_NAME[tk]}] ${cardName(c)} ${dir(c)}\n${head}`, { title: '오늘의 카드', cards: [c], head, lines: todo ? ['오늘 할 일 · ' + todo] : [] })}`);
+      if (!already) record('daily', '오늘의 카드', [c], DQ_NAME[tk], { day: today() });
+      document.querySelectorAll('[data-dmore]').forEach(b => { if (b.dataset.bound) return; b.dataset.bound = 1; b.addEventListener('click', () => {
+        const k = b.dataset.dmore; userMsg(`${DQ_ICON[k]} ${DQ_NAME[k]}${ro(DQ_NAME[k])} 보기`);
+        if (typeof BETA !== 'undefined') BETA.track('daily_more', { topic: k });
+        daily(k, '');
+      }); });
       showResult();
     }, 700);
   }
@@ -3061,7 +3182,7 @@ const TP = (() => {
         ${h.q && h.kind !== 'daily' ? `<b>${esc(h.q.replace(/\s*\([^)]*\)\s*$/, ''))}</b>` : ''}<em>${h.cards.map(c => esc(c.n) + (c.r ? '(역)' : '')).join(' · ')}</em></div>`;
     }).join('') + '<p class="text-[11px] text-purple-300/70 mt-2">기록은 이 기기에만 저장돼요.</p>';
   }
-  return { daily, yesno, history, dict, afterReading, miniCard, recordsHtml };
+  return { daily: () => { userMsg('🌙 오늘의 카드 한 장'); dailyAsk(); }, dailyOld, yesno, history, dict, afterReading, miniCard, recordsHtml };
 })();
 
 const ORDINAL = ['첫', '두', '세', '네', '다섯'];
