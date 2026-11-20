@@ -7362,7 +7362,7 @@ const MB = (() => {
     $('me-notime').addEventListener('change', e => { $('me-time').disabled = e.target.checked; });
     const close = () => ov.remove();
     ov.addEventListener('click', e => {
-      if (e.target === ov || e.target.closest('[data-close]')) close();
+      if (e.target.closest('[data-close]')) close(); // 바깥을 눌러도 닫히지 않음 (입력 중 날아가는 것 방지, 2026-11-21)
       if (e.target.closest('[data-forget]')) { try { localStorage.removeItem(PKEY); } catch (x) { /* 무시 */ } Object.keys(ran).forEach(k => delete ran[k]); collapse(); meLabel(); renderToday(); close(); }
     });
     ov.querySelector('form').addEventListener('submit', e => {
@@ -7941,6 +7941,47 @@ const PLAN = (() => {
   return { kindOf, BADGE, get pref() { return pref; } };
 })();
 
+</script>
+<script>
+/* 시간 칸 쉬운 선택 (2026-11-21): 브라우저 기본 시간 칸 대신 [오전/오후 · 시 · 분] 드롭다운.
+ * 기존 코드는 그대로 input.value("HH:MM")·disabled를 쓰고, 이 칸이 보이는 선택창과 맞춰 줌 */
+(function () {
+  const EN = (document.documentElement.lang || '').toLowerCase().indexOf('en') === 0;
+  const T = EN ? { a: 'AM/PM', am: 'AM', pm: 'PM', h: 'Hour', m: 'Min', hs: '', ms: '' } : { a: '오전/오후', am: '오전', pm: '오후', h: '시', m: '분', hs: '시', ms: '분' };
+  const st = document.createElement('style');
+  st.textContent = '.ts-group{display:flex;flex-wrap:wrap;gap:8px;width:100%}.ts-group select{flex:1 1 40%;min-width:0;cursor:pointer;padding-left:12px;padding-right:6px}.ts-group select:first-child{flex:1 0 100%}.ts-group select:disabled{opacity:.4;cursor:not-allowed}';
+  document.head.appendChild(st);
+  const pad = n => String(n).padStart(2, '0');
+  const vProto = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+  const dProto = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'disabled');
+  function enhance(inp) {
+    if (inp.dataset.ts) return; inp.dataset.ts = '1';
+    const mk = (label, html) => { const s = document.createElement('select'); s.className = 'inp'; s.setAttribute('aria-label', label); s.innerHTML = html; return s; };
+    const a = mk(T.a, `<option value="">${T.a}</option><option value="am">${T.am}</option><option value="pm">${T.pm}</option>`);
+    const h = mk(T.h, `<option value="">${T.h}</option>` + Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}">${i + 1}${T.hs}</option>`).join(''));
+    const m = mk(T.m, `<option value="">${T.m}</option>` + Array.from({ length: 60 }, (_, i) => `<option value="${pad(i)}">${pad(i)}${T.ms}</option>`).join(''));
+    const wrap = document.createElement('span'); wrap.className = 'ts-group'; wrap.append(a, h, m);
+    inp.style.display = 'none'; inp.after(wrap);
+    const fire = () => { inp.dispatchEvent(new Event('input', { bubbles: true })); inp.dispatchEvent(new Event('change', { bubbles: true })); };
+    const toSel = () => {
+      const mt = /^(\d{1,2}):(\d{2})/.exec(vProto.get.call(inp) || '');
+      if (!mt) { a.value = ''; h.value = ''; m.value = ''; return; }
+      const hh = Number(mt[1]); a.value = hh >= 12 ? 'pm' : 'am'; h.value = String(hh % 12 || 12); m.value = mt[2];
+    };
+    const fromSel = () => {
+      if (h.value && !m.value) m.value = '00';
+      const v = a.value && h.value && m.value ? `${pad((Number(h.value) % 12) + (a.value === 'pm' ? 12 : 0))}:${m.value}` : '';
+      vProto.set.call(inp, v); fire();
+    };
+    [a, h, m].forEach(s => s.addEventListener('change', e => { e.stopPropagation(); fromSel(); }));
+    Object.defineProperty(inp, 'value', { configurable: true, get() { return vProto.get.call(this); }, set(v) { vProto.set.call(this, v); toSel(); } });
+    Object.defineProperty(inp, 'disabled', { configurable: true, get() { return dProto.get.call(this); }, set(v) { dProto.set.call(this, v); [a, h, m].forEach(s => { s.disabled = !!v; }); } });
+    toSel(); [a, h, m].forEach(s => { s.disabled = inp.disabled; });
+  }
+  const scan = root => (root.querySelectorAll ? root.querySelectorAll('input[type=time]') : []).forEach(enhance);
+  scan(document);
+  new MutationObserver(ms => ms.forEach(r => r.addedNodes.forEach(n => { if (n.nodeType === 1) { if (n.matches && n.matches('input[type=time]')) enhance(n); scan(n); } }))).observe(document.body, { childList: true, subtree: true });
+})();
 </script>
 </body>
 </html>
