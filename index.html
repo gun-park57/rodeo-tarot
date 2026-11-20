@@ -4495,16 +4495,7 @@ function sajuReport({ P, r, du, gender, name, dateStr, city, curDu, lock }) {
   out.push(`<p class="rp-h">6. 그래서 올해는 이렇게 해봐요</p>
     <p class="rp-do">✅ ${esc(act[0])}</p><p class="rp-dont">⛔ ${esc(act[1])}</p>`);
 
-  // 7. 맛보기: 타로·별자리
-  const sign = typeof sunSignKo === 'function' ? sunSignKo(dateStr) : '';
-  out.push(`<p class="rp-h">7. 다른 눈으로 보면 (맛보기)</p>
-    <div class="rp-tease">
-      <p class="rp-tline">🃏 <b>타로로 보면</b> · 지금 마음이 어느 쪽인지 카드 한 장으로 바로 볼 수 있어요.</p>
-      <button type="button" class="rp-tbtn" data-quick="daily">오늘의 카드 뽑기</button>
-      ${sign ? `<p class="rp-tline" style="margin-top:12px">✨ <b>별자리로 보면</b> · ${esc(sign)}자리예요.</p>
-      <p class="rp-tlock">🔒 태어난 날 하늘로 본 성향과 잘 맞는 일은 별자리 리포트에서 자세히 알려드려요.</p>
-      <button type="button" class="rp-tbtn" data-quick="astro">별자리 리포트 보기</button>` : ''}
-    </div>`);
+  // 7. 맛보기 섹션은 삭제 (2026-11-20 박건)
 
   return `<div class="rp sj-rp">
     <p class="rp-title">📜 ${name === '나' ? '내' : esc(name) + '님의'} 사주 리포트${T ? ` · ${esc(T.name)}` : ''}</p>
