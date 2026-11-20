@@ -3932,6 +3932,13 @@ const INFER = (() => {
     let m = x.match(/^(.+?)\s*(?:으로|로)?\s*할지$/); if (m && m[1]) return dropJosa(m[1]).replace(/(으로|로)$/, '').trim();
     m = x.match(/^(.+?)(?:을|를)지$/); if (m) return m[1] + '기';
     const P = x.slice(-2, -1), c = P.charCodeAt(0) - 8; return x.slice(0, -2) + String.fromCharCode(c) + '기'; }
+  // "먹을까"→{full:'먹기', verb:'먹기'}, "이직할까"→{full:'이직하기', verb:'하기'}, "갈까"→가기
+  function kkaStem(w) {
+    let m = w.match(/^(.*)하까$/) || w.match(/^(.*)할까$/); if (m) return { full: m[1] + '하기', verb: '하기' };
+    m = w.match(/^(.+)을까$/); if (m) return { full: m[1] + '기', verb: m[1] + '기' };
+    m = w.match(/^(.*)(.)까$/); if (m && jong(m[2]) === 8) { const v = m[1] + String.fromCharCode(m[2].charCodeAt(0) - 8) + '기'; return { full: v, verb: v }; }
+    return null;
+  }
   function parseChoice(q) {
     const s = String(q || '').replace(/[?？!]/g, '').trim();
     let m = s.match(/^(.+?)\s*(?:아니면|vs|VS|or|또는)\s*(.+)$/);
@@ -3945,6 +3952,12 @@ const INFER = (() => {
     if (!m) { const k = s.match(/^(.+?)\s*(좋은지|나은지|맞는지|괜찮은지|좋을지|나을지|맞을지|괜찮을지|좋을까|나을까|맞을까|괜찮을까|잘될까|잘 될까|잘될지|잘 될지)\s+(.+?)\s*\2(?:\s.*)?$/); if (k) m = [k[0], dropJosa(k[1]), dropJosa(k[3])]; }
     // "이직할지 남을지", "A로 할지 B로 할지"
     if (!m) { const k = s.match(/^(.+?지)\s+(.+?지)(?:\s*(?:고민|모르겠|궁금|헷갈|정해|골라|알려).*)?$/); if (k && rjI(k[1]) && rjI(k[2])) { const a = jiStem(k[1]); m = [k[0], a, k[2].trim() === '말지' ? '안 ' + a : jiStem(k[2])]; } }
+    // "수면제 먹을까 말까", "이직할까 말까" → [먹기, 안 먹기] (2026-11-20)
+    if (!m) { const k = s.match(/^(?:(.*)\s)?(\S+?)(을까|까)\s*말까(?:\s.*)?$/); if (k) { const r = kkaStem(k[2] + k[3]); if (r) return [((k[1] || '') + ' ' + r.full).trim(), '안 ' + r.verb]; } }
+    // "진정제 먹어야 돼 말아야 돼"
+    if (!m) { const k = s.match(/^(.+?)야\s?(?:돼|되|하나|할까|해)\s*말아야\s?(?:돼|되|하나|할까|해)?(?:\s.*)?$/); if (k) return [k[1].trim() + '야 돼', '말아야 돼']; }
+    // "약 끊을까 계속 먹을까" (서로 다른 동사 두 개)
+    if (!m) { const k = s.match(/^(.+?(?:을까|[가-힣]까))\s+(.+?(?:을까|[가-힣]까))$/); if (k && !/말까$/.test(k[2])) return [k[1].trim(), k[2].trim()]; }
     if (!m) return null;
     const clean = x => x.replace(/선샹|선상(?=님)/g, '선생').replace(/\s*(할까|갈까|먹을까|살까|입을까|볼까|탈까|만날까|이야|야)$/, '').replace(/^(오늘|점심|저녁|이번에|그냥)\s+/, '').trim();
     const a = clean(m[1]), b = clean(m[2]);
@@ -4262,7 +4275,7 @@ function reportCard(c, i, tk, sc) {
       ${word ? `<p class="rp-word">💬 카드가 하는 말 · ${esc(word)}</p>` : ''}
       ${angles ? `<p class="rp-sub">다른 쪽으로 보면</p><ul class="rp-angles">${angles}</ul>` : ''}
       ${note && c.type === 'major' ? `<p class="rp-study">${note}</p>` : ''}
-      <details class="deep"><summary>＋ 전문가 풀이 보기</summary>
+      <details class="deep" open><summary>전문가 풀이</summary>
         ${o ? `<p><b>원문 (웨이트, 1910)</b> <i>“${esc(rev ? o[2] : o[0])}”</i><br>${esc(rev ? o[3] : o[1])}</p>` : ''}
         <p><b>전통 해석</b> ${esc(rev ? c.reversed : c.upright)}</p>
         ${c.keywords && !rev ? `<p><b>핵심 단어</b> ${esc(c.keywords)}</p>` : ''}
@@ -4331,10 +4344,10 @@ function renderReport() {
     ${tk === 'stock' ? '<p class="rp-health">재미로 보는 참고용이에요. 투자 판단은 꼭 직접 하세요.</p>' : ''}
     ${tk === 'health' ? '<p class="rp-health">타로는 컨디션 참고용이에요. 아프거나 걱정되는 증상이 있으면 꼭 병원에서 확인해요.</p>' : ''}
     ${dom && domAns ? `<p class="rp-pick"><b>${esc(dom.label)}</b>는 ${domAns}</p>` : ''}
-    <details class="deep rd-more"><summary>카드 한 장씩 자세히 보기</summary>
+    <details class="deep rd-more" open><summary>카드 한 장씩 자세히</summary>
     <div class="rd-reads">${reads}</div>
     <div class="rd-num">${READER.numerology(chosen)}</div>
-    <details class="deep"><summary>카드 설명 더 보기</summary>
+    <details class="deep" open><summary>카드 설명</summary>
       ${chosen.map((c, i) => reportCard(c, i, tk, v.scores[i])).join('')}
       ${combo.map(l => `<p>• ${esc(l)}</p>`).join('')}
       ${typeof INFER !== 'undefined' ? INFER.links(chosen, L.positions.map(p => p.short)).map(l => `<p>• ${l}</p>`).join('') : ''}
@@ -4828,7 +4841,7 @@ const QC = (() => {
   }
 
   /* ---------- 3-2. 중요한 양자택일 → 6장 깊은 비교 후킹 (2026-11-17, 호리AI처럼 궁금하게 만들고 답은 꼭 준다) ---------- */
-  const MED_RE = /(안정제|수면제|수면유도|진통제|항우울|우울증약|신경안정|정신과\s?약|처방|복용|투약|약(?:을|은|이|\s*먹|\s*드|\s*끊|\s*줄)|약$)/;
+  const MED_RE = /(진정제|안정제|수면제|수면유도|진통제|항우울|우울증약|신경안정|정신과\s?약|처방|복용|투약|약(?:을|은|이|\s*먹|\s*드|\s*끊|\s*줄)|약$)/;
   const STOP_RE = /(안\s?드|안\s?먹|끊|그만|말아|말까|줄이|줄여|안\s?챙)/;
   const IMPORTANT = /(사업|창업|이직|회사|직장|퇴사|진로|학교|대학|전공|결혼|이사|투자|주식|코인|유튜브|채널|매출|계약|가게|앱|부업|플레이리스트|브랜드|쇼핑몰|집|아파트|전세|월세)/;
   const SURPRISE = { wands: '사람들이 먼저 찾아오는 순간', cups: '진짜 팬이 생기는 순간', swords: '판을 바꾸는 소식', pentacles: '처음으로 돈이 들어오는 시점' };
@@ -5847,7 +5860,7 @@ const STORY = (() => {
 
 /* =========================================================
  * 카드 규칙 보정 (2026-11-19 박건)
- *  - 죽음·탑 거꾸로는 오히려 좋은 카드 (행운의 역방향: 악마·달·컵4·컵7·죽음·탑)
+ *  - 행운의 역방향 14장: 악마·달·죽음·탑 / 컵 4·5·7 / 소드 3·5·8·9·10 / 펜타클 5 / 완즈 10
  * ========================================================= */
 (function () {
   const FIX = {
@@ -5856,6 +5869,9 @@ const STORY = (() => {
   };
   if (typeof FULL_TAROT_DECK !== 'undefined') FULL_TAROT_DECK.forEach(c => { if (FIX[c.id]) Object.assign(c, FIX[c.id], { lucky: true }); });
   if (typeof DECK_DATA !== 'undefined') DECK_DATA.majors.forEach(m => { const f = FIX['maj_' + m.num]; if (f) Object.assign(m, f, { lucky: true }); });
+  // 2026-11-20 박건 확정: 마이너 행운의 역방향 추가 (막힌 게 풀리고 회복되는 흐름)
+  const LUCKY_MINOR = ['cups_5', 'swords_3', 'swords_5', 'swords_8', 'swords_9', 'swords_10', 'pentacles_5', 'wands_10'];
+  if (typeof FULL_TAROT_DECK !== 'undefined') FULL_TAROT_DECK.forEach(c => { if (LUCKY_MINOR.includes(c.id)) c.lucky = true; });
   // 주제별 거꾸로 문장도 좋은 쪽으로
   const REV = { 13: '끝날 줄 알았던 게 다시 살아나요. 최악은 피했어요.', 16: '큰 위기는 비켜가요. 오히려 운이 트여요.' };
   const STOCK = { 13: '끝난 줄 알았던 종목이 다시 살아나요.', 16: '큰 하락은 비켜갔어요. 오히려 반등해요.' };
