@@ -868,6 +868,7 @@ details.deep p b { color: var(--text); margin-right: 4px; font-weight: 700; }
 .dq-more .row { display: flex; flex-wrap: wrap; gap: 6px; }
 .dq-more button { padding: 8px 12px; border-radius: 999px; border: 1px solid var(--brass); background: transparent; color: var(--text); font-weight: 700; font-size: 14px; cursor: pointer; }
 .dq-free { font-size: 12px; color: #8FD6A0; margin-left: 4px; }
+.ch-med { margin: 8px 0 4px !important; padding: 9px 12px; border-radius: 10px; border: 1px solid rgba(255,92,122,.5); background: rgba(255,92,122,.08); font-size: 13.5px; color: #FFC2CD; }
 
 </style>
 <script src="config.js" onerror="void 0"></script>
@@ -4827,6 +4828,8 @@ const QC = (() => {
   }
 
   /* ---------- 3-2. 중요한 양자택일 → 6장 깊은 비교 후킹 (2026-11-17, 호리AI처럼 궁금하게 만들고 답은 꼭 준다) ---------- */
+  const MED_RE = /(안정제|수면제|수면유도|진통제|항우울|우울증약|신경안정|정신과\s?약|처방|복용|투약|약(?:을|은|이|\s*먹|\s*드|\s*끊|\s*줄)|약$)/;
+  const STOP_RE = /(안\s?드|안\s?먹|끊|그만|말아|말까|줄이|줄여|안\s?챙)/;
   const IMPORTANT = /(사업|창업|이직|회사|직장|퇴사|진로|학교|대학|전공|결혼|이사|투자|주식|코인|유튜브|채널|매출|계약|가게|앱|부업|플레이리스트|브랜드|쇼핑몰|집|아파트|전세|월세)/;
   const SURPRISE = { wands: '사람들이 먼저 찾아오는 순간', cups: '진짜 팬이 생기는 순간', swords: '판을 바꾸는 소식', pentacles: '처음으로 돈이 들어오는 시점' };
   let LAST = null;
@@ -4939,14 +4942,31 @@ const QC = (() => {
       const open = `${esc(N)}, <b>${esc(pair[0])}</b>${jong(pair[0]) ? '과' : '와'} <b>${esc(pair[1])}</b> 사이에서 고민하고 계시는군요! 두 장을 비교해 보면, ${compare}`;
       const yo = w => jong(w) ? '이에요' : '예요';
       const pick = win == null ? '둘 다 비슷해요. 지금 더 끌리는 쪽이 정답이에요' : `제 추천은 <b>${esc(pair[win])}</b>${yo(pair[win])}`;
-      const verdict = `<p class="ch-pick">${pick}</p><p class="ch-why">${open} ${win == null ? '두 카드 힘이 거의 같아요. 지금 더 끌리는 쪽을 고르시면 돼요.' : `${why} 그래서 <b>${esc(pair[win])}</b> 쪽을 추천드려요.`}</p>`;
+      let verdict = `<p class="ch-pick">${pick}</p><p class="ch-why">${open} ${win == null ? '두 카드 힘이 거의 같아요. 지금 더 끌리는 쪽을 고르시면 돼요.' : `${why} 그래서 <b>${esc(pair[win])}</b> 쪽을 추천드려요.`}</p>`;
+      // 약 질문 (2026-11-20 박건: 답은 분명하게, 대신 끊는 쪽은 "의사와 줄여보기"로, 바로 아래 안내문)
+      const MED = MED_RE.test(q);
+      if (MED) {
+        const M = c => (typeof CARD_META !== 'undefined' && CARD_META[c.id]) || null;
+        const read = c => { const m = M(c); if (!m) return ''; const g = !c.isReversed || c.lucky; return `${m.sym}이에요. ${(g ? m.up : m.rv)[1]}`; };
+        const stopIdx = STOP_RE.test(pair[0]) ? 0 : STOP_RE.test(pair[1]) ? 1 : -1;
+        let mp = pick, tail = win == null ? '두 카드 힘이 거의 같아요.' : `${why}`;
+        if (win != null && stopIdx >= 0) {
+          const wc = win ? cb : ca;
+          if (win === stopIdx) { mp = '카드는 <b>줄여갈 수 있는 쪽</b>을 가리켜요'; tail += ` 카드가 이쪽에 힘을 실어줘요. 다만 줄이는 건 혼자 정할 일이 아니에요. 다음 진료 때 <b>"줄여봐도 될까요?"</b> 하고 의사에게 먼저 물어보세요. <b>혼자 갑자기 끊지는 마세요.</b>`; }
+          else { mp = '제 추천은 <b>드시는 쪽</b>이에요'; tail += ` 지금은 혼자 버티기보다 도움을 받는 게 맞아요. <b>처방받은 대로 드시면서</b> 마음을 쉬게 해주세요.`; }
+        } else if (win != null) tail += ` 그래서 <b>${esc(pair[win])}</b> 쪽이에요.`;
+        const det = [0, 1].map(k => { const c = k ? cb : ca; return `<div class="ch-tc${win === k ? ' ch-tc-win' : ''}"><p class="ch-tn">${esc(pair[k])} · ${esc(nm(c))}</p><p>${esc(read(c))}</p></div>`; }).join('');
+        verdict = `<p class="ch-pick">${mp}</p><p class="ch-why">${open} ${tail}</p>
+          <div class="ch-teach"><p class="ch-th">두 카드, 이렇게 읽어요</p>${det}</div>
+          <p class="ch-med">타로는 재미로 보는 참고용이에요. 약은 처방한 의사와 함께 정해주세요.</p>`;
+      }
       botMsg(`<div class="space-y-1.5"><p class="text-xs gold-text font-bold">양자택일 타로</p>
         <div class="ch-grid">${row(ca, pair[0], sa, 0)}${row(cb, pair[1], sb, 1)}</div>
         ${verdict}
         <p class="text-[11px] text-purple-300/70">먼저 말한 쪽이 왼쪽 카드예요. 메이저 카드인지, 정방향인지 순서로 비교했어요.</p>
-        ${win != null && IMPORTANT.test(q) ? deepHook(pair, win, win ? cb : ca) : ''}</div>`);
+        ${win != null && IMPORTANT.test(q) && !MED ? deepHook(pair, win, win ? cb : ca) : ''}</div>`);
       if (typeof BETA !== 'undefined') BETA.track('choice_pick');
-      if (win != null && IMPORTANT.test(q)) { LAST = { q, pair, win, card: win ? cb : ca }; if (typeof BETA !== 'undefined') BETA.track('choice_hook_view'); }
+      if (win != null && IMPORTANT.test(q) && !MED) { LAST = { q, pair, win, card: win ? cb : ca }; if (typeof BETA !== 'undefined') BETA.track('choice_hook_view'); }
       setPanel(`<div class="flex flex-col gap-2.5"><button type="button" class="qc-sug" data-again>🔄 다시 뽑기</button>
         <button type="button" class="mb-home-row" data-go="home">🏠 처음으로 · 새 질문하기</button></div>`);
       panel.querySelector('[data-again]').addEventListener('click', () => choose(q, pair));
