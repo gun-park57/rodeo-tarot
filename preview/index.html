@@ -3300,11 +3300,12 @@ const TP = (() => {
 
 const ORDINAL = ['첫', '두', '세', '네', '다섯'];
 
-let READ_HOLD = false, READ_ANCHOR = null; // 읽는 중: 새 메시지가 붙어도 제목을 화면 맨 위에 붙잡아 둠
-function anchorTop() { if (!READ_ANCHOR) return; const top = READ_ANCHOR.getBoundingClientRect().top - app.getBoundingClientRect().top + app.scrollTop - 8; app.scrollTo({ top, behavior: 'smooth' }); }
-function scrollDown() { if (READ_HOLD) { requestAnimationFrame(anchorTop); return; } requestAnimationFrame(() => { app.scrollTop = app.scrollHeight; }); }
-function readFrom() { READ_ANCHOR = stream.lastElementChild; READ_HOLD = true; requestAnimationFrame(anchorTop); }
-function readDone() { READ_HOLD = false; READ_ANCHOR = null; }
+let READ_HOLD = false, READ_ANCHOR = null, READ_USER = false; // 읽는 중: 새 메시지가 붙어도 제목을 화면 맨 위에 붙잡아 둠. 손으로 스크롤하면(READ_USER) 자동 이동을 멈춤
+function anchorTop() { if (!READ_ANCHOR || READ_USER) return; const top = READ_ANCHOR.getBoundingClientRect().top - app.getBoundingClientRect().top + app.scrollTop - 8; app.scrollTo({ top, behavior: 'smooth' }); }
+function scrollDown() { if (READ_USER) return; if (READ_HOLD) { requestAnimationFrame(anchorTop); return; } requestAnimationFrame(() => { app.scrollTop = app.scrollHeight; }); }
+function readFrom() { READ_USER = false; READ_ANCHOR = stream.lastElementChild; READ_HOLD = true; requestAnimationFrame(anchorTop); }
+function readDone() { READ_HOLD = false; READ_ANCHOR = null; READ_USER = false; }
+['touchmove', 'wheel', 'keydown'].forEach(ev => app.addEventListener(ev, () => { if (READ_HOLD) READ_USER = true; }, { passive: true }));
 
 const AVATAR_BOT = 'w-9 h-9 rounded-full bg-gradient-to-br from-purple-800 to-indigo-950 border border-amber-400/40 flex items-center justify-center text-sm shrink-0 shadow-lg';
 const AVATAR_USER = 'w-9 h-9 rounded-full bg-gradient-to-br from-amber-600 to-amber-800 border border-amber-300 flex items-center justify-center text-sm shrink-0 shadow-lg';
@@ -7580,7 +7581,7 @@ const COIN = (() => {
       <p class="coin-bal"><span aria-hidden="true">🪙</span>${read().bal}<small>코인</small></p>
       <p class="coin-free">오늘 무료 질문 <b>${left}/${max}</b> 남았어요</p>
       <p class="coin-h">쓰는 곳</p>
-      <ul class="coin-rule"><li>하루 질문 <b>${max}개는 무료</b>예요. 카드는 끝까지 다 열려요</li><li>무료를 다 쓰면 질문 1개에 <b>🪙${COST}</b></li><li>5장 풀이, 6장 깊은 비교도 질문 1개로 쳐요</li></ul>
+      <ul class="coin-rule"><li>하루 질문 <b>${max}개는 무료</b>예요. 앞 카드는 바로 보이고, 마지막 카드는 질문 1개로 열어요</li><li>무료를 다 쓰면 질문 1개에 <b>🪙${COST}</b></li><li>5장 풀이, 6장 깊은 비교도 질문 1개로 쳐요</li></ul>
       <p class="coin-h">모으는 법</p>
       <p class="coin-sub">매일 출석 · 7일 한 바퀴 (주 65코인)</p>${weekHtml()}
       <ul class="coin-rule"><li>첫 방문 선물 <b>+${WELCOME}</b></li><li class="soon">친구 3명 초대 <b>+30</b> <em>곧 열려요</em></li></ul>
@@ -7666,11 +7667,8 @@ const PLAN = (() => {
   startLayout = function (key) {
     if (pref) { key = resolve(pref); pref = null; }
     const base = SPREADS[key] || SPREADS.three;
-    if (QUOTA.left() > 0) {
-      QUOTA.use();
-      layout = Object.assign({}, base, { free: base.count, _freeQ: true, _n: QUOTA.used(), _m: QUOTA.max() });
-      if (typeof BETA !== 'undefined') BETA.track('free_question', { n: QUOTA.used(), spread: key });
-    } else layout = base;
+    // 2026-11-21 박건: 앞 카드는 무료로 먼저 보여 주고, 마지막 카드와 종합 풀이는 무료 질문 1개(다 쓰면 코인)로 연다
+    layout = base;
     const T = typeof READER !== 'undefined' && READER.third ? READER.third(userContext.customQuery) : null;
     if (T && /^(five|reunion)$/.test(layout.key)) {
       const who = `${T.who} 마음`, pt = `${T.partner || '상대'} 마음`;
@@ -7713,7 +7711,8 @@ const PLAN = (() => {
     setTimeout(() => { botMsg(`<b class="gold-text">${esc(head)}</b>`); readFrom(); }, t); t += 400;
     for (let i = 0; i < L.free; i++) { const k = i; setTimeout(() => botMsg(cardBubble(chosen[k], k)), t); t += 700; }
     L.pairs.filter(p => p.free || L._freeQ).forEach(p => { setTimeout(() => botMsg(pairBubble(chosen[p.a], chosen[p.b], p.title)), t); t += 700; });
-    setTimeout(() => { renderPaywall(); readDone(); }, t);
+    // 무료 질문은 종합 풀이가 다 붙을 때까지 제목을 화면 위에 붙잡아 둔다 (읽는 중 맨 아래로 튀는 현상 방지, 2026-11-21)
+    setTimeout(() => { renderPaywall(); setTimeout(() => readDone(), 600); }, t);
   };
 
   /* ---------- 결제창: 무료 질문은 바로 종합, 아니면 코인 ---------- */
@@ -7723,11 +7722,29 @@ const PLAN = (() => {
       busy = true;
       loadingPanel(`카드 ${L.count}장을 하나로 엮는 중...`);
       setTimeout(() => { botMsg(`${renderReport()}`); }, 500);
-      setTimeout(() => { busy = false; renderEnd(); }, 1000);
+      setTimeout(() => { busy = false; renderEnd(); if (typeof readDone === 'function') readDone(); }, 1000);
       return;
     }
     const hook = L.hook ? L.hook : L.key === 'five' ? '가까운 미래와 결과·조언 카드' : isRelationQuestion() ? '마지막 미래 카드와 상대방의 숨겨진 흐름' : '마지막 미래 카드와 세 장 종합 풀이';
     const b = COIN.bal(), ok = b >= COIN.COST;
+    if (QUOTA.left() > 0) {
+      const left = QUOTA.left(), max = QUOTA.max();
+      setPanel(`<div class="glass-luxury p-4 rounded-2xl border border-amber-400/60 space-y-3 shadow-2xl pw-coin">
+        <p class="text-xs font-bold gold-text">🔒 ${esc(hook)}</p>
+        <p class="text-xs text-gray-300 leading-relaxed">잠긴 카드 ${L.count - L.free}장과 ${L.count}장 종합 풀이를 볼 수 있어요.</p>
+        <button type="button" id="btn-freeq" class="coin-go">🎟 무료 질문 쓰고 보기 <small>오늘 ${left}/${max}개 남음</small></button>
+        <p class="coin-foot">무료 질문은 하루 ${max}개예요. 다 쓰면 🪙${COIN.COST}코인으로 볼 수 있어요.</p>
+      </div>`);
+      if (typeof BETA !== 'undefined') BETA.track('paywall_view', { spread: L.key, free_left: left });
+      document.getElementById('btn-freeq').addEventListener('click', e => {
+        if (busy) return;
+        e.currentTarget.disabled = true;
+        QUOTA.use();
+        if (typeof BETA !== 'undefined') { BETA.track('free_question', { n: QUOTA.used(), spread: L.key }); BETA.toast(`무료 질문 ${QUOTA.used()}/${QUOTA.max()}개 썼어요`); }
+        unlockFinal();
+      });
+      return;
+    }
     setPanel(`<div class="glass-luxury p-4 rounded-2xl border border-amber-400/60 space-y-3 shadow-2xl pw-coin">
       <p class="hk-out">오늘 무료 질문 ${QUOTA.max()}개를 다 썼어요</p>
       <p class="text-xs font-bold gold-text">🔒 ${esc(hook)}</p>
