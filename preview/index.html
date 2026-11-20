@@ -949,6 +949,10 @@ header.top .mb-me { flex-shrink: 1; min-width: 0; max-width: 96px; overflow: hid
 .sp-gate .coin-go { margin-top: 10px; }
 .sp-gate-s { font-size: 11px; color: #9A8FBD; text-align: center; margin-top: 4px; }
 
+.mb-legal { margin: 18px 0 4px; text-align: center; font-size: 11.5px; line-height: 1.6; color: #9A8FBD; }
+.mb-legal b { color: #CFC3EE; }
+.mb-legal a { display: inline-block; margin-top: 4px; color: #B79CF0; text-decoration: none; border-bottom: 1px dotted currentColor; }
+
 </style>
 </head>
 <body>
@@ -5236,7 +5240,7 @@ const READER = (() => {
   const T_SPACE = new RegExp(`^(?:우리\\s*|내\\s*)?(${T_FAMILY})\\s`);
   function third(q) {
     q = String(q == null ? (typeof userContext !== 'undefined' && userContext.customQuery) || '' : q).replace(/\s*\([^)]*\)\s*$/, '').trim();
-    if (/(나를|나한테|나에게|날\s|저를|저한테|저에게)/.test(q)) return null; // 나와 그 사람 사이 = 내 질문
+    if (/(나를|나한테|나에게|날\s|저를|저한테|저에게|내가|제가|때문에|탓에)/.test(q)) return null; // 나와 그 사람 사이 · 그 사람 때문에 내가 = 내 질문
     let m = q.match(T_PAIR);
     if (m) return { who: THIRD_HON[m[1]], partner: PARTNER_HON[m[2]] || m[2] };
     m = q.match(T_SUBJ) || q.match(T_SPACE);
@@ -7334,7 +7338,7 @@ const MB = (() => {
     const p = getP() || {};
     const ov = document.createElement('div'); ov.id = 'mb-sheet'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', '내 정보');
     ov.innerHTML = `<form class="dict-box mb-me-form"><div class="dict-head"><b>내 정보</b><button type="button" data-close aria-label="닫기">✕</button></div>
-      <p class="note">한 번 넣어두면 사주·별자리·오늘의 기운이 바로 나와요. 이 기기에만 저장돼요.</p>
+      <p class="note">한 번 넣어두면 사주·별자리·오늘의 기운이 바로 나와요. 이름·생년월일은 서버로 보내지 않고 이 기기에만 저장돼요. 언제든 아래 '내 정보 지우기'로 지울 수 있어요.</p>
       ${p.date && typeof READER !== 'undefined' && READER.lifeCard(p.date) ? (lc => `<p class="note rd-life">🎂 <b>내 생일 카드는 ${lc.n}번 ${esc(lc.name)}</b> (${lc.calc}). ${esc(lc.text)}</p>`)(READER.lifeCard(p.date)) : ''}
       <div class="fg"><label for="me-name">이름 (선택)</label><input class="inp" id="me-name" maxlength="20" value="${esc(p.name || '')}"></div>
       <div class="row2"><div class="fg"><label for="me-date">생년월일 (양력)</label><input class="inp" type="date" id="me-date" min="1930-01-01" max="2030-12-31" value="${p.date || ''}" required></div>
@@ -7574,7 +7578,7 @@ const COIN = (() => {
       <p class="coin-sub">매일 출석 · 7일 한 바퀴 (주 65코인)</p>${weekHtml()}
       <ul class="coin-rule"><li>첫 방문 선물 <b>+${WELCOME}</b></li><li class="soon">친구 3명 초대 <b>+30</b> <em>곧 열려요</em></li></ul>
       ${log ? `<p class="coin-h">최근 내역</p><ul class="coin-log">${log}</ul>` : ''}
-      <p class="coin-foot">코인은 이 기기에만 저장돼요. 실제 결제는 준비 중이에요.</p>`);
+      <p class="coin-foot">코인은 이 기기에만 저장돼요. 베타 기간에는 결제 기능 없이 무료 코인만 써요.</p>`);
   }
 
   /* ---------- 질문 1개 값 치르기: 무료 → 코인 → (베타) 0원 ---------- */
@@ -7592,15 +7596,14 @@ const COIN = (() => {
       <p class="coin-free">오늘 무료 질문 ${QUOTA.max()}개를 다 썼어요</p>
       <p class="coin-mid">보유 <b>🪙${b}</b> ${ok ? `→ 쓰고 나면 <b>🪙${b - COST}</b>` : `· 필요 🪙${COST}`}</p>
       ${ok ? `<button type="button" class="coin-go" data-cuse>🪙 ${COST}코인 쓰고 보기</button>` : `<p class="coin-sub">내일 출석하면 <b>+${nextAtt()}코인</b>이에요. 자정이 지나면 무료 질문 ${QUOTA.max()}개도 다시 생겨요.</p>`}
-      <button type="button" class="coin-alt" data-cbeta>결제하고 보기 · 베타라 0원</button>
-      <p class="coin-foot">실제 결제는 준비 중이에요.</p>`);
+      ${ok ? '' : '<button type="button" class="coin-alt" data-cclose>닫기</button>'}
+      <p class="coin-foot">베타 기간에는 결제 없이 무료 코인으로만 볼 수 있어요.</p>`);
     let done = false;
     ov.querySelector('[data-cuse]') && ov.querySelector('[data-cuse]').addEventListener('click', () => {
       done = true; spend(COST, '질문 1개'); ov.remove(); toast(`🪙${COST}코인을 썼어요. 남은 코인 ${read().bal}`);
       if (typeof BETA !== 'undefined') BETA.track('coin_spend', { product, left: read().bal });
       setTimeout(unlock, 300);
     });
-    ov.querySelector('[data-cbeta]').addEventListener('click', () => { done = true; ov.remove(); payOrig(product, unlock); });
     new MutationObserver((m, o) => { if (!document.body.contains(ov)) { o.disconnect(); if (!done) cancel(); } }).observe(document.body, { childList: true });
   }
 
@@ -7723,15 +7726,13 @@ const PLAN = (() => {
       <p class="text-xs font-bold gold-text">🔒 ${esc(hook)}</p>
       <p class="text-xs text-gray-300 leading-relaxed">잠긴 카드 ${L.count - L.free}장과 ${L.count}장 종합 풀이를 볼 수 있어요.</p>
       <button type="button" id="btn-coin" class="coin-go${ok ? '' : ' off'}">🪙 ${COIN.COST}코인으로 이어보기 <small>보유 ${b}</small></button>
-      <button type="button" id="btn-pay" class="coin-alt">결제하고 보기 · 베타라 0원</button>
-      <p class="coin-foot">${ok ? '' : `코인이 모자라요. 내일 출석하면 +${COIN.nextAtt()}코인이에요. `}실제 결제는 준비 중이에요.</p>
+      <p class="coin-foot">${ok ? '' : `코인이 모자라요. 내일 출석하면 +${COIN.nextAtt()}코인이고, 자정이 지나면 무료 질문 ${QUOTA.max()}개도 다시 생겨요. `}베타 기간에는 결제 없이 무료 코인으로만 볼 수 있어요.</p>
     </div>`);
     if (typeof BETA !== 'undefined') BETA.track('paywall_view', { spread: L.key, coin: b });
     document.getElementById('btn-coin').addEventListener('click', () => {
       if (COIN.spend(COIN.COST, '질문 1개')) { BETA.toast(`🪙${COIN.COST}코인을 썼어요. 남은 코인 ${COIN.bal()}`); BETA.track('coin_spend', { product: 'tarot_' + L.key }); unlockFinal(); }
       else COIN.sheet();
     });
-    document.getElementById('btn-pay').addEventListener('click', () => PAY_ORIG('tarot_' + L.key, unlockFinal));
   };
 
   /* ---------- 끝: 3장이면 "5장으로 더 깊게" ---------- */
@@ -7759,6 +7760,11 @@ const PLAN = (() => {
     f.insertAdjacentHTML('afterend', `<div class="sp-pick" id="sp-pick">
       <button type="button" data-sp="three"><b>🃏 3장 기본</b><small>과거 · 현재 · 미래</small></button>
       <button type="button" data-sp="five"><b id="sp-five-lab">✨ 5장 깊게 보기</b><small id="sp-five-sub">상황 · 걸림돌 · 원인 · 열쇠 · 결과</small></button>
+    </div>`);
+    const hero = document.getElementById('mb-hero');
+    if (hero && !document.getElementById('mb-legal')) hero.insertAdjacentHTML('beforeend', `<div class="mb-legal" id="mb-legal">
+      <p>재미로 보는 <b>오락용 콘텐츠</b>예요. 결과를 보장하지 않아요.</p>
+      <a href="https://www.youtube.com/@dalbit_tarot_kr" target="_blank" rel="noopener">🌙 유튜브 「달빛 타로 주파수」 × 압구정 로데오 타로</a>
     </div>`);
     const inp = document.getElementById('mb-input');
     const relabel = () => {
@@ -7844,9 +7850,9 @@ const PLAN = (() => {
       else if (!p) {
         h = h.replace(TEASE_RE, '');
         gate = `<div class="sp-gate"><p class="sp-gate-h">🔒 사주 · 별자리 점사가 아직 빠져 있어요</p>
-          <p>로그인하면 이 질문에 <span class="sc sc-sj">사주</span>와 <span class="sc sc-as">별자리</span>가 더해져서, 언제 힘이 붙는지 더 자세한 미래를 알려드려요.</p>
+          <p>내 정보를 넣으면 이 질문에 <span class="sc sc-sj">사주</span>와 <span class="sc sc-as">별자리</span>가 더해져서, 언제 힘이 붙는지 더 자세한 미래를 알려드려요.</p>
           <button type="button" class="coin-go" data-more="me" data-gate>내 정보 넣고 자세히 보기</button>
-          <p class="sp-gate-s">생년월일 · 태어난 시간 · 출생지만 넣으면 돼요 · 30초</p></div>`;
+          <p class="sp-gate-s">생년월일 · 태어난 시간 · 출생지만 넣으면 돼요 · 30초<br>이 기기에만 저장되고, 언제든 '내 정보 지우기'로 지울 수 있어요.</p></div>`;
       }
       if (p && !TH) { try { sj = sajuSpice(p, key, tk, N); } catch (e) { sj = null; } try { as = astroSpice(p, key, N); } catch (e) { as = null; } }
       if (sj || as) {
