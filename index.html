@@ -953,6 +953,13 @@ header.top .mb-me { flex-shrink: 1; min-width: 0; max-width: 96px; overflow: hid
 .mb-legal b { color: #CFC3EE; }
 .mb-legal a { display: inline-block; margin-top: 4px; color: #B79CF0; text-decoration: none; border-bottom: 1px dotted currentColor; }
 
+/* 2026-11-21 C안: 카드 그림 빼고 BETA 띠, 머리의 작은 베타 표시 빼기 */
+#mb-hero .mb-mark { display: none; }
+header.top .mb-beta { display: none; }
+.beta-strip { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 2px 0 14px; padding: 9px 12px; border-radius: 12px; border: 1.5px solid #C08BFF; background: rgba(192,139,255,.10); box-shadow: 0 0 10px rgba(192,139,255,.3); font-size: 12.5px; color: #E6DAFF; line-height: 1.4; }
+.beta-strip b { color: #0E0820; background: #C08BFF; border-radius: 6px; padding: 1px 7px; font-size: 11.5px; letter-spacing: .5px; }
+.beta-strip em { font-style: normal; color: #FFE14D; font-weight: 800; }
+
 </style>
 </head>
 <body>
@@ -7762,6 +7769,8 @@ const PLAN = (() => {
       <button type="button" data-sp="five"><b id="sp-five-lab">✨ 5장 깊게 보기</b><small id="sp-five-sub">상황 · 걸림돌 · 원인 · 열쇠 · 결과</small></button>
     </div>`);
     const hero = document.getElementById('mb-hero');
+    // 2026-11-21 박건 C안: 위 카드 그림 대신 BETA 띠 → 질문창·3장/5장이 첫 화면 안으로
+    if (hero && !document.getElementById('beta-strip')) hero.insertAdjacentHTML('afterbegin', `<div class="beta-strip" id="beta-strip"><b>BETA</b><span>무료로 써보는 중 · 하루 질문 <em>${QUOTA.max()}개 무료</em></span></div>`);
     if (hero && !document.getElementById('mb-legal')) hero.insertAdjacentHTML('beforeend', `<div class="mb-legal" id="mb-legal">
       <p>재미로 보는 <b>오락용 콘텐츠</b>예요. 결과를 보장하지 않아요.</p>
       <a href="https://www.youtube.com/@dalbit_tarot_kr" target="_blank" rel="noopener">🌙 유튜브 「달빛 타로 주파수」 × 압구정 로데오 타로</a>
