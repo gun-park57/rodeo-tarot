@@ -944,6 +944,11 @@ header.top .mb-beta, header.top .coin-badge { flex-shrink: 0; white-space: nowra
 header.top .mb-me { flex-shrink: 1; min-width: 0; max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 360px) { header.top .mb-beta { display: none; } }
 
+.sp-gate { margin: 14px 0 6px; border: 1.5px dashed rgba(255,92,122,.6); border-radius: 14px; padding: 12px 14px; background: rgba(255,92,122,.05); font-size: 13px; line-height: 1.6; }
+.sp-gate-h { font-weight: 800; color: #FF7A93; font-size: 13.5px; margin-bottom: 4px; }
+.sp-gate .coin-go { margin-top: 10px; }
+.sp-gate-s { font-size: 11px; color: #9A8FBD; text-align: center; margin-top: 4px; }
+
 </style>
 </head>
 <body>
@@ -3800,7 +3805,7 @@ function cardBubble(card, posIndex) {
       <p class="plain-main rd-bub">${typeof READER !== 'undefined' ? READER.quickBubble(card, posIndex) : esc(plain || r.text)}</p>
       ${card.isReversed && card.lucky ? '<p class="rev-note">🔄 거꾸로 나왔지만, 이 카드는 거꾸로일 때 오히려 좋은 뜻이에요.</p>' : ''}
       </div></div>
-      <details class="deep"><summary>더 깊이 보기</summary>
+      <details class="deep" open><summary>자세히</summary>
         ${typeof READER !== 'undefined' ? `<p>${READER.bubble(card, posIndex)}</p>` : ''}
         ${typeof READER !== 'undefined' && READER.minorPlain(card) ? `<p>👉 ${READER.minorPlain(card)}</p>` : ''}
         ${plain ? `<p><b>원래 뜻</b> ${esc(r.text)}</p>` : ''}
@@ -5221,7 +5226,24 @@ const READER = (() => {
     reunion: ['헤어진 이유엔', '지금 내 마음엔', '그 사람 마음엔', '다시 이어질지 보면', '지금 할 일로는'],
     general5: ['지금 상황엔', '걸림돌로는', '숨은 원인엔', '풀 열쇠로는', '결국']
   };
-  const leadOf = i => (LEAD[layout.key] || LEAD.three)[i] || layout.positions[i].short;
+  /* ---------- 3인칭 질문 (2026-11-20 박건: "딸과 남친구는 잘될까?" → 내가 아니라 딸 이야기) ---------- */
+  const THIRD_HON = { 딸: '따님', 딸내미: '따님', 아들: '아드님', 남편: '남편분', 신랑: '남편분', 아내: '아내분', 와이프: '아내분', 엄마: '어머님', 어머니: '어머님', 아빠: '아버님', 아버지: '아버님', 언니: '언니', 오빠: '오빠', 누나: '누나', 형: '형', 동생: '동생', 친구: '친구분', 동료: '동료분', 조카: '조카', 손주: '손주', 손자: '손주', 손녀: '손주', 따님: '따님', 아드님: '아드님', 남편분: '남편분', 아내분: '아내분', 어머님: '어머님', 아버님: '아버님', 친구분: '친구분', 동료분: '동료분' };
+  const PARTNER_HON = { 남친: '남자친구', 남친구: '남자친구', 남자친구: '남자친구', 여친: '여자친구', 여친구: '여자친구', 여자친구: '여자친구', 남편: '남편분', 아내: '아내분', 애인: '애인' };
+  const T_WORDS = Object.keys(THIRD_HON).sort((a, b) => b.length - a.length).join('|');
+  const T_FAMILY = '딸내미|딸|아들|남편|신랑|아내|와이프|엄마|어머니|아빠|아버지|언니|오빠|누나|형|동생|조카|손주|손자|손녀';
+  const T_PAIR = new RegExp(`^(?:우리\\s*|내\\s*)?(${T_WORDS})(?:과|와|랑|이랑|하고)\\s*(\\S+?)(?:(?:은|는|이|가|의)(?:\\s|$)|,)`);
+  const T_SUBJ = new RegExp(`^(?:우리\\s*|내\\s*)?(${T_WORDS})(?:(?:은|는|이|가|의|네|도|에게|께)(?:,|\\s|$)|,)`);
+  const T_SPACE = new RegExp(`^(?:우리\\s*|내\\s*)?(${T_FAMILY})\\s`);
+  function third(q) {
+    q = String(q == null ? (typeof userContext !== 'undefined' && userContext.customQuery) || '' : q).replace(/\s*\([^)]*\)\s*$/, '').trim();
+    if (/(나를|나한테|나에게|날\s|저를|저한테|저에게)/.test(q)) return null; // 나와 그 사람 사이 = 내 질문
+    let m = q.match(T_PAIR);
+    if (m) return { who: THIRD_HON[m[1]], partner: PARTNER_HON[m[2]] || m[2] };
+    m = q.match(T_SUBJ) || q.match(T_SPACE);
+    return m ? { who: THIRD_HON[m[1]], partner: null } : null;
+  }
+  const toWho = w => (/[님분]$/.test(w) ? `${w}께` : `${w}에게`);
+  const leadOf = i => { let s = (LEAD[layout.key] || LEAD.three)[i] || layout.positions[i].short; const T = third(); if (T) s = s.replace('내 마음', `${T.who} 마음`).replace('상대 쪽', `${T.partner || '상대'} 쪽`); return s; };
 
   // 역방향 네 갈래: 막힘 · 속으로 · 과잉 · 끝남 (박건·해외 블로그 정리)
   const POWER = [1, 4, 7, 8, 15, 16];
@@ -5531,7 +5553,7 @@ const READER = (() => {
     return `<div class="rd-quick">
       <p class="rd-q1"><span class="rd-tag t-${LV.key}">${ICON[LV.key]}</span><b>${esc(head)}</b></p>
       ${why}
-      <p class="rd-q3"><span>그래서</span> ${esc(polite(actLine ? softAct(actLine, LV.key) : G.do[0]))}</p>
+      <p class="rd-q3"><span>그래서</span> ${(() => { const T = third(v.q), t = esc(polite(actLine ? softAct(actLine, LV.key) : G.do[0])); return T ? `${esc(toWho(T.who))} 이렇게 전해주세요. "${t}"` : t; })()}</p>
     </div>`;
   }
   function toneWord(sc) { const k = sc > 0.15 ? 'yes' : sc < -0.15 ? 'no' : 'mid'; return `<i class="tw t-${k}">${{ yes: '좋아요', no: '조심해요', mid: '반반이에요' }[k]}</i>`; }
@@ -5600,12 +5622,12 @@ const READER = (() => {
     const adv = advCard ? `${esc(seat(split[2]))}에는 ${got(cards[split[2]])}. ${esc(polite(softAct(firstSentence(textOf(cards[split[2]], split[2])), LV.key)))} ${csrc(cards[split[2]])}` : `${esc(polite(G.do[0]))} ${esc(polite(G.do[1] || ''))}`;
     const sol = solver(cards, v.worst);
     const caution = v.worst >= 0 && v.worst !== split[2] ? `다만, ${esc(seat(v.worst))}의 ${esc(short(cards[v.worst]))} 카드가 말하는 "${esc(firstSentence(textOf(cards[v.worst], v.worst)).replace(/[.!?]$/, ''))}" 이 부분은 꼭 챙기셔야 해요.${sol ? ` 풀 열쇠는 ${esc(short(cards[sol.i]))} 카드예요. ${esc(sol.how)} ${csrc(cards[sol.i])}` : ''}` : '다만,';
-    const dont = esc(polite(G.dont));
+    const dont = esc(polite(G.dont)), TH = third(v.q);
     return `<div class="rd-tell">
-      <p class="rd-open">${esc(N)}이 ${esc(DOING[tk] || DOING.general)} 하고 계시는군요! 카드 ${cards.length}장을 종합해 보면, ${esc(fill((SUM[tk] || SUM.general)[LV.key]))}</p>
+      <p class="rd-open">${esc(N)}이 ${TH ? `${esc(TH.who)} 일로 마음 쓰고 계시는군요!` : `${esc(DOING[tk] || DOING.general)} 하고 계시는군요!`} 카드 ${cards.length}장을 종합해 보면, ${esc(fill((SUM[tk] || SUM.general)[LV.key]))}</p>
       <p class="rd-h">${esc(h1)}</p><p>${say(split[0])}</p>
       <p class="rd-h">앞으로, ${esc(pickT(HD2[al.conflict ? 'mid' : LV.key], tk))}</p><p>${al.conflict ? '다만, ' : ''}${say(split[1])} ${when}</p>
-      <p class="rd-h">${esc(pickT(HD3, tk))}</p><p>${adv} ${caution === '다만,' ? `다만, ${dont}` : `${caution} 그리고 ${dont}`}</p>
+      <p class="rd-h">${esc(pickT(HD3, tk))}</p><p>${TH && !advCard ? `${esc(toWho(TH.who))} 이렇게 전해주세요. ` : ''}${adv} ${caution === '다만,' ? `다만, ${dont}` : `${caution} 그리고 ${dont}`}</p>
       <p class="rd-close">${esc(fill(tk === 'stock' ? CHEER_STOCK[LV.key] : CHEER[LV.key]))} ${esc(pickT(ASK, tk))}</p>
     </div>`;
   }
@@ -5620,7 +5642,7 @@ const READER = (() => {
     return `${n}${c.rank === 'Ace' ? '는' : eunN(c.rank)} <b>${NUM_PLAIN[c.rank]}</b>예요. ${SUIT_KO[c.suit]}${jong(SUIT_KO[c.suit]) ? '은' : '는'} ${SUIT_PLAIN[c.suit]} 카드라서, ${SUIT_PLAIN[c.suit]} 쪽 이야기예요.`;
   }
   function revPlain(c) { const m = revMode(c); return m ? REV_TEXT[m] : (c.isReversed && c.lucky ? '거꾸로지만 이 카드는 오히려 좋게 읽어요.' : ''); }
-  return { tell, deadline, minorPlain, revPlain, quick, quickBubble, bubble, line, joiner, final, numerology, timing, lifeCard, sumCard, solver, shape, revMode, lux, isTimeQ };
+  return { third, tell, deadline, minorPlain, revPlain, quick, quickBubble, bubble, line, joiner, final, numerology, timing, lifeCard, sumCard, solver, shape, revMode, lux, isTimeQ };
 })();
 
 /* =========================================================
@@ -5660,7 +5682,9 @@ const HOOK = (() => {
   function pickQs(tk, q) {
     const key = typeof layout !== 'undefined' && layout.key === 'reunion' ? 'reunion' : (Q[tk] ? tk : 'general');
     const norm = s => (s || '').replace(/[\s?？.!]/g, '');
-    const pool = Q[key].filter(x => norm(x) !== norm(q));
+    const T = typeof READER !== 'undefined' && READER.third ? READER.third(q) : null;
+    const tq = T ? [`${T.who}, 3개월 뒤엔 어떻게 돼 있을까요?`, `${T.who}에게 지금 제일 필요한 건 뭘까요?`, T.partner ? `${T.who}의 ${T.partner}, 진심일까요?` : `${T.who}, 올해 조심할 건 뭘까요?`, T.partner ? `${T.who}${(String(T.who).slice(-1).charCodeAt(0) - 0xAC00) % 28 ? '과' : '와'} ${T.partner}, 오래 갈 수 있을까요?` : `${T.who}에게 곧 좋은 소식이 있을까요?`] : null;
+    const pool = (tq || Q[key]).filter(x => norm(x) !== norm(q));
     const seed = (chosen || []).reduce((a, c) => a + (c.id ? String(c.id).length : 1) + (c.num || 0), 0);
     const a = pool[seed % pool.length], b = pool[(seed + 1) % pool.length];
     return [a, b];
@@ -7637,6 +7661,16 @@ const PLAN = (() => {
       layout = Object.assign({}, base, { free: base.count, _freeQ: true, _n: QUOTA.used(), _m: QUOTA.max() });
       if (typeof BETA !== 'undefined') BETA.track('free_question', { n: QUOTA.used(), spread: key });
     } else layout = base;
+    const T = typeof READER !== 'undefined' && READER.third ? READER.third(userContext.customQuery) : null;
+    if (T && /^(five|reunion)$/.test(layout.key)) {
+      const who = `${T.who} 마음`, pt = `${T.partner || '상대'} 마음`;
+      const ren = x => (x === '나' ? who : x === '상대방' || x === '상대' ? pt : x);
+      layout = Object.assign({}, layout, {
+        _third: T,
+        positions: layout.positions.map(po => Object.assign({}, po, { short: ren(po.short), label: po.label.replace(/현재의 나|지금 나의 마음/, who).replace(/상대방의 상태|상대의 지금 마음/, pt) })),
+        pairs: layout.pairs.map(pa => Object.assign({}, pa, { title: pa.title.replace('나', T.who).replace('상대방', T.partner || '상대') }))
+      });
+    }
     renderDeck();
     const w = document.querySelector('.sh-wrap'); if (w) w.insertAdjacentHTML('afterbegin', spBadge(layout.key));
   };
@@ -7800,11 +7834,21 @@ const PLAN = (() => {
     let h = _rr.apply(this, arguments);
     try {
       const k = layout.key;
-      if (BADGE[k]) h = h.replace(/(<p class="rp-title">[^<]*<\/p>)/, `$1<p class="rp-spread"><b>${BADGE[k][0]}</b> ${BADGE[k][1]}</p>`);
+      if (BADGE[k]) h = h.replace(/(<p class="rp-title">[^<]*<\/p>)/, `$1<p class="rp-spread"><b>${BADGE[k][0]}</b> ${layout._third ? esc(layout.positions.map(x => x.short).join(' · ')) : BADGE[k][1]}</p>`);
       const v = verdictInfo(), tk = topicKey(v.q) || 'general', key = chosen[v.keyIdx], LV = v.level;
       const p = prof(), N = p && p.name ? `${String(p.name).trim()}님` : '고객님';
-      let sj = null, as = null;
-      if (p) { try { sj = sajuSpice(p, key, tk, N); } catch (e) { sj = null; } try { as = astroSpice(p, key, N); } catch (e) { as = null; } }
+      const TH = typeof READER !== 'undefined' && READER.third ? READER.third(v.q) : null;
+      const TEASE_RE = /<p class="rp-h">다른 눈으로 보면 \(맛보기\)<\/p>\s*<div class="rp-tease">[\s\S]*?<\/div>/;
+      let sj = null, as = null, gate = '';
+      if (TH) h = h.replace(TEASE_RE, ''); // 남의 일: 내 사주·별자리는 빼기
+      else if (!p) {
+        h = h.replace(TEASE_RE, '');
+        gate = `<div class="sp-gate"><p class="sp-gate-h">🔒 사주 · 별자리 점사가 아직 빠져 있어요</p>
+          <p>로그인하면 이 질문에 <span class="sc sc-sj">사주</span>와 <span class="sc sc-as">별자리</span>가 더해져서, 언제 힘이 붙는지 더 자세한 미래를 알려드려요.</p>
+          <button type="button" class="coin-go" data-more="me" data-gate>내 정보 넣고 자세히 보기</button>
+          <p class="sp-gate-s">생년월일 · 태어난 시간 · 출생지만 넣으면 돼요 · 30초</p></div>`;
+      }
+      if (p && !TH) { try { sj = sajuSpice(p, key, tk, N); } catch (e) { sj = null; } try { as = astroSpice(p, key, N); } catch (e) { as = null; } }
       if (sj || as) {
         const spice = `<p class="rd-h">사주와 별자리로 한 번 더 보면</p>${sj ? sj.html : ''}${as ? as.html : ''}`;
         if (h.includes('<p class="rd-close">')) h = h.replace('<p class="rd-close">', spice + '<p class="rd-close">');
@@ -7816,12 +7860,12 @@ const PLAN = (() => {
         ['답', `<span class="rd-tag t-${LV.key}">${{ yes: '좋아요', mid: '반반', no: '조심' }[LV.key]}</span> ${esc(v.topic[LV.key])}`],
         ['핵심 카드', `${esc(layout.positions[v.keyIdx].short)} · ${esc(nmOf(key))}${key.isReversed ? ' (거꾸로)' : ''} <span class="sc sc-t">타로</span>`],
         ['시기', esc(tm.text)],
-        ['할 일', esc(G.do[0])],
+        ['할 일', (TH ? `${esc(TH.who)}${/[님분]$/.test(TH.who) ? '께' : '에게'} · ` : '') + esc(G.do[0])],
         ['조심', esc(G.dont)]
       ];
       if (sj) rows.push(['사주', `${esc(sj.sum)} <span class="sc sc-sj">사주</span>`]);
       if (as) rows.push(['별자리', `${esc(as.sum)} <span class="sc sc-as">별자리</span>`]);
-      const box = `<div class="sp-sum"><p class="sp-sum-h">한눈에 정리</p><dl>${rows.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl>
+      const box = gate + `<div class="sp-sum"><p class="sp-sum-h">한눈에 정리</p><dl>${rows.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl>
         ${sj || as ? `<div class="sp-sum-go"><button type="button" class="rp-tbtn" data-quick="saju" data-topic="${tk}">사주 리포트 보기</button><button type="button" class="rp-tbtn" data-quick="astro" data-topic="${tk}">별자리 리포트 보기</button></div>` : ''}</div>`;
       const i = h.indexOf('<div class="rd-tell">');
       const j = i >= 0 ? h.indexOf('</div>', i) : -1;
@@ -7835,6 +7879,29 @@ const PLAN = (() => {
     if (/^(choice_deep|story_)/.test(product)) return COIN.charge(product, unlock, PAY_ORIG);
     return PAY_ORIG(product, unlock);
   };
+
+  /* 내 정보 넣고 오면: 방금 풀이에 사주·별자리 붙여주기 */
+  let gateQ = null;
+  document.addEventListener('click', e => { if (e.target.closest && e.target.closest('[data-gate]')) { gateQ = { q: userContext.customQuery, cards: chosen.slice(), lay: layout }; if (typeof BETA !== 'undefined') BETA.track('gate_click', {}); } }, true);
+  new MutationObserver(() => {
+    if (!gateQ || document.getElementById('mb-sheet')) return;
+    const g = gateQ; gateQ = null; const p = prof(); if (!p) return;
+    try {
+      const keep = [userContext, chosen, layout];
+      userContext = { customQuery: g.q }; chosen = g.cards; layout = g.lay;
+      const v = verdictInfo(), tk = topicKey(v.q) || 'general', key = chosen[v.keyIdx];
+      const N = p.name ? `${String(p.name).trim()}님` : '고객님';
+      let sj = null, as = null; try { sj = sajuSpice(p, key, tk, N); } catch (e) { /* 무시 */ } try { as = astroSpice(p, key, N); } catch (e) { /* 무시 */ }
+      [userContext, chosen, layout] = keep;
+      if (!sj && !as) return;
+      if (typeof BETA !== 'undefined') BETA.track('gate_done', {});
+      document.querySelectorAll('.sp-gate').forEach(x => x.remove());
+      const rows = [sj && ['사주', `${esc(sj.sum)} <span class="sc sc-sj">사주</span>`], as && ['별자리', `${esc(as.sum)} <span class="sc sc-as">별자리</span>`]].filter(Boolean);
+      botMsg(`<div class="rp"><p class="rd-h">사주와 별자리로 한 번 더 보면</p>${sj ? sj.html : ''}${as ? as.html : ''}
+        <div class="sp-sum"><p class="sp-sum-h">한눈에 정리 · 더하기</p><dl>${rows.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl>
+        <div class="sp-sum-go"><button type="button" class="rp-tbtn" data-quick="saju" data-topic="${tk}">사주 리포트 보기</button><button type="button" class="rp-tbtn" data-quick="astro" data-topic="${tk}">별자리 리포트 보기</button></div></div></div>`);
+    } catch (e) { /* 무시 */ }
+  }).observe(document.body, { childList: true });
 
   function start() { mountHome(); COIN.start(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
