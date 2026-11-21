@@ -7712,7 +7712,7 @@ const PLAN = (() => {
     for (let i = 0; i < L.free; i++) { const k = i; setTimeout(() => botMsg(cardBubble(chosen[k], k)), t); t += 700; }
     L.pairs.filter(p => p.free || L._freeQ).forEach(p => { setTimeout(() => botMsg(pairBubble(chosen[p.a], chosen[p.b], p.title)), t); t += 700; });
     // 무료 질문은 종합 풀이가 다 붙을 때까지 제목을 화면 위에 붙잡아 둔다 (읽는 중 맨 아래로 튀는 현상 방지, 2026-11-21)
-    setTimeout(() => { renderPaywall(); setTimeout(() => readDone(), 600); }, t);
+    setTimeout(() => { renderPaywall(); if (!L._freeQ) setTimeout(() => readDone(), 600); }, t); // 무료 질문은 종합 풀이·끝 화면이 붙은 뒤(renderPaywall 안)에서 해제
   };
 
   /* ---------- 결제창: 무료 질문은 바로 종합, 아니면 코인 ---------- */
