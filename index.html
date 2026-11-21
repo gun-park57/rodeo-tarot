@@ -5098,32 +5098,45 @@ const QC = (() => {
       const jg = w => { const l = String(w).slice(-1); if (/\d/.test(l)) return '0136780'.includes(l); const x = l.charCodeAt(0) - 0xAC00; return x >= 0 && x < 11172 && x % 28 !== 0; };
       const desc = (c, f, m) => `${m ? '메이저' : '마이너'} 카드 <b>${esc(base(c))}</b>${jg(base(c)) ? '이' : '가'} ${!c.isReversed ? '정방향으로' : f ? '거꾸로(이 카드는 거꾸로가 좋은 뜻)' : '거꾸로'}`;
       // 비교 순서 (2026-11-19 박건 수정): ① 메이저 > 마이너 (메이저는 거꾸로여도) ② 같은 종류면 정방향 > 거꾸로 ③ 질문에 맞는 카드 ④ 카드 점수
-      if (ma !== mb) { win = ma ? 0 : 1; const wf = ma ? fa : fb; why = wf ? '메이저 카드는 마이너 카드보다 힘이 세요. 그래서 메이저 카드 쪽이 이겨요.' : `${esc(pair[win])} 카드는 거꾸로지만, 메이저 카드라서 마이너 카드보다 힘이 세요.`; }
-      else if (fa !== fb) { win = fa ? 0 : 1; why = `둘 다 ${ma ? '메이저' : '마이너'} 카드라, 정방향인 쪽이 이겨요.`; }
-      else if (Math.abs(sa - sb) > 0.05) { win = sa > sb ? 0 : 1; why = `둘 다 ${ma ? '메이저' : '마이너'} 카드에 ${fa ? '정방향이라서' : '거꾸로라서'}, 카드 뜻으로 비교했어요. ${esc(base(win ? cb : ca))} 쪽 뜻이 더 좋아요.`; }
-      const compare = `<b>${esc(pair[0])}</b>에는 ${desc(ca, fa, ma)} 나왔고, <b>${esc(pair[1])}</b>에는 ${desc(cb, fb, mb)} 나왔어요.`;
+      // 2026-11-21: 이유는 카드 등급 설명 대신 사람이 옆에서 말해 주는 이야기로 (비교 규칙은 그대로)
+      let reason = '';
+      if (ma !== mb) { win = ma ? 0 : 1; reason = '흐름 자체가 더 크게 받쳐주는'; }
+      else if (fa !== fb) { win = fa ? 0 : 1; reason = '막힘 없이 바로 풀리는'; }
+      else if (Math.abs(sa - sb) > 0.05) { win = sa > sb ? 0 : 1; reason = '조금 더 편하게 풀리는'; }
+      const META = c => (typeof CARD_META !== 'undefined' && CARD_META[c.id]) || null;
+      const kt1 = c => String(typeof keyText === 'function' ? keyText(c) : '').split(/(?<=[.!?])\s/)[0];
+      const dot = t => (t && !/[.!?]$/.test(t) ? t + '.' : t || '');
+      const first = t => String(t || '').split(/(?<=[.!?])\s/)[0];
+      const qtk = typeof topicKey === 'function' ? topicKey(q) : null; // 질문 주제(이직·연애 등)가 있으면 그 주제 말로
+      const metaAt = (c, k) => { const m = META(c); return m ? dot((c.isReversed ? m.rv : m.up)[k]) : ''; };
+      const lineOf = c => dot(first(qtk && typeof topicLine === 'function' ? topicLine(c, qtk) : '')) || metaAt(c, 1) || kt1(c);
+      const okBox = t => t && /요[.!?]?$/.test(t) && !/나와요|뜻하기도|숫자|상징/.test(t);
+      const boxOf = c => [qtk ? metaAt(c, 1) : '', dot(first(qtk && typeof topicLine === 'function' ? topicLine(c, qtk) : '')), metaAt(c, 0), metaAt(c, 1)].find(t => okBox(t) && t !== lineOf(c)) || '';
+      const ctag = c => `<span class="src">${esc(base(c))}${c.isReversed ? ' 거꾸로' : ''}</span>`;
+      const story = `<b>${esc(pair[0])}</b> 쪽은 ${esc(lineOf(ca))} ${ctag(ca)} <b>${esc(pair[1])}</b> 쪽은 ${esc(lineOf(cb))} ${ctag(cb)}`;
+      why = win == null ? `${story} 두 쪽 힘이 비슷해요.` : `${story} 그래서 ${reason} <b>${esc(pair[win])}</b> 쪽이 더 나아요.`;
       const tag = s => s > 0.15 ? '<span class="rd-tag t-yes">좋아요</span>' : s >= -0.15 ? '<span class="rd-tag t-mid">반반</span>' : '<span class="rd-tag t-no">조심</span>';
       const row = (c, name, s, k) => `<div class="ch-col${win === k ? ' ch-win' : ''}">${win === k ? '<span class="ch-badge">추천</span>' : ''}<p class="ch-name">${esc(name)}</p>${art(c)}<p class="font-bold gold-text">${esc(nm(c))}</p>
-        <p class="text-[13px]"><span class="src">${c.type === 'major' ? '메이저' : '마이너'}</span> <span class="src">${!c.isReversed ? '정방향' : c.lucky ? '거꾸로·좋은 뜻' : '거꾸로'}</span> ${tag(s)}</p>
-        <p class="rp-infer">${INFER.traits(c).text}</p></div>`;
+        <p class="text-[13px]">${c.isReversed ? '<span class="src">거꾸로</span> ' : ''}${tag(s)}</p>
+        ${boxOf(c) ? `<p class="rp-infer">${esc(boxOf(c))}</p>` : ''}</div>`;
       let N = '고객님'; try { const p = JSON.parse(localStorage.getItem('rodeo_profile_v1') || 'null'); if (p && p.name) N = String(p.name).trim() + '님'; } catch (e) { /* 무시 */ }
       const jong = w => { const x = String(w).slice(-1).charCodeAt(0) - 0xAC00; return x >= 0 && x < 11172 && x % 28 !== 0; };
-      const open = `${esc(N)}, <b>${esc(pair[0])}</b>${jong(pair[0]) ? '과' : '와'} <b>${esc(pair[1])}</b> 사이에서 고민하고 계시는군요! 두 장을 비교해 보면, ${compare}`;
+      const open = `${esc(N)}, <b>${esc(pair[0])}</b>${jong(pair[0]) ? '과' : '와'} <b>${esc(pair[1])}</b> 사이에서 고민하고 계시는군요!`;
       const yo = w => jong(w) ? '이에요' : '예요';
       const pick = win == null ? '둘 다 비슷해요. 지금 더 끌리는 쪽이 정답이에요' : `제 추천은 <b>${esc(pair[win])}</b>${yo(pair[win])}`;
-      let verdict = `<p class="ch-pick">${pick}</p><p class="ch-why">${open} ${win == null ? '두 카드 힘이 거의 같아요. 지금 더 끌리는 쪽을 고르시면 돼요.' : `${why} 그래서 <b>${esc(pair[win])}</b> 쪽을 추천드려요.`}</p>`;
+      let verdict = `<p class="ch-pick">${pick}</p><p class="ch-why">${open} ${win == null ? `${why} 지금 더 끌리는 쪽을 고르시면 돼요.` : why}</p>`;
       // 약 질문 (2026-11-20 박건: 답은 분명하게, 대신 끊는 쪽은 "의사와 줄여보기"로, 바로 아래 안내문)
       const MED = MED_RE.test(q);
       if (MED) {
         const M = c => (typeof CARD_META !== 'undefined' && CARD_META[c.id]) || null;
         const read = c => { const m = M(c); if (!m) return ''; const g = !c.isReversed || c.lucky; return `${m.sym}이에요. ${(g ? m.up : m.rv)[1]}`; };
         const stopIdx = STOP_RE.test(pair[0]) ? 0 : STOP_RE.test(pair[1]) ? 1 : -1;
-        let mp = pick, tail = win == null ? '두 카드 힘이 거의 같아요.' : `${why}`;
+        let mp = pick, tail = win == null ? `${story} 두 카드 힘이 거의 같아요.` : story; // 약 질문은 '더 나아요' 단정 없이 이야기만, 결론은 아래 의사 안내로
         if (win != null && stopIdx >= 0) {
           const wc = win ? cb : ca;
           if (win === stopIdx) { mp = '카드는 <b>줄여갈 수 있는 쪽</b>을 가리켜요'; tail += ` 카드가 이쪽에 힘을 실어줘요. 다만 줄이는 건 혼자 정할 일이 아니에요. 다음 진료 때 <b>"줄여봐도 될까요?"</b> 하고 의사에게 먼저 물어보세요. <b>혼자 갑자기 끊지는 마세요.</b>`; }
           else { mp = '제 추천은 <b>드시는 쪽</b>이에요'; tail += ` 지금은 혼자 버티기보다 도움을 받는 게 맞아요. <b>처방받은 대로 드시면서</b> 마음을 쉬게 해주세요.`; }
-        } else if (win != null) tail += ` 그래서 <b>${esc(pair[win])}</b> 쪽이에요.`;
+        }
         const det = [0, 1].map(k => { const c = k ? cb : ca; return `<div class="ch-tc${win === k ? ' ch-tc-win' : ''}"><p class="ch-tn">${esc(pair[k])} · ${esc(nm(c))}</p><p>${esc(read(c))}</p></div>`; }).join('');
         verdict = `<p class="ch-pick">${mp}</p><p class="ch-why">${open} ${tail}</p>
           <div class="ch-teach"><p class="ch-th">두 카드, 이렇게 읽어요</p>${det}</div>
@@ -5132,7 +5145,7 @@ const QC = (() => {
       botMsg(`<div class="space-y-1.5"><p class="text-xs gold-text font-bold">양자택일 타로</p>
         <div class="ch-grid">${row(ca, pair[0], sa, 0)}${row(cb, pair[1], sb, 1)}</div>
         ${verdict}
-        <p class="text-[11px] text-purple-300/70">먼저 말한 쪽이 왼쪽 카드예요. 메이저 카드인지, 정방향인지 순서로 비교했어요.</p>
+        <p class="text-[11px] text-purple-300/70">먼저 말한 쪽이 왼쪽 카드예요. 재미와 참고용이에요.</p>
         ${win != null && IMPORTANT.test(q) && !MED ? deepHook(pair, win, win ? cb : ca) : ''}</div>`);
       if (typeof BETA !== 'undefined') BETA.track('choice_pick');
       if (win != null && IMPORTANT.test(q) && !MED) { LAST = { q, pair, win, card: win ? cb : ca }; if (typeof BETA !== 'undefined') BETA.track('choice_hook_view'); }
