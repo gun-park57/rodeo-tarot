@@ -3817,13 +3817,9 @@ function cardBubble(card, posIndex) {
       <p class="plain-main rd-bub">${typeof READER !== 'undefined' ? READER.quickBubble(card, posIndex) : esc(plain || r.text)}</p>
       ${card.isReversed && card.lucky ? '<p class="rev-note">🔄 거꾸로 나왔지만, 이 카드는 거꾸로일 때 오히려 좋은 뜻이에요.</p>' : ''}
       </div></div>
-      <details class="deep" open><summary>자세히</summary>
-        ${typeof READER !== 'undefined' && READER.cardStory(card, posIndex) ? `<p>${READER.cardStory(card, posIndex)}</p>` : ''}
-        ${plain && !(card.isReversed && card.lucky) ? `<p><b>원래 뜻</b> ${esc(r.text)}</p>` : ''}
-        ${r.practical ? `<p><b>한 줄 팁</b> ${esc(r.practical)}</p>` : ''}
-        ${extra && card.type !== 'minor' ? `<p>${esc(extra)}</p>` : ''}
-
-      </details>
+      ${typeof READER !== 'undefined' && READER.cardStory(card, posIndex) ? `<details class="deep" open><summary>자세히</summary>
+        <p>${READER.cardStory(card, posIndex)}</p>
+      </details>` : ''}
     </div>`;
 }
 
@@ -4445,7 +4441,7 @@ function renderReport() {
   const domAns = dom && dom.key !== 'time' ? (INFER.one(key, v.q) || '').split('👉 ')[1] : '';
   const flow = summaryLines(), combo = comboLines(chosen).filter(l => !/정방향|역방향/.test(l));
   // 타로사처럼: 카드마다 질문이랑 이어서 한두 문장
-  const reads = chosen.map((c, i) => `<p class="rd-card"><span class="rd-pos">${esc(L.positions[i].short)}</span>${READER.joiner(i ? v.scores[i - 1] : null, v.scores[i], i)}<b>${esc(READER.leadOf(i))}</b> ${READER.cardStory(c, i, true)}</p>`).join('');
+  const reads = chosen.map((c, i) => `<p class="rd-card"><span class="rd-pos">${esc(L.positions[i].short)}</span>${READER.joiner(i ? v.scores[i - 1] : null, v.scores[i], i)}${(() => { const st = READER.cardStory(c, i, true); return `${READER.seatOk(st) ? `<b>${esc(READER.leadOf(i))}</b> ` : ''}${st}`; })()}</p>`).join('');
   return `<div class="rp">
     <p class="rp-title">${esc((TOPIC_NAME[tk] || '전체 운'))} 점사</p>
     ${v.q ? `<p class="rp-q">“${esc(v.q.replace(/\s*\([^)]*\)\s*$/, ''))}”</p>` : ''}
@@ -5435,6 +5431,12 @@ const READER = (() => {
     if (a !== 0 && b !== 0) return '근데 ';
     return '그리고 ';
   }
+  // 말머리 충돌: 문장이 '지금/이제/앞으로…'로 시작하면 '처음엔·지금은' 같은 말머리를 붙이지 않는다 (2026-11-21)
+  const TIMEW = /^(지금|이제|앞으로|곧|처음|요즘|당장|아직)/;
+  const seatOk = t => !TIMEW.test(String(t || '').replace(/<[^>]+>/g, '').trim());
+  // 거꾸로 문구가 카드 문장과 같은 말이면 빼기
+  const REV_DUP = { blocked: /막혀|막히|늦어|밀려/, inward: /안 드러|숨기|숨겨/, excess: /과해|과한|너무/, ended: /고비|지나가|끝나/ };
+  const revDup = (rm, t) => !!(REV_DUP[rm] && REV_DUP[rm].test(t));
   // 카드 상세 '자세히': 옆에서 말해 주는 이야기 + 끝 태그 (2026-11-21, 카드 수업식 줄 제거)
   function cardStory(c, i, full) {
     const q = userContext.customQuery || '', tk = topicKey(q) || 'general';
@@ -5447,7 +5449,7 @@ const READER = (() => {
     if (court && ((PERSON_POS[layout.key] || []).includes(i) || ['love', 'people', 'work'].includes(tk))) parts.push(`사람으로 보면 <b>${COURT_PERSON[c.rank]} ${SUIT_PERSON[c.suit]}</b>이에요.`);
     if (rest) parts.push(esc(rest));
     const m = lux(c, q, tk); if (m) parts.push(esc(m));
-    const rm = revMode(c); if (rm) parts.push(`<span class="rd-rev">${REV_TEXT[rm]}</span>`);
+    const rm = revMode(c); if (rm && !revDup(rm, rest)) parts.push(`<span class="rd-rev">${REV_TEXT[rm]}</span>`);
     return parts.length ? `${parts.join(' ')} ${csrc(c)}` : '';
   }
   function bubble(card, i) {
@@ -5630,6 +5632,7 @@ const READER = (() => {
     const SEAT = { 과거: '처음엔', 현재: '지금은', 미래: '앞으로는' }, FLOW = { 과거: '지나온', 현재: '지금', 미래: '앞으로' };
     const sg2 = x => x > 0.15 ? 1 : x < -0.15 ? -1 : 0, scs = cards.map(cardScore);
     const seatOf = i => { const p = layout.positions[i].short; return SEAT[p] || `${p} 쪽은`; };
+    const sayAt = (i, t) => `${seatOk(t) ? esc(seatOf(i)) + ' ' : ''}${esc(t)}`;
     const flowOf = i => { const p = layout.positions[i].short; return FLOW[p] ? `${FLOW[p]} 흐름` : `${p} 쪽`; };
     const sup = cards[al.ri];
     let oi = -1;
@@ -5637,9 +5640,17 @@ const READER = (() => {
     let why;
     if (oi >= 0) {
       const opp = cards[oi];
-      why = `<p class="rd-q2" data-dir="${sgn}" data-sc="${cardScore(sup)}"><span>왜?</span> ${esc(seatOf(oi))} ${esc(firstSentence(textOf(opp, oi)))} 근데 ${esc(flowOf(al.ri))}이 더 세게 ${sgn > 0 ? '받쳐줘서, 결국엔 풀리는 쪽으로 기울어요' : '눌러서, 지금은 막히는 쪽으로 기울어요'}. ${csrc(opp)} ${csrc(sup)}</p>`;
+      why = `<p class="rd-q2" data-dir="${sgn}" data-sc="${cardScore(sup)}"><span>왜?</span> ${sayAt(oi, firstSentence(textOf(opp, oi)))} 근데 ${esc(flowOf(al.ri))}이 더 세게 ${sgn > 0 ? '받쳐줘서, 결국엔 풀리는 쪽으로 기울어요' : '눌러서, 지금은 막히는 쪽으로 기울어요'}. ${csrc(opp)} ${csrc(sup)}</p>`;
     } else {
-      why = `<p class="rd-q2" data-dir="${sgn}" data-sc="${cardScore(sup)}"><span>왜?</span> ${esc(seatOf(al.ri))} ${esc(firstSentence(textOf(sup, al.ri)))} ${sgn > 0 ? '이 흐름이 계속 받쳐줘요.' : sgn < 0 ? '이 부분이 계속 발목을 잡아요.' : '아직 어느 쪽으로도 안 기울었어요.'} ${csrc(sup)}</p>`;
+      // 반반: 제일 좋은 카드와 제일 걸리는 카드를 같이
+      let hi = -1, lo = -1;
+      scs.forEach((x, i) => { if (sg2(x) > 0 && (hi < 0 || x > scs[hi])) hi = i; if (sg2(x) < 0 && (lo < 0 || x < scs[lo])) lo = i; });
+      if (!sgn && hi >= 0 && lo >= 0) {
+        const [f, g] = lo < hi ? [lo, hi] : [hi, lo];
+        why = `<p class="rd-q2" data-dir="0" data-sc="${cardScore(sup)}"><span>왜?</span> ${sayAt(f, firstSentence(textOf(cards[f], f)))} 근데 ${sayAt(g, firstSentence(textOf(cards[g], g)))} 좋은 쪽과 걸리는 쪽이 팽팽해서, 아직 어느 쪽으로도 안 기울었어요. ${csrc(cards[f])} ${csrc(cards[g])}</p>`;
+      } else {
+        why = `<p class="rd-q2" data-dir="${sgn}" data-sc="${cardScore(sup)}"><span>왜?</span> ${sayAt(al.ri, firstSentence(textOf(sup, al.ri)))} ${sgn > 0 ? '이 흐름이 계속 받쳐줘요.' : sgn < 0 ? '이 부분이 계속 발목을 잡아요.' : '아직 어느 쪽으로도 안 기울었어요.'} ${csrc(sup)}</p>`;
+      }
     }
     const head = `${v.topic[LV.key]}${timeQ ? ` ${deadline(v.q, tm, LV.key) || tm.text + ' 보여요.'}` : ''}`;
     return `<div class="rd-quick">
@@ -5705,7 +5716,7 @@ const READER = (() => {
     const say = idx => idx.filter(i => cards[i]).map((i, n) => {
       const prev = n ? cardScore(cards[idx[n - 1]]) : null, cur = cardScore(cards[i]);
       const sg = x => x > 0.15 ? 1 : x < -0.15 ? -1 : 0; const j = !n ? '' : (sg(prev) * sg(cur) < 0 ? '그런데 ' : '그리고 ');
-      if (tk === 'biz' && typeof bizStory === 'function' && P[i].short in SAYP) { const st = bizStory(cards[i]); if (st) return `${j}${SAYP[P[i].short]}${esc(st)} ${csrc(cards[i])}`; }
+      if (tk === 'biz' && typeof bizStory === 'function' && P[i].short in SAYP) { const st = bizStory(cards[i]); if (st) return `${j}${seatOk(st) ? SAYP[P[i].short] : ''}${esc(st)} ${csrc(cards[i])}`; }
       return `${j}${esc(seat(i))}에는 ${got(cards[i])}. ${esc(firstSentence(textOf(cards[i], i)))} ${csrc(cards[i])}`;
     }).join(' ');
     const a1 = split[0].reduce((s, i) => s + cardScore(cards[i]), 0) / split[0].length;
@@ -5737,7 +5748,7 @@ const READER = (() => {
     return `${n}${c.rank === 'Ace' ? '는' : eunN(c.rank)} <b>${NUM_PLAIN[c.rank]}</b>예요. ${SUIT_KO[c.suit]}${jong(SUIT_KO[c.suit]) ? '은' : '는'} ${SUIT_PLAIN[c.suit]} 카드라서, ${SUIT_PLAIN[c.suit]} 쪽 이야기예요.`;
   }
   function revPlain(c) { const m = revMode(c); return m ? REV_TEXT[m] : (c.isReversed && c.lucky ? '거꾸로지만 이 카드는 오히려 좋게 읽어요.' : ''); }
-  return { third, tell, deadline, minorPlain, revPlain, quick, quickBubble, bubble, cardStory, leadOf, line, joiner, final, numerology, timing, lifeCard, sumCard, solver, shape, revMode, lux, isTimeQ };
+  return { third, tell, deadline, minorPlain, revPlain, quick, quickBubble, bubble, cardStory, seatOk, leadOf, line, joiner, final, numerology, timing, lifeCard, sumCard, solver, shape, revMode, lux, isTimeQ };
 })();
 
 /* =========================================================
