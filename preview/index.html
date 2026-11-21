@@ -4735,6 +4735,63 @@ const QC = (() => {
     ['한 단계 완성돼요. 더 큰 시장으로 나갈 수 있어요.', '거의 다 왔는데 마무리가 덜 됐어요.']
   ];
   MB.forEach((x, i) => { MAJOR_TOPIC[i].biz = x; });
+
+  /* 사업 풀이 스토리텔링 문구 (2026-11-21): 카드 설명이 아니라 사람이 옆에서 말해 주듯, 2문장으로 풀어서.
+     카드 이름은 문장에 넣지 않고 끝에 작은 태그로만 붙인다. 문장은 때(처음엔/지금은/앞으로는)에 상관없이 읽히게 썼다. */
+  window.BIZ_STORY = {
+    major: [
+      ['부족한 부분이 있어도 일단 작게 시작해 보는 쪽이 잘 맞아요. 시작하고 나서 사람들 반응을 보며 고쳐 가도 늦지 않아요.', '충분히 준비하지 않은 채 덜컥 지르면 돈만 나가기 쉬워요. 한 번만 멈춰서 숫자와 계획을 점검하고 움직여요.'],
+      ['내가 가진 기술이 바로 상품이 될 수 있어요. 만들 실력은 이미 충분하니 자신 있게 내보여도 돼요.', '말과 계획은 큰데 실제 실행이 따라오지 못하고 있어요. 큰 그림은 잠시 내려놓고 오늘 할 수 있는 한 가지부터 끝내 봐요.'],
+      ['아직 널리 알려지진 않았지만 이미 찾는 사람이 조용히 있어요. 서두르지 말고 차분히 다듬으면 그 사람들이 단골이 돼요.', '시장에 대한 정보가 아직 부족해요. 고객이 정말 원하는 게 뭔지 직접 들어보는 것부터 시작해요.'],
+      ['정성을 들인 만큼 쑥쑥 자라는 흐름이에요. 매출이 눈에 띄게 불어날 수 있어요.', '버는 돈보다 나가는 돈이 많아서 속이 타는 상태예요. 비용 구조부터 차분히 정리하면 숨통이 트여요.'],
+      ['구조와 체계를 잘 잡으면 오래 가는 사업이 돼요. 규칙과 틀을 세워 두는 시간이 나중에 큰 힘이 돼요.', '모든 걸 혼자 쥐고 있다 보니 어딘가에서 막히고 있어요. 맡길 수 있는 건 믿고 맡겨야 속도가 나요.'],
+      ['이미 검증된 방식이나 좋은 멘토를 따르면 안전하게 갈 수 있어요. 처음부터 새로 만들기보다 잘하는 사람에게 배워 보세요.', '남들이 하는 걸 그대로 따라 하면 내 사업만의 차별점이 안 생겨요. 나만 줄 수 있는 한 가지를 찾아야 해요.'],
+      ['좋은 파트너와 손을 잡으면 일이 크게 커져요. 고객 반응도 호의적이어서 분위기가 좋아요.', '같이 하는 사람과 보는 방향이 어긋나고 있어요. 더 커지기 전에 서로 원하는 걸 솔직하게 맞춰 봐요.'],
+      ['마음먹고 밀어붙이면 시장을 먼저 잡을 수 있어요. 지금은 속도가 가장 큰 무기예요.', '방향 없이 달리기만 하면 어느 순간 지쳐서 멈추게 돼요. 어디로 가는지부터 한 번 더 확인해요.'],
+      ['당장 결과가 안 보여도 꾸준히 버티면 팬이 생겨요. 조급해하지 않고 계속 가는 게 가장 좋은 전략이에요.', '요즘 자신감이 많이 떨어져 있어요. 큰 성공보다 작은 성공을 하나씩 쌓으면서 힘을 되찾아요.'],
+      ['한 분야를 깊게 파고들수록 그게 나만의 무기가 돼요. 여러 개를 건드리기보다 하나를 제대로 하는 게 유리해요.', '열심히 만들기만 하고 세상에 알리지 않고 있어요. 좋은 걸 만들었다면 이제 사람들에게 보여 줄 차례예요.'],
+      ['좋은 타이밍이 다가오고 있어요. 때가 왔을 때 올라타면 단숨에 커질 수 있어요.', '타이밍이 조금 엇갈리고 있어요. 서두르기보다 출시 시기를 다시 점검해 보세요.'],
+      ['들인 만큼 정직하게 돌아오는 흐름이에요. 계약이나 정산도 깔끔하게 정리될 거예요.', '계약이나 정산, 약관에서 문제가 생길 수 있어요. 서류는 꼼꼼히 읽고 확인한 뒤에 사인해요.'],
+      ['앞으로 나아가기보다 멈춰서 방향을 다시 볼 때예요. 이 쉬어가는 시간이 더 좋은 선택을 도와줘요.', '멈춰 있던 일이 다시 굴러가기 시작해요. 기다린 보람이 서서히 보일 거예요.'],
+      ['지금 방식은 정리하고 새 판을 짜야 살아날 수 있어요. 끝내는 게 아쉬워도 새로운 시작을 위한 정리예요.', '잘 안 되는 걸 계속 붙잡고 있어요. 미련을 내려놓고 정리해야 다음 단계로 갈 수 있어요.'],
+      ['천천히 균형을 맞춰 가면 오래 가는 사업이 돼요. 대신 시간이 걸리니 느긋하게 가는 마음이 필요해요.', '이것저것 섞다 보니 내 색깔이 흐려지고 있어요. 가장 나다운 한 가지를 중심에 다시 세워요.'],
+      ['사람들이 확 끌리는 매력적인 상품이에요. 빠져드는 재미가 가장 큰 무기가 돼요.', '쉽게 벌 수 있다는 유혹은 조심해야 해요. 눈앞의 돈보다 신뢰를 쌓는 게 먼저예요.'],
+      ['예상하지 못한 변수로 갑자기 판이 바뀔 수 있어요. 미리 대비책을 마련해 두면 크게 흔들리지 않아요.', '큰 위기는 이미 한고비 넘겼어요. 이제 무너진 부분을 수습하고 다시 나아가면 돼요.'],
+      ['입소문이 퍼질 수 있는 흐름이에요. SNS에서 갑자기 화제가 될 가능성도 있어요.', '기대가 너무 커져서 현실과 차이가 생기기 쉬워요. 숫자를 냉정하게 보면서 차분히 가요.'],
+      ['아직 안개가 낀 듯 불확실한 상태예요. 확인되지 않은 정보나 소문은 그대로 믿지 마세요.', '불안하던 마음이 걷히고 방향이 보이기 시작해요. 흐릿하던 부분이 조금씩 선명해질 거예요.'],
+      ['아주 좋은 흐름이에요. 널리 알려지고 눈에 보이는 성과가 나올 가능성이 커요.', '반응은 오고 있지만 생각했던 것보다 조금 작아요. 한꺼번에 기대하기보다 조금씩 키워 가요.'],
+      ['좋은 소식이 찾아와요. 한 번 더 도전해 볼 만한 때예요.', '기다리는 소식이 예상보다 늦어지고 있어요. 조급해하지 말고 준비하며 기다려요.'],
+      ['한 단계가 멋지게 완성되는 흐름이에요. 더 큰 시장으로 나가는 문이 열려 있어요.', '거의 다 왔는데 마무리가 조금 덜 됐어요. 마지막 한 걸음까지 챙기면 결실을 얻어요.']
+    ],
+    ace: { wands: '새 아이템이나 홍보 기회가 찾아와요. 부담 갖지 말고 일단 올려 보세요.', cups: '첫 팬, 첫 단골이 생기는 흐름이에요. 반응이 좋으니 그 마음을 소중히 이어가요.', swords: '막혀 있던 기획이 확 풀려요. 좋은 아이디어가 떠오를 수 있어요.', pentacles: '첫 매출이 들어와요. 금액이 작아도 의미 있는 시작이에요.' },
+    rank: {
+      Ace: ['{s} 쪽에서 새로운 기회가 열려요. 작은 시도라도 지금 시작하면 좋은 출발이 돼요.', '시작하려던 일이 자꾸 뒤로 밀리고 있어요. 이유를 하나씩 찾아서 막힌 부분부터 풀어요.'],
+      2: ['두 가지 방향 사이에서 고민하는 중이에요. 충분히 비교해 보고 하나를 정하면 길이 열려요.', '결정을 못 해서 제자리에 머물러 있어요. 완벽한 답을 찾으려 하기보다 하나를 골라 먼저 움직여요.'],
+      3: ['같이 하는 사람이 있으면 성과가 나와요. 서로 역할을 나누면 일이 훨씬 수월해져요.', '함께하는 사람과 손발이 잘 안 맞고 있어요. 역할과 기대를 솔직하게 다시 맞춰 봐요.'],
+      4: ['기반이 단단하게 잡혀 가요. 버틸 수 있는 힘이 생기고 있어요.', '안정적이긴 한데 성장이 멈춘 느낌이에요. 안전한 자리에서 한 걸음만 더 나가 봐요.'],
+      5: ['경쟁이 붙고 시행착오도 겪을 수 있어요. 그 과정에서 배운다는 마음으로 가면 돼요.', '부딪히던 문제들이 정리되기 시작해요. 한숨 돌리고 정리하는 시간을 가져요.'],
+      6: ['반응이 오고 일이 술술 풀려요. 고객들이 좋아해 주는 분위기를 이어가요.', '반응이 기대보다 약해요. 고객 눈높이에서 다시 한 번 바라보면 답이 보여요.'],
+      7: ['혼자 결단해야 하는 때예요. 흔들리지 않고 나만의 색깔을 지키는 게 중요해요.', '혼자 버티다가 지쳐 가고 있어요. 방식을 바꾸거나 도움을 받아 숨통을 틔워요.'],
+      8: ['일이 빠르게 진행되고 속도가 붙어요. 이 흐름을 놓치지 말고 올라타세요.', '진행이 막히고 늦어지고 있어요. 서두르지 말고 막힌 이유부터 확인해요.'],
+      9: ['목표가 눈앞이에요. 끝까지 가면 좋은 결과가 기다려요.', '마지막 고비에서 마음이 흔들리고 있어요. 여기까지 온 걸 믿고 조금만 더 가요.'],
+      10: ['한 단계를 마무리하고 다음 판으로 넘어가요. 지금까지의 성과를 바탕으로 새 단계를 준비해요.', '일을 너무 많이 벌려서 버거워졌어요. 꼭 필요한 일만 남기고 나머지는 내려놓아요.'],
+      Page: ['새로운 아이디어나 첫 고객 소식이 찾아와요. 작은 소식이라도 반갑게 받아들여요.', '준비가 덜 된 상태라 실수가 나올 수 있어요. 한 번 더 점검하고 움직이면 막을 수 있어요.'],
+      Knight: ['밀어붙여서 성과를 내는 흐름이에요. 추진력이 곧 무기가 돼요.', '너무 급하게 움직이다가 사고가 날 수 있어요. 속도를 조금 줄이고 확인하며 가요.'],
+      Queen: ['고객 한 명 한 명을 꼼꼼하게 챙기는 게 큰 강점이에요. 한 번 온 사람이 다시 찾아오게 만드는 힘이 여기서 나와요.', '혼자 다 챙기다 보니 지쳐 가고 있어요. 일부는 덜어내고 나를 챙기는 시간도 가져요.'],
+      King: ['사장다운 그릇이 있어요. 크게 키울 수 있는 힘이 보여요.', '내 방식만 고집하다가 놓치는 게 생길 수 있어요. 다른 사람의 의견도 한 번 들어 봐요.']
+    }
+  };
+  // 카드 하나 → 스토리 문장 (topicLine과 같은 규칙으로 밝은/어두운 쪽을 고른다)
+  window.bizStory = function (c) {
+    const S = window.BIZ_STORY; if (!S || !c) return '';
+    const i = c.isReversed && !c.lucky ? 1 : 0;
+    if (c.type === 'major') return (S.major[c.num] || [])[i] || '';
+    const bright = c.rank === '5' ? 1 : 0;
+    const j = typeof cardScore === 'function' ? (cardScore(c) >= 0 ? bright : 1 - bright) : i;
+    if (c.rank === 'Ace' && j === 0 && S.ace[c.suit]) return S.ace[c.suit];
+    const r = S.rank[c.rank];
+    return r ? r[j].replace('{s}', SUIT_FLAVOR.biz[c.suit]) : '';
+  };
   RANK_TOPIC.biz = {
     Ace: ['{s} 쪽에서 새 기회가 열려요.', '시작하려던 게 자꾸 밀려요.'], 2: ['두 방향 중에 고르는 중이에요.', '결정을 못 해서 제자리예요.'], 3: ['같이 하는 사람이 있으면 성과가 나와요.', '같이 하는 사람과 손발이 안 맞아요.'],
     4: ['기반이 잡혀요. 버틸 힘이 생겨요.', '안정적인데 성장이 멈췄어요.'], 5: ['경쟁이 붙어요. 시행착오는 각오해요.', '부딪히던 게 정리돼요.'], 6: ['반응이 오고 술술 풀려요.', '반응이 기대보다 약해요. 고객 눈높이부터 다시 봐요.'],
@@ -5621,9 +5678,11 @@ const READER = (() => {
     const split = k === 'five' ? [[0, 1, 2], [3, 4], null] : k === 'reunion' ? [[0, 1, 2], [3], 4] : k === 'general5' ? [[0, 1, 2], [4], 3] : [[0, 1], [2], null];
     const seat = i => fill(SEAT[P[i].short] || `${P[i].short} 자리`);
     const got = c => `<b>${esc(short(c))}</b>${c.isReversed ? ' 카드가 거꾸로' : ` 카드${ige('카드')}`} 나왔어요`;
+    const SAYP = { 과거: '처음엔 ', 현재: '지금은 ', 미래: '' }; // 사업 풀이: 이야기체 머리말
     const say = idx => idx.filter(i => cards[i]).map((i, n) => {
       const prev = n ? cardScore(cards[idx[n - 1]]) : null, cur = cardScore(cards[i]);
       const sg = x => x > 0.15 ? 1 : x < -0.15 ? -1 : 0; const j = !n ? '' : (sg(prev) * sg(cur) < 0 ? '그런데 ' : '그리고 ');
+      if (tk === 'biz' && typeof bizStory === 'function' && P[i].short in SAYP) { const st = bizStory(cards[i]); if (st) return `${j}${SAYP[P[i].short]}${esc(st)} ${csrc(cards[i])}`; }
       return `${j}${esc(seat(i))}에는 ${got(cards[i])}. ${esc(firstSentence(textOf(cards[i], i)))} ${csrc(cards[i])}`;
     }).join(' ');
     const a1 = split[0].reduce((s, i) => s + cardScore(cards[i]), 0) / split[0].length;
@@ -5633,7 +5692,8 @@ const READER = (() => {
     const advCard = split[2] != null && cards[split[2]];
     const adv = advCard ? `${esc(seat(split[2]))}에는 ${got(cards[split[2]])}. ${esc(polite(softAct(firstSentence(textOf(cards[split[2]], split[2])), LV.key)))} ${csrc(cards[split[2]])}` : `${esc(polite(G.do[0]))} ${esc(polite(G.do[1] || ''))}`;
     const sol = solver(cards, v.worst);
-    const caution = v.worst >= 0 && v.worst !== split[2] ? `다만, ${esc(seat(v.worst))}의 ${esc(short(cards[v.worst]))} 카드가 말하는 "${esc(firstSentence(textOf(cards[v.worst], v.worst)).replace(/[.!?]$/, ''))}" 이 부분은 꼭 챙기셔야 해요.${sol ? ` 풀 열쇠는 ${esc(short(cards[sol.i]))} 카드예요. ${esc(sol.how)} ${csrc(cards[sol.i])}` : ''}` : '다만,';
+    const bizW = tk === 'biz' && v.worst >= 0 && typeof bizStory === 'function' ? bizStory(cards[v.worst]) : '';
+    const caution = bizW && v.worst !== split[2] ? `다만, 꼭 챙기셔야 할 부분이 있어요. ${esc(bizW)} ${csrc(cards[v.worst])}${sol ? ` ${csrc(cards[sol.i])}` : ''}` : v.worst >= 0 && v.worst !== split[2] ? `다만, ${esc(seat(v.worst))}의 ${esc(short(cards[v.worst]))} 카드가 말하는 "${esc(firstSentence(textOf(cards[v.worst], v.worst)).replace(/[.!?]$/, ''))}" 이 부분은 꼭 챙기셔야 해요.${sol ? ` 풀 열쇠는 ${esc(short(cards[sol.i]))} 카드예요. ${esc(sol.how)} ${csrc(cards[sol.i])}` : ''}` : '다만,';
     const dont = esc(polite(G.dont)), TH = third(v.q);
     return `<div class="rd-tell">
       <p class="rd-open">${esc(N)}이 ${TH ? `${esc(TH.who)} 일로 마음 쓰고 계시는군요!` : `${esc(DOING[tk] || DOING.general)} 하고 계시는군요!`} 카드 ${cards.length}장을 종합해 보면, ${esc(fill((SUM[tk] || SUM.general)[LV.key]))}</p>
@@ -7981,6 +8041,44 @@ const PLAN = (() => {
   const scan = root => (root.querySelectorAll ? root.querySelectorAll('input[type=time]') : []).forEach(enhance);
   scan(document);
   new MutationObserver(ms => ms.forEach(r => r.addedNodes.forEach(n => { if (n.nodeType === 1) { if (n.matches && n.matches('input[type=time]')) enhance(n); scan(n); } }))).observe(document.body, { childList: true, subtree: true });
+})();
+</script>
+<style>
+.nx-card { margin: 16px 0 6px; padding: 16px 14px 14px; border: 1px solid rgba(201,164,106,.38); border-radius: 16px; background: rgba(201,164,106,.07); }
+.nx-card .nx-t { margin: 0 0 4px; font-size: 16px; font-weight: 800; color: var(--brass-hi, #E6C98D); }
+.nx-card .nx-s { margin: 0 0 10px; font-size: 13.5px; color: var(--sub, #B9A9A0); line-height: 1.5; }
+.nx-card button { display: block; width: 100%; margin-top: 8px; padding: 14px 12px; border-radius: 12px; border: 1px solid rgba(201,164,106,.5); background: transparent; color: var(--text, #F3E9E2); font-size: 15px; font-weight: 700; cursor: pointer; }
+.nx-card button.nx-main { background: var(--brass, #C9A46A); color: #1B1014; border: 0; }
+</style>
+<script>
+/* 사주·별자리·궁합 결과 맨 끝에 "다음엔 뭘 볼까요?" 카드 (2026-11-21) — 결과가 끝나도 다음 길이 있도록 */
+(function () {
+  const BTN = {
+    saju: ['🔮 사주 리포트 보기', 'saju'], astro: ['✨ 별자리 리포트 보기', 'astro'], compat: ['💞 궁합 보기', 'compat']
+  };
+  function card(cur) {
+    const others = ['saju', 'astro', 'compat'].filter(k => k !== cur);
+    const hasP = (() => { try { return !!localStorage.getItem('rodeo_profile_v1'); } catch (e) { return false; } })();
+    const sub = hasP ? '입력해 둔 생년월일 그대로 바로 볼 수 있어요.' : '생년월일을 한 번만 넣으면 돼요.';
+    return '<div class="nx-card" data-nx="1"><p class="nx-t">다음엔 뭘 볼까요?</p><p class="nx-s">' + sub + '</p>'
+      + others.map((k, i) => '<button type="button" class="' + (i === 0 ? 'nx-main' : '') + '" data-quick="' + BTN[k][1] + '">' + BTN[k][0] + '</button>').join('')
+      + '<button type="button" data-go="home">🃏 타로로 다시 물어보기</button>'
+      + '<button type="button" data-go="home">🏠 처음으로</button></div>';
+  }
+  const MAP = { 'sj-result': 'saju', 'as-result': 'astro', 'cp-result': 'compat' };
+  Object.keys(MAP).forEach(id => {
+    const box = document.getElementById(id); if (!box) return;
+    let busy = false;
+    const fit = () => {
+      if (busy) return;
+      const has = box.querySelector(':scope > .nx-card');
+      if (!box.textContent.trim() || box.style.display === 'none') { if (has) { busy = true; has.remove(); busy = false; } return; }
+      if (has && box.lastElementChild === has) return;
+      busy = true; if (has) has.remove(); box.insertAdjacentHTML('beforeend', card(MAP[id])); busy = false;
+    };
+    new MutationObserver(fit).observe(box, { childList: true, attributes: true, attributeFilter: ['style'] });
+    fit();
+  });
 })();
 </script>
 </body>
