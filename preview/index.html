@@ -5699,7 +5699,7 @@ const READER = (() => {
       <p class="rd-open">${esc(N)}이 ${TH ? `${esc(TH.who)} 일로 마음 쓰고 계시는군요!` : `${esc(DOING[tk] || DOING.general)} 하고 계시는군요!`} 카드 ${cards.length}장을 종합해 보면, ${esc(fill((SUM[tk] || SUM.general)[LV.key]))}</p>
       <p class="rd-h">${esc(h1)}</p><p>${say(split[0])}</p>
       <p class="rd-h">앞으로, ${esc(pickT(HD2[al.conflict ? 'mid' : LV.key], tk))}</p><p>${al.conflict ? '다만, ' : ''}${say(split[1])} ${when}</p>
-      <p class="rd-h">${esc(pickT(HD3, tk))}</p><p>${TH && !advCard ? `${esc(toWho(TH.who))} 이렇게 전해주세요. ` : ''}${adv} ${caution === '다만,' ? `다만, ${dont}` : `${caution} 그리고 ${dont}`}</p>
+      <p class="rd-h">${esc(pickT(HD3, tk))}</p><p>${TH && !advCard ? `${esc(toWho(TH.who))} 이렇게 전해주세요. ` : ''}${adv} ${caution === '다만,' ? `다만, ${dont}` : `${caution}</p><p>하나 더, ${dont}`}</p>
       <p class="rd-close">${esc(fill(tk === 'stock' ? CHEER_STOCK[LV.key] : CHEER[LV.key]))} ${esc(pickT(ASK, tk))}</p>
     </div>`;
   }
