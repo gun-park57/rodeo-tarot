@@ -3300,11 +3300,12 @@ const TP = (() => {
 
 const ORDINAL = ['첫', '두', '세', '네', '다섯'];
 
-let READ_HOLD = false, READ_ANCHOR = null; // 읽는 중: 새 메시지가 붙어도 제목을 화면 맨 위에 붙잡아 둠
-function anchorTop() { if (!READ_ANCHOR) return; const top = READ_ANCHOR.getBoundingClientRect().top - app.getBoundingClientRect().top + app.scrollTop - 8; app.scrollTo({ top, behavior: 'smooth' }); }
-function scrollDown() { if (READ_HOLD) { requestAnimationFrame(anchorTop); return; } requestAnimationFrame(() => { app.scrollTop = app.scrollHeight; }); }
-function readFrom() { READ_ANCHOR = stream.lastElementChild; READ_HOLD = true; requestAnimationFrame(anchorTop); }
-function readDone() { READ_HOLD = false; READ_ANCHOR = null; }
+let READ_HOLD = false, READ_ANCHOR = null, READ_USER = false; // 읽는 중: 새 메시지가 붙어도 제목을 화면 맨 위에 붙잡아 둠. 손으로 스크롤하면(READ_USER) 자동 이동을 멈춤
+function anchorTop() { if (!READ_ANCHOR || READ_USER) return; const top = READ_ANCHOR.getBoundingClientRect().top - app.getBoundingClientRect().top + app.scrollTop - 8; app.scrollTo({ top, behavior: 'smooth' }); }
+function scrollDown() { if (READ_USER) return; if (READ_HOLD) { requestAnimationFrame(anchorTop); return; } requestAnimationFrame(() => { app.scrollTop = app.scrollHeight; }); }
+function readFrom() { READ_USER = false; READ_ANCHOR = stream.lastElementChild; READ_HOLD = true; requestAnimationFrame(anchorTop); }
+function readDone() { READ_HOLD = false; READ_ANCHOR = null; READ_USER = false; }
+['touchmove', 'wheel', 'keydown'].forEach(ev => app.addEventListener(ev, () => { if (READ_HOLD) READ_USER = true; }, { passive: true }));
 
 const AVATAR_BOT = 'w-9 h-9 rounded-full bg-gradient-to-br from-purple-800 to-indigo-950 border border-amber-400/40 flex items-center justify-center text-sm shrink-0 shadow-lg';
 const AVATAR_USER = 'w-9 h-9 rounded-full bg-gradient-to-br from-amber-600 to-amber-800 border border-amber-300 flex items-center justify-center text-sm shrink-0 shadow-lg';
@@ -3816,16 +3817,9 @@ function cardBubble(card, posIndex) {
       <p class="plain-main rd-bub">${typeof READER !== 'undefined' ? READER.quickBubble(card, posIndex) : esc(plain || r.text)}</p>
       ${card.isReversed && card.lucky ? '<p class="rev-note">🔄 거꾸로 나왔지만, 이 카드는 거꾸로일 때 오히려 좋은 뜻이에요.</p>' : ''}
       </div></div>
-      <details class="deep" open><summary>자세히</summary>
-        ${typeof READER !== 'undefined' ? `<p>${READER.bubble(card, posIndex)}</p>` : ''}
-        ${typeof READER !== 'undefined' && READER.minorPlain(card) ? `<p>👉 ${READER.minorPlain(card)}</p>` : ''}
-        ${plain ? `<p><b>원래 뜻</b> ${esc(r.text)}</p>` : ''}
-        ${r.practical ? `<p><b>한 줄 팁</b> ${esc(r.practical)}</p>` : ''}
-        ${extra && card.type !== 'minor' ? `<p>${esc(extra)}</p>` : ''}
-
-        ${gaze ? `<p><b>인물의 시선</b> ${esc(GAZE_TEXT[gaze])}</p>` : ''}
-        <p class="text-[11px]">${esc(card.en)} · ${esc(ELEMENT_KO[card.element])} 원소${card.isReversed ? ` · ${esc(r.badge)}` : ''}</p>
-      </details>
+      ${typeof READER !== 'undefined' && READER.cardStory(card, posIndex) ? `<details class="deep" open><summary>자세히</summary>
+        <p>${READER.cardStory(card, posIndex)}</p>
+      </details>` : ''}
     </div>`;
 }
 
@@ -4447,7 +4441,7 @@ function renderReport() {
   const domAns = dom && dom.key !== 'time' ? (INFER.one(key, v.q) || '').split('👉 ')[1] : '';
   const flow = summaryLines(), combo = comboLines(chosen).filter(l => !/정방향|역방향/.test(l));
   // 타로사처럼: 카드마다 질문이랑 이어서 한두 문장
-  const reads = chosen.map((c, i) => `<p class="rd-card"><span class="rd-pos">${esc(L.positions[i].short)}</span>${READER.joiner(i ? v.scores[i - 1] : null, v.scores[i], i)}${READER.line(c, i, tk, v.q)}</p>`).join('');
+  const reads = chosen.map((c, i) => `<p class="rd-card"><span class="rd-pos">${esc(L.positions[i].short)}</span>${READER.joiner(i ? v.scores[i - 1] : null, v.scores[i], i)}${(() => { const st = READER.cardStory(c, i, true); return `${READER.seatOk(st) ? `<b>${esc(READER.leadOf(i))}</b> ` : ''}${st}`; })()}</p>`).join('');
   return `<div class="rp">
     <p class="rp-title">${esc((TOPIC_NAME[tk] || '전체 운'))} 점사</p>
     ${v.q ? `<p class="rp-q">“${esc(v.q.replace(/\s*\([^)]*\)\s*$/, ''))}”</p>` : ''}
@@ -4734,6 +4728,63 @@ const QC = (() => {
     ['한 단계 완성돼요. 더 큰 시장으로 나갈 수 있어요.', '거의 다 왔는데 마무리가 덜 됐어요.']
   ];
   MB.forEach((x, i) => { MAJOR_TOPIC[i].biz = x; });
+
+  /* 사업 풀이 스토리텔링 문구 (2026-11-21): 카드 설명이 아니라 사람이 옆에서 말해 주듯, 2문장으로 풀어서.
+     카드 이름은 문장에 넣지 않고 끝에 작은 태그로만 붙인다. 문장은 때(처음엔/지금은/앞으로는)에 상관없이 읽히게 썼다. */
+  window.BIZ_STORY = {
+    major: [
+      ['부족한 부분이 있어도 일단 작게 시작해 보는 쪽이 잘 맞아요. 시작하고 나서 사람들 반응을 보며 고쳐 가도 늦지 않아요.', '충분히 준비하지 않은 채 덜컥 지르면 돈만 나가기 쉬워요. 한 번만 멈춰서 숫자와 계획을 점검하고 움직여요.'],
+      ['내가 가진 기술이 바로 상품이 될 수 있어요. 만들 실력은 이미 충분하니 자신 있게 내보여도 돼요.', '말과 계획은 큰데 실제 실행이 따라오지 못하고 있어요. 큰 그림은 잠시 내려놓고 오늘 할 수 있는 한 가지부터 끝내 봐요.'],
+      ['아직 널리 알려지진 않았지만 이미 찾는 사람이 조용히 있어요. 서두르지 말고 차분히 다듬으면 그 사람들이 단골이 돼요.', '시장에 대한 정보가 아직 부족해요. 고객이 정말 원하는 게 뭔지 직접 들어보는 것부터 시작해요.'],
+      ['정성을 들인 만큼 쑥쑥 자라는 흐름이에요. 매출이 눈에 띄게 불어날 수 있어요.', '버는 돈보다 나가는 돈이 많아서 속이 타는 상태예요. 비용 구조부터 차분히 정리하면 숨통이 트여요.'],
+      ['구조와 체계를 잘 잡으면 오래 가는 사업이 돼요. 규칙과 틀을 세워 두는 시간이 나중에 큰 힘이 돼요.', '모든 걸 혼자 쥐고 있다 보니 어딘가에서 막히고 있어요. 맡길 수 있는 건 믿고 맡겨야 속도가 나요.'],
+      ['이미 검증된 방식이나 좋은 멘토를 따르면 안전하게 갈 수 있어요. 처음부터 새로 만들기보다 잘하는 사람에게 배워 보세요.', '남들이 하는 걸 그대로 따라 하면 내 사업만의 차별점이 안 생겨요. 나만 줄 수 있는 한 가지를 찾아야 해요.'],
+      ['좋은 파트너와 손을 잡으면 일이 크게 커져요. 고객 반응도 호의적이어서 분위기가 좋아요.', '같이 하는 사람과 보는 방향이 어긋나고 있어요. 더 커지기 전에 서로 원하는 걸 솔직하게 맞춰 봐요.'],
+      ['마음먹고 밀어붙이면 시장을 먼저 잡을 수 있어요. 지금은 속도가 가장 큰 무기예요.', '방향 없이 달리기만 하면 어느 순간 지쳐서 멈추게 돼요. 어디로 가는지부터 한 번 더 확인해요.'],
+      ['당장 결과가 안 보여도 꾸준히 버티면 팬이 생겨요. 조급해하지 않고 계속 가는 게 가장 좋은 전략이에요.', '요즘 자신감이 많이 떨어져 있어요. 큰 성공보다 작은 성공을 하나씩 쌓으면서 힘을 되찾아요.'],
+      ['한 분야를 깊게 파고들수록 그게 나만의 무기가 돼요. 여러 개를 건드리기보다 하나를 제대로 하는 게 유리해요.', '열심히 만들기만 하고 세상에 알리지 않고 있어요. 좋은 걸 만들었다면 이제 사람들에게 보여 줄 차례예요.'],
+      ['좋은 타이밍이 다가오고 있어요. 때가 왔을 때 올라타면 단숨에 커질 수 있어요.', '타이밍이 조금 엇갈리고 있어요. 서두르기보다 출시 시기를 다시 점검해 보세요.'],
+      ['들인 만큼 정직하게 돌아오는 흐름이에요. 계약이나 정산도 깔끔하게 정리될 거예요.', '계약이나 정산, 약관에서 문제가 생길 수 있어요. 서류는 꼼꼼히 읽고 확인한 뒤에 사인해요.'],
+      ['앞으로 나아가기보다 멈춰서 방향을 다시 볼 때예요. 이 쉬어가는 시간이 더 좋은 선택을 도와줘요.', '멈춰 있던 일이 다시 굴러가기 시작해요. 기다린 보람이 서서히 보일 거예요.'],
+      ['지금 방식은 정리하고 새 판을 짜야 살아날 수 있어요. 끝내는 게 아쉬워도 새로운 시작을 위한 정리예요.', '잘 안 되는 걸 계속 붙잡고 있어요. 미련을 내려놓고 정리해야 다음 단계로 갈 수 있어요.'],
+      ['천천히 균형을 맞춰 가면 오래 가는 사업이 돼요. 대신 시간이 걸리니 느긋하게 가는 마음이 필요해요.', '이것저것 섞다 보니 내 색깔이 흐려지고 있어요. 가장 나다운 한 가지를 중심에 다시 세워요.'],
+      ['사람들이 확 끌리는 매력적인 상품이에요. 빠져드는 재미가 가장 큰 무기가 돼요.', '쉽게 벌 수 있다는 유혹은 조심해야 해요. 눈앞의 돈보다 신뢰를 쌓는 게 먼저예요.'],
+      ['예상하지 못한 변수로 갑자기 판이 바뀔 수 있어요. 미리 대비책을 마련해 두면 크게 흔들리지 않아요.', '큰 위기는 이미 한고비 넘겼어요. 이제 무너진 부분을 수습하고 다시 나아가면 돼요.'],
+      ['입소문이 퍼질 수 있는 흐름이에요. SNS에서 갑자기 화제가 될 가능성도 있어요.', '기대가 너무 커져서 현실과 차이가 생기기 쉬워요. 숫자를 냉정하게 보면서 차분히 가요.'],
+      ['아직 안개가 낀 듯 불확실한 상태예요. 확인되지 않은 정보나 소문은 그대로 믿지 마세요.', '불안하던 마음이 걷히고 방향이 보이기 시작해요. 흐릿하던 부분이 조금씩 선명해질 거예요.'],
+      ['아주 좋은 흐름이에요. 널리 알려지고 눈에 보이는 성과가 나올 가능성이 커요.', '반응은 오고 있지만 생각했던 것보다 조금 작아요. 한꺼번에 기대하기보다 조금씩 키워 가요.'],
+      ['좋은 소식이 찾아와요. 한 번 더 도전해 볼 만한 때예요.', '기다리는 소식이 예상보다 늦어지고 있어요. 조급해하지 말고 준비하며 기다려요.'],
+      ['한 단계가 멋지게 완성되는 흐름이에요. 더 큰 시장으로 나가는 문이 열려 있어요.', '거의 다 왔는데 마무리가 조금 덜 됐어요. 마지막 한 걸음까지 챙기면 결실을 얻어요.']
+    ],
+    ace: { wands: '새 아이템이나 홍보 기회가 찾아와요. 부담 갖지 말고 일단 올려 보세요.', cups: '첫 팬, 첫 단골이 생기는 흐름이에요. 반응이 좋으니 그 마음을 소중히 이어가요.', swords: '막혀 있던 기획이 확 풀려요. 좋은 아이디어가 떠오를 수 있어요.', pentacles: '첫 매출이 들어와요. 금액이 작아도 의미 있는 시작이에요.' },
+    rank: {
+      Ace: ['{s} 쪽에서 새로운 기회가 열려요. 작은 시도라도 지금 시작하면 좋은 출발이 돼요.', '시작하려던 일이 자꾸 뒤로 밀리고 있어요. 이유를 하나씩 찾아서 막힌 부분부터 풀어요.'],
+      2: ['두 가지 방향 사이에서 고민하는 중이에요. 충분히 비교해 보고 하나를 정하면 길이 열려요.', '결정을 못 해서 제자리에 머물러 있어요. 완벽한 답을 찾으려 하기보다 하나를 골라 먼저 움직여요.'],
+      3: ['같이 하는 사람이 있으면 성과가 나와요. 서로 역할을 나누면 일이 훨씬 수월해져요.', '함께하는 사람과 손발이 잘 안 맞고 있어요. 역할과 기대를 솔직하게 다시 맞춰 봐요.'],
+      4: ['기반이 단단하게 잡혀 가요. 버틸 수 있는 힘이 생기고 있어요.', '안정적이긴 한데 성장이 멈춘 느낌이에요. 안전한 자리에서 한 걸음만 더 나가 봐요.'],
+      5: ['경쟁이 붙고 시행착오도 겪을 수 있어요. 그 과정에서 배운다는 마음으로 가면 돼요.', '부딪히던 문제들이 정리되기 시작해요. 한숨 돌리고 정리하는 시간을 가져요.'],
+      6: ['반응이 오고 일이 술술 풀려요. 고객들이 좋아해 주는 분위기를 이어가요.', '반응이 기대보다 약해요. 고객 눈높이에서 다시 한 번 바라보면 답이 보여요.'],
+      7: ['혼자 결단해야 하는 때예요. 흔들리지 않고 나만의 색깔을 지키는 게 중요해요.', '혼자 버티다가 지쳐 가고 있어요. 방식을 바꾸거나 도움을 받아 숨통을 틔워요.'],
+      8: ['일이 빠르게 진행되고 속도가 붙어요. 이 흐름을 놓치지 말고 올라타세요.', '진행이 막히고 늦어지고 있어요. 서두르지 말고 막힌 이유부터 확인해요.'],
+      9: ['목표가 눈앞이에요. 끝까지 가면 좋은 결과가 기다려요.', '마지막 고비에서 마음이 흔들리고 있어요. 여기까지 온 걸 믿고 조금만 더 가요.'],
+      10: ['한 단계를 마무리하고 다음 판으로 넘어가요. 지금까지의 성과를 바탕으로 새 단계를 준비해요.', '일을 너무 많이 벌려서 버거워졌어요. 꼭 필요한 일만 남기고 나머지는 내려놓아요.'],
+      Page: ['새로운 아이디어나 첫 고객 소식이 찾아와요. 작은 소식이라도 반갑게 받아들여요.', '준비가 덜 된 상태라 실수가 나올 수 있어요. 한 번 더 점검하고 움직이면 막을 수 있어요.'],
+      Knight: ['밀어붙여서 성과를 내는 흐름이에요. 추진력이 곧 무기가 돼요.', '너무 급하게 움직이다가 사고가 날 수 있어요. 속도를 조금 줄이고 확인하며 가요.'],
+      Queen: ['고객 한 명 한 명을 꼼꼼하게 챙기는 게 큰 강점이에요. 한 번 온 사람이 다시 찾아오게 만드는 힘이 여기서 나와요.', '혼자 다 챙기다 보니 지쳐 가고 있어요. 일부는 덜어내고 나를 챙기는 시간도 가져요.'],
+      King: ['사장다운 그릇이 있어요. 크게 키울 수 있는 힘이 보여요.', '내 방식만 고집하다가 놓치는 게 생길 수 있어요. 다른 사람의 의견도 한 번 들어 봐요.']
+    }
+  };
+  // 카드 하나 → 스토리 문장 (topicLine과 같은 규칙으로 밝은/어두운 쪽을 고른다)
+  window.bizStory = function (c) {
+    const S = window.BIZ_STORY; if (!S || !c) return '';
+    const i = c.isReversed && !c.lucky ? 1 : 0;
+    if (c.type === 'major') return (S.major[c.num] || [])[i] || '';
+    const bright = c.rank === '5' ? 1 : 0;
+    const j = typeof cardScore === 'function' ? (cardScore(c) >= 0 ? bright : 1 - bright) : i;
+    if (c.rank === 'Ace' && j === 0 && S.ace[c.suit]) return S.ace[c.suit];
+    const r = S.rank[c.rank];
+    return r ? r[j].replace('{s}', SUIT_FLAVOR.biz[c.suit]) : '';
+  };
   RANK_TOPIC.biz = {
     Ace: ['{s} 쪽에서 새 기회가 열려요.', '시작하려던 게 자꾸 밀려요.'], 2: ['두 방향 중에 고르는 중이에요.', '결정을 못 해서 제자리예요.'], 3: ['같이 하는 사람이 있으면 성과가 나와요.', '같이 하는 사람과 손발이 안 맞아요.'],
     4: ['기반이 잡혀요. 버틸 힘이 생겨요.', '안정적인데 성장이 멈췄어요.'], 5: ['경쟁이 붙어요. 시행착오는 각오해요.', '부딪히던 게 정리돼요.'], 6: ['반응이 오고 술술 풀려요.', '반응이 기대보다 약해요. 고객 눈높이부터 다시 봐요.'],
@@ -5380,6 +5431,27 @@ const READER = (() => {
     if (a !== 0 && b !== 0) return '근데 ';
     return '그리고 ';
   }
+  // 말머리 충돌: 문장이 '지금/이제/앞으로…'로 시작하면 '처음엔·지금은' 같은 말머리를 붙이지 않는다 (2026-11-21)
+  const TIMEW = /^(지금|이제|앞으로|곧|처음|요즘|당장|아직)/;
+  const seatOk = t => !TIMEW.test(String(t || '').replace(/<[^>]+>/g, '').trim());
+  // 거꾸로 문구가 카드 문장과 같은 말이면 빼기
+  const REV_DUP = { blocked: /막혀|막히|늦어|밀려/, inward: /안 드러|숨기|숨겨/, excess: /과해|과한|너무/, ended: /고비|지나가|끝나/ };
+  const revDup = (rm, t) => !!(REV_DUP[rm] && REV_DUP[rm].test(t));
+  // 카드 상세 '자세히': 옆에서 말해 주는 이야기 + 끝 태그 (2026-11-21, 카드 수업식 줄 제거)
+  function cardStory(c, i, full) {
+    const q = userContext.customQuery || '', tk = topicKey(q) || 'general';
+    const top = firstSentence(textOf(c, i)).trim();
+    const bs = tk === 'biz' && typeof bizStory === 'function' ? bizStory(c) : '';
+    let rest = String(bs || textOf(c, i) || '').trim();
+    if (!bs && !full && rest.startsWith(top)) rest = rest.slice(top.length).trim();
+    const parts = [];
+    const court = c.type === 'minor' && COURT_PERSON[c.rank];
+    if (court && ((PERSON_POS[layout.key] || []).includes(i) || ['love', 'people', 'work'].includes(tk))) parts.push(`사람으로 보면 <b>${COURT_PERSON[c.rank]} ${SUIT_PERSON[c.suit]}</b>이에요.`);
+    if (rest) parts.push(esc(rest));
+    const m = lux(c, q, tk); if (m) parts.push(esc(m));
+    const rm = revMode(c); if (rm && !revDup(rm, rest)) parts.push(`<span class="rd-rev">${REV_TEXT[rm]}</span>`);
+    return parts.length ? `${parts.join(' ')} ${csrc(c)}` : '';
+  }
   function bubble(card, i) {
     const q = userContext.customQuery || '', tk = topicKey(q) || 'general';
     const prev = i > 0 && chosen[i - 1] ? cardScore(chosen[i - 1]) : null;
@@ -5556,10 +5628,30 @@ const READER = (() => {
     const actLine = layout.key === 'reunion' && cards[4] && typeof POSLINE !== 'undefined' ? POSLINE.get(cards[4], 4) : null;
     const nm = short(key), pos = layout.positions[v.keyIdx].short;
     const al = align(v), sgn = al.dir;
+    // '왜?': 결론 쪽 카드와 반대쪽 카드를 같이 말해서 왜 결국 그쪽인지 보이게 (2026-11-21)
+    const SEAT = { 과거: '처음엔', 현재: '지금은', 미래: '앞으로는' }, FLOW = { 과거: '지나온', 현재: '지금', 미래: '앞으로' };
+    const sg2 = x => x > 0.15 ? 1 : x < -0.15 ? -1 : 0, scs = cards.map(cardScore);
+    const seatOf = i => { const p = layout.positions[i].short; return SEAT[p] || `${p} 쪽은`; };
+    const sayAt = (i, t) => `${seatOk(t) ? esc(seatOf(i)) + ' ' : ''}${esc(t)}`;
+    const flowOf = i => { const p = layout.positions[i].short; return FLOW[p] ? `${FLOW[p]} 흐름` : `${p} 쪽`; };
+    const sup = cards[al.ri];
+    let oi = -1;
+    if (sgn) scs.forEach((x, i) => { if (i !== al.ri && sg2(x) === -sgn && (oi < 0 || x * sgn < scs[oi] * sgn)) oi = i; });
     let why;
-    if (al.ri === v.keyIdx) why = `<p class="rd-q2" data-dir="${sgn}" data-sc="${cardScore(key)}"><span>왜?</span> ${esc(pos)} 카드가 ${esc(nm)}${ira(nm)} 그래요. ${esc(firstSentence(textOf(key, v.keyIdx)))} ${csrc(key)}</p>`;
-    else { const rc = cards[al.ri], rn = short(rc); why = `<p class="rd-q2" data-dir="${sgn}" data-sc="${cardScore(rc)}"><span>왜?</span> ${esc(layout.positions[al.ri].short)} 자리 ${esc(rn)}${ige(rn)} ${sgn > 0 ? '힘을 받쳐줘요' : '발목을 잡아요'}. ${esc(firstSentence(textOf(rc, al.ri)))} ${csrc(rc)}</p>`; }
-    if (al.conflict) why += `<p class="rd-q2"><span>다만</span> ${esc(pos)} 자리 ${esc(nm)}${ige(nm)} ${sgn > 0 ? '걸려요. 중간에 한 번 흔들릴 수 있어요' : '버팀목이에요. 완전히 막힌 건 아니에요'}. ${esc(firstSentence(textOf(key, v.keyIdx)))} ${csrc(key)}</p>`;
+    if (oi >= 0) {
+      const opp = cards[oi];
+      why = `<p class="rd-q2" data-dir="${sgn}" data-sc="${cardScore(sup)}"><span>왜?</span> ${sayAt(oi, firstSentence(textOf(opp, oi)))} 근데 ${esc(flowOf(al.ri))}이 더 세게 ${sgn > 0 ? '받쳐줘서, 결국엔 풀리는 쪽으로 기울어요' : '눌러서, 지금은 막히는 쪽으로 기울어요'}. ${csrc(opp)} ${csrc(sup)}</p>`;
+    } else {
+      // 반반: 제일 좋은 카드와 제일 걸리는 카드를 같이
+      let hi = -1, lo = -1;
+      scs.forEach((x, i) => { if (sg2(x) > 0 && (hi < 0 || x > scs[hi])) hi = i; if (sg2(x) < 0 && (lo < 0 || x < scs[lo])) lo = i; });
+      if (!sgn && hi >= 0 && lo >= 0) {
+        const [f, g] = lo < hi ? [lo, hi] : [hi, lo];
+        why = `<p class="rd-q2" data-dir="0" data-sc="${cardScore(sup)}"><span>왜?</span> ${sayAt(f, firstSentence(textOf(cards[f], f)))} 근데 ${sayAt(g, firstSentence(textOf(cards[g], g)))} 좋은 쪽과 걸리는 쪽이 팽팽해서, 아직 어느 쪽으로도 안 기울었어요. ${csrc(cards[f])} ${csrc(cards[g])}</p>`;
+      } else {
+        why = `<p class="rd-q2" data-dir="${sgn}" data-sc="${cardScore(sup)}"><span>왜?</span> ${sayAt(al.ri, firstSentence(textOf(sup, al.ri)))} ${sgn > 0 ? '이 흐름이 계속 받쳐줘요.' : sgn < 0 ? '이 부분이 계속 발목을 잡아요.' : '아직 어느 쪽으로도 안 기울었어요.'} ${csrc(sup)}</p>`;
+      }
+    }
     const head = `${v.topic[LV.key]}${timeQ ? ` ${deadline(v.q, tm, LV.key) || tm.text + ' 보여요.'}` : ''}`;
     return `<div class="rd-quick">
       <p class="rd-q1"><span class="rd-tag t-${LV.key}">${ICON[LV.key]}</span><b>${esc(head)}</b></p>
@@ -5620,9 +5712,11 @@ const READER = (() => {
     const split = k === 'five' ? [[0, 1, 2], [3, 4], null] : k === 'reunion' ? [[0, 1, 2], [3], 4] : k === 'general5' ? [[0, 1, 2], [4], 3] : [[0, 1], [2], null];
     const seat = i => fill(SEAT[P[i].short] || `${P[i].short} 자리`);
     const got = c => `<b>${esc(short(c))}</b>${c.isReversed ? ' 카드가 거꾸로' : ` 카드${ige('카드')}`} 나왔어요`;
+    const SAYP = { 과거: '처음엔 ', 현재: '지금은 ', 미래: '' }; // 사업 풀이: 이야기체 머리말
     const say = idx => idx.filter(i => cards[i]).map((i, n) => {
       const prev = n ? cardScore(cards[idx[n - 1]]) : null, cur = cardScore(cards[i]);
       const sg = x => x > 0.15 ? 1 : x < -0.15 ? -1 : 0; const j = !n ? '' : (sg(prev) * sg(cur) < 0 ? '그런데 ' : '그리고 ');
+      if (tk === 'biz' && typeof bizStory === 'function' && P[i].short in SAYP) { const st = bizStory(cards[i]); if (st) return `${j}${seatOk(st) ? SAYP[P[i].short] : ''}${esc(st)} ${csrc(cards[i])}`; }
       return `${j}${esc(seat(i))}에는 ${got(cards[i])}. ${esc(firstSentence(textOf(cards[i], i)))} ${csrc(cards[i])}`;
     }).join(' ');
     const a1 = split[0].reduce((s, i) => s + cardScore(cards[i]), 0) / split[0].length;
@@ -5632,13 +5726,14 @@ const READER = (() => {
     const advCard = split[2] != null && cards[split[2]];
     const adv = advCard ? `${esc(seat(split[2]))}에는 ${got(cards[split[2]])}. ${esc(polite(softAct(firstSentence(textOf(cards[split[2]], split[2])), LV.key)))} ${csrc(cards[split[2]])}` : `${esc(polite(G.do[0]))} ${esc(polite(G.do[1] || ''))}`;
     const sol = solver(cards, v.worst);
-    const caution = v.worst >= 0 && v.worst !== split[2] ? `다만, ${esc(seat(v.worst))}의 ${esc(short(cards[v.worst]))} 카드가 말하는 "${esc(firstSentence(textOf(cards[v.worst], v.worst)).replace(/[.!?]$/, ''))}" 이 부분은 꼭 챙기셔야 해요.${sol ? ` 풀 열쇠는 ${esc(short(cards[sol.i]))} 카드예요. ${esc(sol.how)} ${csrc(cards[sol.i])}` : ''}` : '다만,';
+    const bizW = tk === 'biz' && v.worst >= 0 && typeof bizStory === 'function' ? bizStory(cards[v.worst]) : '';
+    const caution = bizW && v.worst !== split[2] ? `다만, 꼭 챙기셔야 할 부분이 있어요. ${esc(bizW)} ${csrc(cards[v.worst])}${sol ? ` ${csrc(cards[sol.i])}` : ''}` : v.worst >= 0 && v.worst !== split[2] ? `다만, ${esc(seat(v.worst))}의 ${esc(short(cards[v.worst]))} 카드가 말하는 "${esc(firstSentence(textOf(cards[v.worst], v.worst)).replace(/[.!?]$/, ''))}" 이 부분은 꼭 챙기셔야 해요.${sol ? ` 풀 열쇠는 ${esc(short(cards[sol.i]))} 카드예요. ${esc(sol.how)} ${csrc(cards[sol.i])}` : ''}` : '다만,';
     const dont = esc(polite(G.dont)), TH = third(v.q);
     return `<div class="rd-tell">
       <p class="rd-open">${esc(N)}이 ${TH ? `${esc(TH.who)} 일로 마음 쓰고 계시는군요!` : `${esc(DOING[tk] || DOING.general)} 하고 계시는군요!`} 카드 ${cards.length}장을 종합해 보면, ${esc(fill((SUM[tk] || SUM.general)[LV.key]))}</p>
       <p class="rd-h">${esc(h1)}</p><p>${say(split[0])}</p>
       <p class="rd-h">앞으로, ${esc(pickT(HD2[al.conflict ? 'mid' : LV.key], tk))}</p><p>${al.conflict ? '다만, ' : ''}${say(split[1])} ${when}</p>
-      <p class="rd-h">${esc(pickT(HD3, tk))}</p><p>${TH && !advCard ? `${esc(toWho(TH.who))} 이렇게 전해주세요. ` : ''}${adv} ${caution === '다만,' ? `다만, ${dont}` : `${caution} 그리고 ${dont}`}</p>
+      <p class="rd-h">${esc(pickT(HD3, tk))}</p><p>${TH && !advCard ? `${esc(toWho(TH.who))} 이렇게 전해주세요. ` : ''}${adv} ${caution === '다만,' ? `다만, ${dont}` : `${caution}</p><p>하나 더, ${dont}`}</p>
       <p class="rd-close">${esc(fill(tk === 'stock' ? CHEER_STOCK[LV.key] : CHEER[LV.key]))} ${esc(pickT(ASK, tk))}</p>
     </div>`;
   }
@@ -5653,7 +5748,7 @@ const READER = (() => {
     return `${n}${c.rank === 'Ace' ? '는' : eunN(c.rank)} <b>${NUM_PLAIN[c.rank]}</b>예요. ${SUIT_KO[c.suit]}${jong(SUIT_KO[c.suit]) ? '은' : '는'} ${SUIT_PLAIN[c.suit]} 카드라서, ${SUIT_PLAIN[c.suit]} 쪽 이야기예요.`;
   }
   function revPlain(c) { const m = revMode(c); return m ? REV_TEXT[m] : (c.isReversed && c.lucky ? '거꾸로지만 이 카드는 오히려 좋게 읽어요.' : ''); }
-  return { third, tell, deadline, minorPlain, revPlain, quick, quickBubble, bubble, line, joiner, final, numerology, timing, lifeCard, sumCard, solver, shape, revMode, lux, isTimeQ };
+  return { third, tell, deadline, minorPlain, revPlain, quick, quickBubble, bubble, cardStory, seatOk, leadOf, line, joiner, final, numerology, timing, lifeCard, sumCard, solver, shape, revMode, lux, isTimeQ };
 })();
 
 /* =========================================================
@@ -7361,7 +7456,7 @@ const MB = (() => {
     $('me-notime').addEventListener('change', e => { $('me-time').disabled = e.target.checked; });
     const close = () => ov.remove();
     ov.addEventListener('click', e => {
-      if (e.target === ov || e.target.closest('[data-close]')) close();
+      if (e.target.closest('[data-close]')) close(); // 바깥을 눌러도 닫히지 않음 (입력 중 날아가는 것 방지, 2026-11-21)
       if (e.target.closest('[data-forget]')) { try { localStorage.removeItem(PKEY); } catch (x) { /* 무시 */ } Object.keys(ran).forEach(k => delete ran[k]); collapse(); meLabel(); renderToday(); close(); }
     });
     ov.querySelector('form').addEventListener('submit', e => {
@@ -7580,7 +7675,7 @@ const COIN = (() => {
       <p class="coin-bal"><span aria-hidden="true">🪙</span>${read().bal}<small>코인</small></p>
       <p class="coin-free">오늘 무료 질문 <b>${left}/${max}</b> 남았어요</p>
       <p class="coin-h">쓰는 곳</p>
-      <ul class="coin-rule"><li>하루 질문 <b>${max}개는 무료</b>예요. 카드는 끝까지 다 열려요</li><li>무료를 다 쓰면 질문 1개에 <b>🪙${COST}</b></li><li>5장 풀이, 6장 깊은 비교도 질문 1개로 쳐요</li></ul>
+      <ul class="coin-rule"><li>하루 질문 <b>${max}개는 무료</b>예요. 앞 카드는 바로 보이고, 마지막 카드는 질문 1개로 열어요</li><li>무료를 다 쓰면 질문 1개에 <b>🪙${COST}</b></li><li>5장 풀이, 6장 깊은 비교도 질문 1개로 쳐요</li></ul>
       <p class="coin-h">모으는 법</p>
       <p class="coin-sub">매일 출석 · 7일 한 바퀴 (주 65코인)</p>${weekHtml()}
       <ul class="coin-rule"><li>첫 방문 선물 <b>+${WELCOME}</b></li><li class="soon">친구 3명 초대 <b>+30</b> <em>곧 열려요</em></li></ul>
@@ -7666,11 +7761,8 @@ const PLAN = (() => {
   startLayout = function (key) {
     if (pref) { key = resolve(pref); pref = null; }
     const base = SPREADS[key] || SPREADS.three;
-    if (QUOTA.left() > 0) {
-      QUOTA.use();
-      layout = Object.assign({}, base, { free: base.count, _freeQ: true, _n: QUOTA.used(), _m: QUOTA.max() });
-      if (typeof BETA !== 'undefined') BETA.track('free_question', { n: QUOTA.used(), spread: key });
-    } else layout = base;
+    // 2026-11-21 박건: 앞 카드는 무료로 먼저 보여 주고, 마지막 카드와 종합 풀이는 무료 질문 1개(다 쓰면 코인)로 연다
+    layout = base;
     const T = typeof READER !== 'undefined' && READER.third ? READER.third(userContext.customQuery) : null;
     if (T && /^(five|reunion)$/.test(layout.key)) {
       const who = `${T.who} 마음`, pt = `${T.partner || '상대'} 마음`;
@@ -7713,7 +7805,8 @@ const PLAN = (() => {
     setTimeout(() => { botMsg(`<b class="gold-text">${esc(head)}</b>`); readFrom(); }, t); t += 400;
     for (let i = 0; i < L.free; i++) { const k = i; setTimeout(() => botMsg(cardBubble(chosen[k], k)), t); t += 700; }
     L.pairs.filter(p => p.free || L._freeQ).forEach(p => { setTimeout(() => botMsg(pairBubble(chosen[p.a], chosen[p.b], p.title)), t); t += 700; });
-    setTimeout(() => { renderPaywall(); readDone(); }, t);
+    // 무료 질문은 종합 풀이가 다 붙을 때까지 제목을 화면 위에 붙잡아 둔다 (읽는 중 맨 아래로 튀는 현상 방지, 2026-11-21)
+    setTimeout(() => { renderPaywall(); if (!L._freeQ) setTimeout(() => readDone(), 600); }, t); // 무료 질문은 종합 풀이·끝 화면이 붙은 뒤(renderPaywall 안)에서 해제
   };
 
   /* ---------- 결제창: 무료 질문은 바로 종합, 아니면 코인 ---------- */
@@ -7723,11 +7816,29 @@ const PLAN = (() => {
       busy = true;
       loadingPanel(`카드 ${L.count}장을 하나로 엮는 중...`);
       setTimeout(() => { botMsg(`${renderReport()}`); }, 500);
-      setTimeout(() => { busy = false; renderEnd(); }, 1000);
+      setTimeout(() => { busy = false; renderEnd(); if (typeof readDone === 'function') readDone(); }, 1000);
       return;
     }
     const hook = L.hook ? L.hook : L.key === 'five' ? '가까운 미래와 결과·조언 카드' : isRelationQuestion() ? '마지막 미래 카드와 상대방의 숨겨진 흐름' : '마지막 미래 카드와 세 장 종합 풀이';
     const b = COIN.bal(), ok = b >= COIN.COST;
+    if (QUOTA.left() > 0) {
+      const left = QUOTA.left(), max = QUOTA.max();
+      setPanel(`<div class="glass-luxury p-4 rounded-2xl border border-amber-400/60 space-y-3 shadow-2xl pw-coin">
+        <p class="text-xs font-bold gold-text">🔒 ${esc(hook)}</p>
+        <p class="text-xs text-gray-300 leading-relaxed">잠긴 카드 ${L.count - L.free}장과 ${L.count}장 종합 풀이를 볼 수 있어요.</p>
+        <button type="button" id="btn-freeq" class="coin-go">🎟 무료 질문 쓰고 보기 <small>오늘 ${left}/${max}개 남음</small></button>
+        <p class="coin-foot">무료 질문은 하루 ${max}개예요. 다 쓰면 🪙${COIN.COST}코인으로 볼 수 있어요.</p>
+      </div>`);
+      if (typeof BETA !== 'undefined') BETA.track('paywall_view', { spread: L.key, free_left: left });
+      document.getElementById('btn-freeq').addEventListener('click', e => {
+        if (busy) return;
+        e.currentTarget.disabled = true;
+        QUOTA.use();
+        if (typeof BETA !== 'undefined') { BETA.track('free_question', { n: QUOTA.used(), spread: L.key }); BETA.toast(`무료 질문 ${QUOTA.used()}/${QUOTA.max()}개 썼어요`); }
+        unlockFinal();
+      });
+      return;
+    }
     setPanel(`<div class="glass-luxury p-4 rounded-2xl border border-amber-400/60 space-y-3 shadow-2xl pw-coin">
       <p class="hk-out">오늘 무료 질문 ${QUOTA.max()}개를 다 썼어요</p>
       <p class="text-xs font-bold gold-text">🔒 ${esc(hook)}</p>
@@ -7924,6 +8035,85 @@ const PLAN = (() => {
   return { kindOf, BADGE, get pref() { return pref; } };
 })();
 
+</script>
+<script>
+/* 시간 칸 쉬운 선택 (2026-11-21): 브라우저 기본 시간 칸 대신 [오전/오후 · 시 · 분] 드롭다운.
+ * 기존 코드는 그대로 input.value("HH:MM")·disabled를 쓰고, 이 칸이 보이는 선택창과 맞춰 줌 */
+(function () {
+  const EN = (document.documentElement.lang || '').toLowerCase().indexOf('en') === 0;
+  const T = EN ? { a: 'AM/PM', am: 'AM', pm: 'PM', h: 'Hour', m: 'Min', hs: '', ms: '' } : { a: '오전/오후', am: '오전', pm: '오후', h: '시', m: '분', hs: '시', ms: '분' };
+  const st = document.createElement('style');
+  st.textContent = '.ts-group{display:flex;flex-wrap:wrap;gap:8px;width:100%}.ts-group select{flex:1 1 40%;min-width:0;cursor:pointer;padding-left:12px;padding-right:6px}.ts-group select:first-child{flex:1 0 100%}.ts-group select:disabled{opacity:.4;cursor:not-allowed}';
+  document.head.appendChild(st);
+  const pad = n => String(n).padStart(2, '0');
+  const vProto = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+  const dProto = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'disabled');
+  function enhance(inp) {
+    if (inp.dataset.ts) return; inp.dataset.ts = '1';
+    const mk = (label, html) => { const s = document.createElement('select'); s.className = 'inp'; s.setAttribute('aria-label', label); s.innerHTML = html; return s; };
+    const a = mk(T.a, `<option value="">${T.a}</option><option value="am">${T.am}</option><option value="pm">${T.pm}</option>`);
+    const h = mk(T.h, `<option value="">${T.h}</option>` + Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}">${i + 1}${T.hs}</option>`).join(''));
+    const m = mk(T.m, `<option value="">${T.m}</option>` + Array.from({ length: 60 }, (_, i) => `<option value="${pad(i)}">${pad(i)}${T.ms}</option>`).join(''));
+    const wrap = document.createElement('span'); wrap.className = 'ts-group'; wrap.append(a, h, m);
+    inp.style.display = 'none'; inp.after(wrap);
+    const fire = () => { inp.dispatchEvent(new Event('input', { bubbles: true })); inp.dispatchEvent(new Event('change', { bubbles: true })); };
+    const toSel = () => {
+      const mt = /^(\d{1,2}):(\d{2})/.exec(vProto.get.call(inp) || '');
+      if (!mt) { a.value = ''; h.value = ''; m.value = ''; return; }
+      const hh = Number(mt[1]); a.value = hh >= 12 ? 'pm' : 'am'; h.value = String(hh % 12 || 12); m.value = mt[2];
+    };
+    const fromSel = () => {
+      if (h.value && !m.value) m.value = '00';
+      const v = a.value && h.value && m.value ? `${pad((Number(h.value) % 12) + (a.value === 'pm' ? 12 : 0))}:${m.value}` : '';
+      vProto.set.call(inp, v); fire();
+    };
+    [a, h, m].forEach(s => s.addEventListener('change', e => { e.stopPropagation(); fromSel(); }));
+    Object.defineProperty(inp, 'value', { configurable: true, get() { return vProto.get.call(this); }, set(v) { vProto.set.call(this, v); toSel(); } });
+    Object.defineProperty(inp, 'disabled', { configurable: true, get() { return dProto.get.call(this); }, set(v) { dProto.set.call(this, v); [a, h, m].forEach(s => { s.disabled = !!v; }); } });
+    toSel(); [a, h, m].forEach(s => { s.disabled = inp.disabled; });
+  }
+  const scan = root => (root.querySelectorAll ? root.querySelectorAll('input[type=time]') : []).forEach(enhance);
+  scan(document);
+  new MutationObserver(ms => ms.forEach(r => r.addedNodes.forEach(n => { if (n.nodeType === 1) { if (n.matches && n.matches('input[type=time]')) enhance(n); scan(n); } }))).observe(document.body, { childList: true, subtree: true });
+})();
+</script>
+<style>
+.nx-card { margin: 16px 0 6px; padding: 16px 14px 14px; border: 1px solid rgba(201,164,106,.38); border-radius: 16px; background: rgba(201,164,106,.07); }
+.nx-card .nx-t { margin: 0 0 4px; font-size: 16px; font-weight: 800; color: var(--brass-hi, #E6C98D); }
+.nx-card .nx-s { margin: 0 0 10px; font-size: 13.5px; color: var(--sub, #B9A9A0); line-height: 1.5; }
+.nx-card button { display: block; width: 100%; margin-top: 8px; padding: 14px 12px; border-radius: 12px; border: 1px solid rgba(201,164,106,.5); background: transparent; color: var(--text, #F3E9E2); font-size: 15px; font-weight: 700; cursor: pointer; }
+.nx-card button.nx-main { background: var(--brass, #C9A46A); color: #1B1014; border: 0; }
+</style>
+<script>
+/* 사주·별자리·궁합 결과 맨 끝에 "다음엔 뭘 볼까요?" 카드 (2026-11-21) — 결과가 끝나도 다음 길이 있도록 */
+(function () {
+  const BTN = {
+    saju: ['🔮 사주 리포트 보기', 'saju'], astro: ['✨ 별자리 리포트 보기', 'astro'], compat: ['💞 궁합 보기', 'compat']
+  };
+  function card(cur) {
+    const others = ['saju', 'astro', 'compat'].filter(k => k !== cur);
+    const hasP = (() => { try { return !!localStorage.getItem('rodeo_profile_v1'); } catch (e) { return false; } })();
+    const sub = hasP ? '입력해 둔 생년월일 그대로 바로 볼 수 있어요.' : '생년월일을 한 번만 넣으면 돼요.';
+    return '<div class="nx-card" data-nx="1"><p class="nx-t">다음엔 뭘 볼까요?</p><p class="nx-s">' + sub + '</p>'
+      + others.map((k, i) => '<button type="button" class="' + (i === 0 ? 'nx-main' : '') + '" data-quick="' + BTN[k][1] + '">' + BTN[k][0] + '</button>').join('')
+      + '<button type="button" data-go="home">🃏 타로로 다시 물어보기</button>'
+      + '<button type="button" data-go="home">🏠 처음으로</button></div>';
+  }
+  const MAP = { 'sj-result': 'saju', 'as-result': 'astro', 'cp-result': 'compat' };
+  Object.keys(MAP).forEach(id => {
+    const box = document.getElementById(id); if (!box) return;
+    let busy = false;
+    const fit = () => {
+      if (busy) return;
+      const has = box.querySelector(':scope > .nx-card');
+      if (!box.textContent.trim() || box.style.display === 'none') { if (has) { busy = true; has.remove(); busy = false; } return; }
+      if (has && box.lastElementChild === has) return;
+      busy = true; if (has) has.remove(); box.insertAdjacentHTML('beforeend', card(MAP[id])); busy = false;
+    };
+    new MutationObserver(fit).observe(box, { childList: true, attributes: true, attributeFilter: ['style'] });
+    fit();
+  });
+})();
 </script>
 </body>
 </html>
