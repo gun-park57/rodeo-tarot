@@ -2,6 +2,25 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<script>/* PREVIEW-ONLY-RESET 베타 테스트용 리셋 (미리보기 전용, 2026-11-21)
+ * ?reset=1 로 열면 코인·무료 질문·카톡 1회 무료만 처음 상태로. 내 정보·기록은 그대로 둔다. */
+(function () {
+  try {
+    var u = new URL(location.href);
+    if (u.searchParams.get('reset') !== '1') return;
+    ['rodeo_coin_v1', 'rodeo_quota_v1', 'rodeo_kakao_free_v1'].forEach(function (k) { localStorage.removeItem(k); });
+    u.searchParams.delete('reset');
+    history.replaceState(null, '', u.pathname + u.search + u.hash);
+    document.addEventListener('DOMContentLoaded', function () {
+      var t = document.createElement('div');
+      t.textContent = '코인이랑 무료 질문, 처음 상태로 돌려놨어요 🙌';
+      t.style.cssText = 'position:fixed;left:50%;top:16px;transform:translateX(-50%);z-index:99999;background:#2a1a20;color:#f3e6d8;border:1px solid #c9a46a;padding:10px 14px;border-radius:10px;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.4)';
+      document.body.appendChild(t);
+      setTimeout(function () { t.remove(); }, 3000);
+    });
+  } catch (e) { /* 저장소 접근 불가: 무시 */ }
+})();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>압구정 로데오 타로 — 동서양 통합 역학</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
