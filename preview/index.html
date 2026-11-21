@@ -403,6 +403,8 @@ body { background: var(--ink); background-image: none; color: var(--text); font-
 /* 해외 앱 벤치마킹: 사전·패턴·연속 기록·피드백 */
 .tp-streak { display: inline-block; margin-top: 8px; font-size: 13px; font-weight: 700; color: var(--brass-hi); background: rgba(201,164,106,.12); border: 1px solid rgba(201,164,106,.35); padding: 4px 10px; border-radius: 999px; }
 .tp-feel { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.tp-fb { display: block; margin-top: 8px; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(201,164,106,.7); background: rgba(201,164,106,.1); color: var(--brass-hi); font-size: 13.5px; font-weight: 700; text-align: center; text-decoration: none; word-break: keep-all; }
+.tp-fb:hover { background: rgba(201,164,106,.2); }
 .tp-feel button { padding: 9px 4px; border-radius: 10px; border: 1px solid rgba(201,164,106,.4); background: transparent; color: var(--text); font-size: 13.5px; cursor: pointer; word-break: keep-all; }
 .tp-feel button:hover, .tp-feel button:focus-visible { background: rgba(201,164,106,.15); }
 [data-dict] { cursor: zoom-in; }
@@ -3291,7 +3293,7 @@ const TP = (() => {
     let tag = '', head = '';
     try { const v = verdictInfo(); tag = v.level.tag; head = v.topic[v.level.key] + v.level.tail; } catch (e) { /* 무시 */ }
     record('reading', userContext.customQuery, chosen, tag);
-    botMsg(`<p class="text-[13px] mb-2">이 리딩, 지금 내 상황과 맞나요?</p><div class="tp-feel">${['와닿아요', '반반이에요', '안 맞아요'].map((f, i) => `<button type="button" data-feel="${i}">${['💯', '🤔', '🙅'][i]} ${f}</button>`).join('')}</div>`);
+    botMsg(`<p class="text-[13px] mb-2">이 리딩, 지금 내 상황과 맞나요?</p><div class="tp-feel">${['와닿아요', '반반이에요', '안 맞아요'].map((f, i) => `<button type="button" data-feel="${i}">${['💯', '🤔', '🙅'][i]} ${f}</button>`).join('')}</div>${(() => { const u = window.RODEO_CONFIG && window.RODEO_CONFIG.FEEDBACK_URL; return u ? `<a class="tp-fb" href="${u}" target="_blank" rel="noopener" data-track="feedback_end">💬 1분 의견 남기기 · 베타를 같이 만들어요</a>` : ''; })()}`);
     try {
       const v = verdictInfo(), L = layout, k = chosen[v.keyIdx];
       TI.set({ title: `${L.count}장 리딩`, q: userContext.customQuery, cards: chosen, labels: L.positions.map(p => p.short),
@@ -7605,7 +7607,8 @@ const BETA = (() => {
     const f = e.target.closest('[data-feel]');
     if (f) {
       track('feedback_feel', { feel: ['hit', 'half', 'miss'][Number(f.dataset.feel)] });
-      if (CFG.FEEDBACK_URL && f.dataset.feel === '2') setTimeout(() => botMsg(`아쉬웠던 점을 알려주시면 베타에 바로 반영할게요. <a class="mb-link" href="${CFG.FEEDBACK_URL}" target="_blank" rel="noopener">의견 보내기</a>`), 300);
+      const FEEL_MSG = ['와, 다행이에요! 어디가 딱 맞았는지 위 버튼으로 알려주시면 큰 힘이 돼요.', '어디가 맞고 어디가 아니었는지 알려주시면 바로 다듬을게요.', '아쉬웠던 점을 알려주시면 베타에 바로 반영할게요.'];
+      if (CFG.FEEDBACK_URL) setTimeout(() => botMsg(`${FEEL_MSG[Number(f.dataset.feel)] || FEEL_MSG[2]} <a class="mb-link" href="${CFG.FEEDBACK_URL}" target="_blank" rel="noopener" data-track="feedback_feel_link">의견 보내기</a>`), 300);
     }
   }, true);
   ['vs-cam', 'vs-file'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('change', () => track('vision_photo')); });
