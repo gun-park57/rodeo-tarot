@@ -5886,7 +5886,9 @@ const READER = (() => {
  * ========================================================= */
 const QUOTA = (() => {
   const KEY = 'rodeo_quota_v1';
-  const max = () => { const n = window.RODEO_CONFIG && Number(window.RODEO_CONFIG.FREE_Q); return Number.isFinite(n) && n >= 0 ? n : 3; };
+  // 2026-11-23 박건: 1단계 = 선착순 100명 베타 테스터, 질문 무제한 무료 / 2단계 = 하루 질문 3개 (config.js BETA_STAGE)
+  const unlimited = () => !(window.RODEO_CONFIG && Number(window.RODEO_CONFIG.BETA_STAGE) === 2) && !(window.RODEO_CONFIG && window.RODEO_CONFIG.BETA === false);
+  const max = () => { if (unlimited()) return 9999; const n = window.RODEO_CONFIG && Number(window.RODEO_CONFIG.FREE_Q); return Number.isFinite(n) && n >= 0 ? n : 3; };
   const today = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
   let mem = { d: today(), n: 0 };
   function read() {
@@ -5896,7 +5898,7 @@ const QUOTA = (() => {
   function used() { return read().n; }
   function left() { return Math.max(0, max() - used()); }
   function use() { const o = read(); o.n += 1; mem = o; try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) { /* 저장 불가: 이번 세션만 */ } }
-  return { left, use, used, max };
+  return { left, use, used, max, unlimited };
 })();
 
 const HOOK = (() => {
@@ -7669,7 +7671,7 @@ const BETA = (() => {
     gtag('js', new Date()); gtag('config', CFG.GA_ID, { anonymize_ip: true });
   }
   function track(name, props) {
-    try { if (window.gtag && CFG.GA_ID) window.gtag('event', name, props || {}); } catch (e) { /* 분석 실패는 무시 */ }
+    try { if (window.gtag && CFG.GA_ID) window.gtag('event', name, Object.assign({ beta_stage: Number(CFG.BETA_STAGE) === 2 ? 2 : 1 }, props || {})); } catch (e) { /* 분석 실패는 무시 */ }
   }
   function toast(msg) {
     let t = document.getElementById('beta-toast');
@@ -7803,7 +7805,7 @@ const COIN = (() => {
       <p class="coin-bal"><span aria-hidden="true">🪙</span>${read().bal}<small>코인</small></p>
       <p class="coin-free">오늘 무료 질문 <b>${left}/${max}</b> 남았어요</p>
       <p class="coin-h">쓰는 곳</p>
-      <ul class="coin-rule"><li>하루 질문 <b>${max}개는 무료</b>예요. 앞 카드는 바로 보이고, 마지막 카드는 질문 1개로 열어요</li><li>무료를 다 쓰면 질문 1개에 <b>🪙${COST}</b></li><li>5장 풀이, 6장 깊은 비교도 질문 1개로 쳐요</li></ul>
+      <ul class="coin-rule"><li>${typeof QUOTA !== 'undefined' && QUOTA.unlimited() ? '베타 테스터 기간에는 <b>모든 질문이 무료</b>예요' : `하루 질문 <b>${max}개는 무료</b>예요. 앞 카드는 바로 보이고, 마지막 카드는 질문 1개로 열어요`}</li><li>무료를 다 쓰면 질문 1개에 <b>🪙${COST}</b></li><li>5장 풀이, 6장 깊은 비교도 질문 1개로 쳐요</li></ul>
       <p class="coin-h">모으는 법</p>
       <p class="coin-sub">매일 출석 · 7일 한 바퀴 (주 65코인)</p>${weekHtml()}
       <ul class="coin-rule"><li>첫 방문 선물 <b>+${WELCOME}</b></li><li class="soon">친구 3명 초대 <b>+30</b> <em>곧 열려요</em></li></ul>
@@ -7816,7 +7818,7 @@ const COIN = (() => {
   document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('button'); if (b) lastBtn = b; }, true);
   function charge(product, unlock, payOrig) {
     if (typeof QUOTA !== 'undefined' && QUOTA.left() > 0) {
-      QUOTA.use(); toast(`무료 질문 ${QUOTA.used()}/${QUOTA.max()}개 썼어요`);
+      QUOTA.use(); toast(QUOTA.unlimited() ? '베타 테스터라 무료로 열었어요 🌙' : `무료 질문 ${QUOTA.used()}/${QUOTA.max()}개 썼어요`);
       if (typeof BETA !== 'undefined') BETA.track('free_question', { n: QUOTA.used(), product });
       setTimeout(unlock, 300); return;
     }
@@ -7962,7 +7964,7 @@ const PLAN = (() => {
         if (busy) return;
         e.currentTarget.disabled = true;
         QUOTA.use();
-        if (typeof BETA !== 'undefined') { BETA.track('free_question', { n: QUOTA.used(), spread: L.key }); BETA.toast(`무료 질문 ${QUOTA.used()}/${QUOTA.max()}개 썼어요`); }
+        if (typeof BETA !== 'undefined') { BETA.track('free_question', { n: QUOTA.used(), spread: L.key }); BETA.toast(QUOTA.unlimited() ? '베타 테스터라 무료로 열었어요 🌙' : `무료 질문 ${QUOTA.used()}/${QUOTA.max()}개 썼어요`); }
         unlockFinal();
       });
       return;
@@ -8009,7 +8011,7 @@ const PLAN = (() => {
     </div>`);
     const hero = document.getElementById('mb-hero');
     // 2026-11-21 박건 C안: 위 카드 그림 대신 BETA 띠 → 질문창·3장/5장이 첫 화면 안으로
-    if (hero && !document.getElementById('beta-strip')) hero.insertAdjacentHTML('afterbegin', `<div class="beta-strip" id="beta-strip"><b>BETA</b><span>베타 기간 한정 무료 · 하루 질문 <em>${QUOTA.max()}개</em></span></div>`);
+    if (hero && !document.getElementById('beta-strip')) hero.insertAdjacentHTML('afterbegin', `<div class="beta-strip" id="beta-strip"><b>BETA</b><span>${QUOTA.unlimited() ? '선착순 <em>100명</em> 베타 테스터 · 모든 풀이 무료' : `베타 기간 한정 무료 · 하루 질문 <em>${QUOTA.max()}개</em>`}</span></div>`);
     if (hero && !document.getElementById('mb-legal')) hero.insertAdjacentHTML('beforeend', `<div class="mb-legal" id="mb-legal">
       <p>재미로 보는 <b>오락용 콘텐츠</b>예요. 결과를 보장하지 않아요.</p>
       <p>방문 통계는 익명으로만 모아요. 이름·생년월일·사진은 서버로 보내지 않아요.</p>
