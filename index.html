@@ -4074,13 +4074,25 @@ const INFER = (() => {
       const n = c.type === 'major' ? (c.num <= 7 ? '1~2주' : c.num <= 14 ? '1~3개월' : '3개월 이상') : RANKN[c.rank] ? `${RANKN[c.rank]}${c.suit === 'wands' ? '일' : c.suit === 'swords' ? '주' : c.suit === 'cups' ? '주~개월' : '개월'} 안팎` : e.time;
       ans = `<b>${n}</b>쯤이에요. ${e.ko} 카드라 속도는 "${e.time}"이고, 계절로 치면 <b>${e.season}</b>이에요.${c.isReversed && !c.lucky ? ' 거꾸로라 조금 늦어질 수 있어요.' : ''}`;
     } else {
-      ans = e[d.key];
-      if (c.type === 'minor' && !COURT[c.rank]) { const n = NUM[RANKN[c.rank]]; if (n) ans += `, 그중에서도 <b>${NUMADJ[RANKN[c.rank]]}</b> 쪽`; }
-      if (c.type === 'major') ans += `, 그중에서도 <b>${MAJ[c.num]}</b> 쪽`;
-      if (c.isReversed && !c.lucky) ans += ' (거꾸로라 너무 과하지 않게)';
+      // 2026-11-23 박건 "말이 이상해": 화살표 나열 대신 옆에서 말해 주듯 문장으로, 숫자 뜻도 질문 대상에 맞게
+      const SUITK = { wands: '완즈', cups: '컵', swords: '소드', pentacles: '펜타클' };
+      const NUMWHY = { 1: '시작의 숫자', 2: '둘의 숫자', 3: '사람이 모이는 숫자', 4: '안정의 숫자', 5: '변화의 숫자', 6: '조화의 숫자', 7: '혼자 고르는 숫자', 8: '꾸준히 다져 온 숫자', 9: '소원이 이뤄지는 숫자', 10: '꽉 찬 숫자' };
+      const NUM_FOOD = { 1: '처음 먹어 보는 새 메뉴에 도전하기 좋은 날이에요', 2: '둘이 나눠 먹기 좋은 메뉴가 잘 맞아요', 3: '여럿이 같이 시켜 먹으면 더 맛있는 날이에요', 4: '늘 먹던 단골 메뉴가 제일 편한 날이에요', 5: '평소엔 잘 안 먹던 색다른 메뉴가 기분 전환이 돼요', 6: '누구나 좋아하는 무난한 메뉴가 실패가 없어요', 7: '남 눈치 보지 말고 내가 진짜 먹고 싶은 걸 고르세요', 8: '이미 맛이 검증된 단골 맛집이 정답이에요', 9: '먹고 나서 "아, 이거지" 하고 만족할 메뉴가 기다리고 있어요', 10: '푸짐하게 한 상 차려 먹어도 좋은 날이에요' };
+      const COURT_FOOD = { Page: '가볍게 한 그릇 먹기 좋은 날이에요', Knight: '빨리 나오는 메뉴로 후딱 먹는 게 좋아요', Queen: '정성 들여 만든 집밥 같은 메뉴가 당겨요', King: '제대로 된 든든한 한 끼가 필요한 날이에요' };
+      const NUM_ANY = { 1: '처음 해 보는 새로운 쪽', 2: '둘이 함께하는 쪽', 3: '여럿이 같이하는 쪽', 4: '늘 하던 익숙한 쪽', 5: '평소와 다른 색다른 쪽', 6: '누구나 좋아하는 무난한 쪽', 7: '내 취향대로 고른 쪽', 8: '이미 검증된 쪽', 9: '만족도가 높은 쪽', 10: '넉넉하고 꽉 찬 쪽' };
+      const n = c.type === 'minor' ? RANKN[c.rank] : null, food = d.key === 'food';
+      const S = [];
+      S.push(c.type === 'minor' ? `${SUITK[c.suit]}${jgx(SUITK[c.suit]) ? '은' : '는'} ${e.ko}의 카드라 <b>${e.core}</b> 기운이에요.` : `${e.ko}의 기운을 가진 메이저 카드라 <b>${e.core}</b> 쪽이에요.`);
+      if (c.type === 'major') S.push(`이 카드는 <b>${MAJ[c.num]}</b> 느낌이라, ${food ? '그런 분위기의 메뉴가 잘 어울려요' : '그런 쪽으로 고르면 잘 맞아요'}.`);
+      else if (COURT[c.rank]) S.push(food ? `${COURT[c.rank][0]} ${COURT[c.rank][1]}이라, ${COURT_FOOD[c.rank]}.` : `${COURT[c.rank][0]} <b>${COURT[c.rank][1]}</b>이에요.`);
+      else if (n) S.push(food ? `숫자 ${n}${NUMJ[n]} ${NUMWHY[n]}라, ${NUM_FOOD[n]}.` : `숫자 ${n}${NUMJ[n]} ${NUMWHY[n]}라, 그중에서도 <b>${NUM_ANY[n]}</b>이 좋아요.`);
+      S.push(food ? `그래서 오늘은 <b>${e.food}</b> 쪽이 잘 맞아요.` : `그래서 ${d.label}${ro(d.label)}는 <b>${e[d.key]}</b> 쪽이 잘 맞아요.`);
+      if (c.isReversed && !c.lucky) S.push(food ? '카드가 거꾸로 나왔으니 너무 많이 먹지는 말고요.' : '카드가 거꾸로 나왔으니 너무 과하지 않게 골라요.');
+      return S.join(' ');
     }
     return `📖 ${text} → 🔗 ${d.label}${ro(d.label)} 옮기면 → 👉 ${ans}`;
   }
+  function jgx(w) { const ch = String(w).trim().slice(-1).charCodeAt(0) - 0xAC00; return ch >= 0 && ch < 11172 && ch % 28 !== 0; }
   // 여러 장 사이 연결: 원소 흐름 · 숫자 흐름 · 같은 슈트
   function links(cards, posNames) {
     const out = [];
