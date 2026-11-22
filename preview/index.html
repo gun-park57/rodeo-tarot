@@ -3904,7 +3904,7 @@ const STORYTELL = (() => {
     let tl = '';
     try { tl = tk && typeof topicLine === 'function' ? topicLine(c, tk) : ''; } catch (e) { tl = ''; }
     if (tl && avoid && norm(fs(tl)) === avoid) tl = String(tl).slice(fs(tl).length).trim();
-    if (tl) out.push(`${ASK2[seat] || ASK2.other} ${TK_KO[tk] ? `${TK_KO[tk]} 치면 ` : ''}${esc(end(tl))}`);
+    if (tl) out.push(`${TK_KO[tk] ? `${TK_KO[tk]} 놓고 보면,` : (ASK2[seat] || ASK2.other)} ${esc(end(tl))}`);
     out.push(voice(c, seat));
     return out.join(' ');
   }
