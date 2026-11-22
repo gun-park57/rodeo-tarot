@@ -883,7 +883,7 @@ details.deep p b { color: var(--text); margin-right: 4px; font-weight: 700; }
 .dq-mini { font-size: 14px; font-weight: 700; color: var(--brass-hi); margin: 0 0 4px; }
 
 </style>
-<script src="config.js" onerror="void 0"></script>
+<script src="config.js?v=20261123" onerror="void 0"></script>
 <style>
 /* 가격정책 v1 · 3장/5장 (2026-11-20) */
 .coin-badge { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; padding: 5px 10px; border-radius: 999px; border: 1.5px solid #FFE14D; color: #FFE14D; background: rgba(255,225,77,.08); font-size: 12.5px; font-weight: 800; box-shadow: 0 0 8px rgba(255,225,77,.35); cursor: pointer; }
@@ -5868,7 +5868,7 @@ const READER = (() => {
 /* 가격 칸 (2026-11-23 박건: "0원 칸은 살리고 나중에 2,500원 넣자")
  * config.js PRICE: 질문 1개 가격(원). 0이면 모든 가격 칸이 '0원', 정식 때 2500으로 바꾸면 질문은 2,500원·사주 상품은 원래 가격 */
 const PRICE = (() => {
-  const q = () => { const n = Number((window.RODEO_CONFIG || {}).PRICE); return Number.isFinite(n) && n >= 0 ? n : 2500; };
+  const q = () => { const c = window.RODEO_CONFIG || {}; if (c.PRICE == null || c.PRICE === '') return c.BETA === false ? 2500 : 0; const n = Number(c.PRICE); return Number.isFinite(n) && n >= 0 ? n : 0; };
   const won = n => Number(n).toLocaleString('ko-KR') + '원';
   return { q, zero: () => q() === 0, label: n => won(q() === 0 ? 0 : (n == null ? q() : n)) };
 })();
