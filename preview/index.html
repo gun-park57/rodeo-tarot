@@ -3829,7 +3829,8 @@ const STORYTELL = (() => {
   const end = t => { t = String(t || '').trim(); return !t ? '' : /[.!?]$/.test(t) ? t : t + '.'; };
   const fs = t => { const m = String(t || '').match(/^[^.!?]*[.!?]/); return (m ? m[0] : String(t || '')).trim(); };
   const norm = t => String(t || '').replace(/<[^>]+>/g, '').replace(/[\s.,·!?()]/g, '');
-  const TK_KO = { love: '연애', money: '돈', work: '일', study: '시험·공부', health: '건강', biz: '사업', people: '사람 관계', stock: '투자' };
+  const TK_KO = { love: '연애로', money: '돈 문제로', work: '일로', study: '시험·공부로', health: '건강으로', biz: '사업으로', people: '사람 관계로', stock: '투자로' };
+  const OPEN = { past: ['그림을 보면 ', ' 보여요.'], now: ['카드 속에는 ', ' 있어요.'], future: ['이 카드에는 ', ' 그려져 있어요.'], today: ['오늘 카드 속에는 ', ' 있어요.'], answer: ['뽑으신 카드에는 ', ' 그려져 있어요.'], other: ['카드 속에는 ', ' 있어요.'] };
   const good = c => { const s = typeof cardScore === 'function' ? cardScore(c) : (c.isReversed ? -1 : 1); return s >= -0.15; };
   // 자리 → 말머리
   function seatOf(pos) {
@@ -3847,7 +3848,7 @@ const STORYTELL = (() => {
     if (seat === 'now') return g ? '지금 이 흐름을 억지로 바꾸지 말고 그대로 이어 가면 돼요.' : '지금은 밀어붙이기보다 한 박자 쉬면서 걸리는 부분부터 살펴보는 게 좋아요.';
     if (seat === 'future') {
       let tm = null; try { tm = READER.timing(c); } catch (e) {}
-      const when = tm && tm.text ? ` 시기는 <b>${esc(tm.text)}</b> 쪽으로 봐요.` : '';
+      const when = tm && tm.text ? ` 시기로는 <b>${esc(tm.text)}</b>, 그때를 눈여겨보세요.` : '';
       return (g ? '조급해하지 않아도 이 방향으로 천천히 다가오고 있어요.' : '미리 알았으니, 지금부터 대비하면 충분히 바꿀 수 있어요.') + when;
     }
     if (seat === 'answer') return g ? '원하는 쪽으로 가려면 지금 마음을 그대로 밀고 가면 돼요.' : '그대로 밀어붙이기보다 다른 길도 하나 같이 준비해 두면 마음이 편해요.';
@@ -3860,16 +3861,21 @@ const STORYTELL = (() => {
     const M = META(c); if (!M) return '';
     const seat = seatOf(pos || '');
     const tk = opts.tk || (typeof topicKey === 'function' ? topicKey() : null) || '';
-    const pair = (!c.isReversed || c.lucky) ? M.up : M.rv;
+    const pair = c.isReversed ? M.rv : M.up; // 거꾸로 뜻 문장은 rv (행운의 거꾸로도 rv가 좋은 뜻으로 적혀 있음)
     const avoid = norm(opts.avoid || '');
     const out = [];
-    out.push(`카드 속에는 ${esc(M.scene)}${iga(M.scene)} 있어요.`);
-    if (pair && pair[0]) out.push(`${LEAD[seat] || (pos ? `${esc(pos)} 자리에서 보면, ` : '')}${esc(end(pair[0]))}`);
+    const op = OPEN[seat] || OPEN.other;
+    out.push(`${op[0]}${esc(M.scene)}${iga(M.scene)}${op[1]}`);
+    // 뜻 문장이 그림 설명을 되풀이하면('~그림이에요') 다음 문장을 뜻으로
+    const picDup = pair && (/그림이에요\.?$/.test(String(pair[0] || '').trim()) || norm(pair[0]).startsWith(norm(M.scene).slice(0, 4)));
+    const mean = pair ? (picDup ? pair[1] : pair[0]) : '';
+    if (mean) out.push(`${LEAD[seat] || (pos ? `${esc(pos)} 자리에서 보면, ` : '')}${esc(end(mean))}`);
+    const near = (x, y) => { x = norm(x); y = norm(y); return !!x && !!y && (x.includes(y) || y.includes(x)); };
     let tl = '';
     try { tl = tk && typeof topicLine === 'function' ? topicLine(c, tk) : ''; } catch (e) { tl = ''; }
-    if (tl && avoid && norm(fs(tl)) === avoid) tl = String(tl).slice(fs(tl).length).trim();
-    if (tl) out.push(`${TK_KO[tk] ? `${TK_KO[tk]} 쪽으로 옮겨 보면, ` : ''}${esc(end(tl))}`);
-    else if (pair && pair[1] && norm(pair[1]) !== avoid) out.push(`쉽게 말하면, ${esc(end(pair[1]))}`);
+    if (tl && ((avoid && norm(fs(tl)) === avoid) || near(fs(tl), mean))) tl = String(tl).slice(fs(tl).length).trim();
+    if (tl) out.push(`${TK_KO[tk] ? `${TK_KO[tk]} 치면, ` : ''}${esc(end(tl))}`);
+    else if (!picDup && pair && pair[1] && norm(pair[1]) !== avoid && !near(pair[1], mean)) out.push(`쉽게 말하면, ${esc(end(pair[1]))}`);
     out.push(closer(c, seat, tk));
     return out.join(' ');
   }
@@ -3879,10 +3885,10 @@ const STORYTELL = (() => {
     const M = META(c); const L = [];
     if (M && M.sym) L.push(`<b>상징</b>이 카드는 ${esc(M.sym)}이에요.`);
     try { const mp = READER.minorPlain(c); if (mp) L.push(`<b>숫자·무늬</b>${mp}`); } catch (e) {}
-    if (M && M.astro && M.astro !== '—') L.push(`<b>별자리</b>${esc(M.astro)}${M.house && M.house !== '—' ? ` · ${esc(M.house)}` : ''}`);
+    if (M && M.astro && M.astro !== '—' && !/계절 없음/.test(M.astro)) L.push(`<b>별자리</b>${esc(M.astro)}${M.house && M.house !== '—' ? ` · ${esc(M.house)}` : ''}`);
     if (c.isReversed) { let rp = ''; try { rp = READER.revPlain(c); } catch (e) {} L.push(`<b>거꾸로</b>${rp || esc(end((M && M.rv && M.rv[1]) || '뜻이 약해지거나 늦어지는 쪽으로 읽어요'))}`); }
     else if (M && M.rv && M.rv[1]) L.push(`<b>만약 거꾸로였다면</b>${esc(end(M.rv[1]))}`);
-    if (seatOf(pos || '') !== 'future') { try { const tm = READER.timing(c); if (tm && tm.text) L.push(`<b>시기</b>이 카드가 움직이는 속도는 ${esc(tm.text)} 쪽이에요.`); } catch (e) {} }
+    if (seatOf(pos || '') !== 'future') { try { const tm = READER.timing(c); if (tm && tm.text) L.push(`<b>시기</b>${esc(tm.text)}. ${esc(tm.why || '')}`); } catch (e) {} }
     if (opts.extra) L.push(opts.extra);
     return L.map(x => `<p>${x}</p>`).join('');
   }
