@@ -515,6 +515,9 @@ header.top .mb-me { margin-left: auto; }
 .rev-word { font-size: 12.5px; font-weight: 700; color: var(--ill); margin-left: 4px; }
 .plain-frame { font-size: 13.5px; color: var(--sub); margin: 0; }
 .plain-main { font-size: 16px; font-weight: 700; color: var(--text); line-height: 1.55; margin: 2px 0 4px; }
+.rd-story { font-size: 15px; line-height: 1.75; color: var(--text); margin: 8px 0 2px; }
+.rd-story b { color: var(--brass); font-weight: 700; }
+details.st-more summary { font-weight: 700; }
 details.deep { margin-top: 6px; border-top: 1px solid rgba(201,164,106,.18); padding-top: 6px; }
 details.deep summary { font-size: 15px; color: var(--brass); cursor: pointer; list-style: none; padding: 4px 0; }
 details.deep summary::-webkit-details-marker { display: none; }
@@ -3126,11 +3129,12 @@ const TP = (() => {
     const others = DQ.filter(([k]) => !DQ_SEEN.has(k)).slice(0, 3);
     const dirTag = c.isReversed ? (c.lucky ? ' <span class="rev-word">거꾸로 · 좋은 뜻</span>' : ' <span class="rev-word">거꾸로</span>') : ' <span class="rev-word" style="opacity:.8">정방향</span>';
     const body = `<p class="dq-head">${esc(head)}</p>
-        ${reason ? `<p class="dq-p">${esc(reason)} <span class="sc sc-t">타로</span></p>` : ''}
+        ${(() => { const st = typeof STORYTELL !== 'undefined' ? STORYTELL.story(c, '오늘', { tk: tk === 'general' ? '' : tk, avoid: head }) : ''; return st ? `<p class="dq-p rd-story">${st} <span class="sc sc-t">타로</span></p>` : (reason ? `<p class="dq-p">${esc(reason)} <span class="sc sc-t">타로</span></p>` : ''); })()}
         ${sajuLine(c, tk)}
         ${todo ? `<p class="dq-todo"><b>오늘 할 일</b> · ${esc(todo)}</p>` : ''}
         ${caution ? `<p class="dq-warn"><b>조심할 것</b> · ${esc(caution)}</p>` : ''}
         ${word ? `<p class="text-[12.5px] text-sky-200/90 mt-1">💡 오늘의 한마디: ${esc(word)}</p>` : ''}
+        ${(() => { const m = typeof STORYTELL !== 'undefined' ? STORYTELL.more(c, '오늘', { extra: reason && TL ? `<b>왜 이렇게 읽냐면</b>${esc(reason)}` : '' }) : ''; return m ? `<details class="deep st-more"><summary>더 알아보기</summary>${m}</details>` : ''; })()}
         ${others.length ? `<div class="dq-more"><p>같은 카드를 <b class="gold-text">다른 고민</b>으로 보면 어떨까요? <span class="dq-free">모두 무료</span></p>
           <div class="row">${others.map(([k, i, n]) => `<button type="button" data-dmore="${k}">${i} ${n}${ro(n)} 보기</button>`).join('')}</div></div>` : ''}`;
     loadingPanel(short ? '같은 카드를 다시 읽는 중...' : '카드를 뒤집는 중...');
@@ -3181,8 +3185,7 @@ const TP = (() => {
       botMsg(`<div class="tp-daily">${miniCard(c)}<div>
         <div class="verdict"><span class="vtag ${A.cls}">${A.t}</span><p class="vhead">${esc(A.d)}</p></div>
         <p class="font-bold gold-text text-[13px]">${esc(plainName(c))}${c.isReversed ? ' <span class="rev-word">거꾸로</span>' : ''}</p></div></div>
-        <p class="text-[13px] mt-2">${esc(meaning(c))}</p>
-        ${tl ? `<p class="text-[13px] mt-1"><b>${TOPIC_LABEL[topicKey(q)]}</b> · ${esc(tl)}</p>` : ''}
+        ${(() => { const blk = typeof STORYTELL !== 'undefined' ? STORYTELL.block(c, '답', { tk: topicKey(q) || '' }) : ''; return blk ? `<div class="mt-2">${blk}</div>` : `<p class="text-[13px] mt-2">${esc(meaning(c))}</p>${tl ? `<p class="text-[13px] mt-1"><b>${TOPIC_LABEL[topicKey(q)]}</b> · ${esc(tl)}</p>` : ''}`; })()}
         <p class="text-[11px] text-purple-300/70 mt-1">원카드는 빠른 방향 확인용이에요. 자세히 보고 싶으면 3장 리딩으로 봐요.</p>
         ${shareBtn(`[예/아니오 타로] ${q}\n→ ${A.t} (${cardName(c)} ${dir(c)})`, { title: '예/아니오 타로', q, cards: [c], tag: A.t, tagKey: A.cls.slice(2), head: A.d,
           lines: [meaning(c)].concat(tl ? [tl] : []) })}`);
@@ -3816,6 +3819,81 @@ function flip(i) {
   if (lb) lb.textContent = `${layout.positions[i].short}${chosen[i].isReversed ? ' · 거꾸로' : ''}`;
 }
 
+/* ===== 카드 이야기 풀이 (2026-11-23, 박건: "1장·3장 카드 전부 스토리텔링 + 더 알아보기")
+ * 카드마다: 그림 장면 → 이 자리(처음·지금·앞으로·오늘)에서의 뜻 → 고민 주제로 옮긴 말 → 자리별 마무리(시기·다음 걸음)
+ * 사람이 옆에서 말해 주듯 이어서 읽히게. '더 알아보기'에는 상징·숫자·별자리·거꾸로 뜻. */
+const STORYTELL = (() => {
+  const META = c => (typeof CARD_META !== 'undefined' && CARD_META[c.id]) || null;
+  const jg = w => { const ch = String(w).replace(/[^가-힣0-9]/g, '').slice(-1); if (!ch) return false; if (/[0-9]/.test(ch)) return '013678'.includes(ch); const k = ch.charCodeAt(0) - 0xAC00; return k >= 0 && k % 28 !== 0; };
+  const iga = w => (jg(w) ? '이' : '가');
+  const end = t => { t = String(t || '').trim(); return !t ? '' : /[.!?]$/.test(t) ? t : t + '.'; };
+  const fs = t => { const m = String(t || '').match(/^[^.!?]*[.!?]/); return (m ? m[0] : String(t || '')).trim(); };
+  const norm = t => String(t || '').replace(/<[^>]+>/g, '').replace(/[\s.,·!?()]/g, '');
+  const TK_KO = { love: '연애', money: '돈', work: '일', study: '시험·공부', health: '건강', biz: '사업', people: '사람 관계', stock: '투자' };
+  const good = c => { const s = typeof cardScore === 'function' ? cardScore(c) : (c.isReversed ? -1 : 1); return s >= -0.15; };
+  // 자리 → 말머리
+  function seatOf(pos) {
+    if (/과거|원인|처음/.test(pos)) return 'past';
+    if (/미래|결과|앞으로|가까운/.test(pos)) return 'future';
+    if (/현재|지금|상황/.test(pos)) return 'now';
+    if (pos === '오늘') return 'today';
+    if (pos === '답') return 'answer';
+    return 'other';
+  }
+  const LEAD = { past: '지나온 일로 보면, ', now: '지금 상황으로 보면, ', future: '앞으로의 흐름으로 보면, ', today: '오늘 하루로 보면, ', answer: '이 질문으로 보면, ' };
+  function closer(c, seat, tk) {
+    const g = good(c);
+    if (seat === 'past') return g ? '그때 쌓아 둔 것이 지금까지 든든하게 이어지고 있어요.' : '그때 남은 아쉬움이 아직 마음 한쪽에 남아 있어서, 지금 일에도 조금 영향을 주고 있어요.';
+    if (seat === 'now') return g ? '지금 이 흐름을 억지로 바꾸지 말고 그대로 이어 가면 돼요.' : '지금은 밀어붙이기보다 한 박자 쉬면서 걸리는 부분부터 살펴보는 게 좋아요.';
+    if (seat === 'future') {
+      let tm = null; try { tm = READER.timing(c); } catch (e) {}
+      const when = tm && tm.text ? ` 시기는 <b>${esc(tm.text)}</b> 쪽으로 봐요.` : '';
+      return (g ? '조급해하지 않아도 이 방향으로 천천히 다가오고 있어요.' : '미리 알았으니, 지금부터 대비하면 충분히 바꿀 수 있어요.') + when;
+    }
+    if (seat === 'answer') return g ? '원하는 쪽으로 가려면 지금 마음을 그대로 밀고 가면 돼요.' : '그대로 밀어붙이기보다 다른 길도 하나 같이 준비해 두면 마음이 편해요.';
+    if (seat === 'today') return g ? '오늘은 이 마음 그대로 가볍게 움직여 보세요.' : '오늘은 서두르지 말고 한 번 더 확인하고 움직이세요.';
+    return g ? '이 부분이 전체를 받쳐 주고 있어요.' : '이 부분은 조금 신경 써서 챙기면 좋아요.';
+  }
+  /* 본문 이야기 (보이는 부분). avoid: 말풍선에 이미 나온 문장은 되풀이하지 않는다 */
+  function story(c, pos, opts) {
+    opts = opts || {};
+    const M = META(c); if (!M) return '';
+    const seat = seatOf(pos || '');
+    const tk = opts.tk || (typeof topicKey === 'function' ? topicKey() : null) || '';
+    const pair = (!c.isReversed || c.lucky) ? M.up : M.rv;
+    const avoid = norm(opts.avoid || '');
+    const out = [];
+    out.push(`카드 속에는 ${esc(M.scene)}${iga(M.scene)} 있어요.`);
+    if (pair && pair[0]) out.push(`${LEAD[seat] || (pos ? `${esc(pos)} 자리에서 보면, ` : '')}${esc(end(pair[0]))}`);
+    let tl = '';
+    try { tl = tk && typeof topicLine === 'function' ? topicLine(c, tk) : ''; } catch (e) { tl = ''; }
+    if (tl && avoid && norm(fs(tl)) === avoid) tl = String(tl).slice(fs(tl).length).trim();
+    if (tl) out.push(`${TK_KO[tk] ? `${TK_KO[tk]} 쪽으로 옮겨 보면, ` : ''}${esc(end(tl))}`);
+    else if (pair && pair[1] && norm(pair[1]) !== avoid) out.push(`쉽게 말하면, ${esc(end(pair[1]))}`);
+    out.push(closer(c, seat, tk));
+    return out.join(' ');
+  }
+  /* 더 알아보기 (접힌 부분) */
+  function more(c, pos, opts) {
+    opts = opts || {};
+    const M = META(c); const L = [];
+    if (M && M.sym) L.push(`<b>상징</b>이 카드는 ${esc(M.sym)}이에요.`);
+    try { const mp = READER.minorPlain(c); if (mp) L.push(`<b>숫자·무늬</b>${mp}`); } catch (e) {}
+    if (M && M.astro && M.astro !== '—') L.push(`<b>별자리</b>${esc(M.astro)}${M.house && M.house !== '—' ? ` · ${esc(M.house)}` : ''}`);
+    if (c.isReversed) { let rp = ''; try { rp = READER.revPlain(c); } catch (e) {} L.push(`<b>거꾸로</b>${rp || esc(end((M && M.rv && M.rv[1]) || '뜻이 약해지거나 늦어지는 쪽으로 읽어요'))}`); }
+    else if (M && M.rv && M.rv[1]) L.push(`<b>만약 거꾸로였다면</b>${esc(end(M.rv[1]))}`);
+    if (seatOf(pos || '') !== 'future') { try { const tm = READER.timing(c); if (tm && tm.text) L.push(`<b>시기</b>이 카드가 움직이는 속도는 ${esc(tm.text)} 쪽이에요.`); } catch (e) {} }
+    if (opts.extra) L.push(opts.extra);
+    return L.map(x => `<p>${x}</p>`).join('');
+  }
+  function block(c, pos, opts) {
+    const s = story(c, pos, opts), m = more(c, pos, opts);
+    if (!s && !m) return '';
+    return `${s ? `<p class="rd-story">${s}</p>` : ''}${m ? `<details class="deep st-more"><summary>더 알아보기</summary>${m}</details>` : ''}`;
+  }
+  return { story, more, block, seatOf };
+})();
+
 /* ---------- 3. 리딩 말풍선 ---------- */
 function cardBubble(card, posIndex) {
   const r = cardReading(card);
@@ -3838,9 +3916,12 @@ function cardBubble(card, posIndex) {
       <p class="plain-main rd-bub">${typeof READER !== 'undefined' ? READER.quickBubble(card, posIndex) : esc(plain || r.text)}</p>
       ${card.isReversed && card.lucky ? '<p class="rev-note">🔄 거꾸로 나왔지만, 이 카드는 거꾸로일 때 오히려 좋은 뜻이에요.</p>' : ''}
       </div></div>
-      ${typeof READER !== 'undefined' && READER.cardStory(card, posIndex) ? `<details class="deep" open><summary>자세히</summary>
-        <p>${READER.cardStory(card, posIndex)}</p>
-      </details>` : ''}
+      ${(() => {
+        const cs = typeof READER !== 'undefined' ? READER.cardStory(card, posIndex) : '';
+        let avoid = ''; try { avoid = String(typeof READER !== 'undefined' ? READER.quickBubble(card, posIndex) : '').split('<br>').pop(); } catch (e) {}
+        const blk = typeof STORYTELL !== 'undefined' ? STORYTELL.block(card, layout.positions[posIndex].short, { avoid, extra: cs ? `<b>카드 풀이</b>${cs}` : '' }) : '';
+        return blk || (cs ? `<details class="deep" open><summary>자세히</summary><p>${cs}</p></details>` : '');
+      })()}
     </div>`;
 }
 
