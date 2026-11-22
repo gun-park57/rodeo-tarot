@@ -517,7 +517,10 @@ header.top .mb-me { margin-left: auto; }
 .plain-main { font-size: 16px; font-weight: 700; color: var(--text); line-height: 1.55; margin: 2px 0 4px; }
 .rd-story { font-size: 15px; line-height: 1.75; color: var(--text); margin: 8px 0 2px; }
 .rd-story b { color: var(--brass); font-weight: 700; }
-details.st-more summary { font-weight: 700; }
+.st-more { margin-top: 8px; border-top: 1px solid rgba(201,164,106,.18); padding-top: 6px; }
+.st-more p { font-size: 15px; color: var(--sub); margin: 6px 0; line-height: 1.65; }
+.st-more p b { color: var(--text); margin-right: 4px; font-weight: 700; }
+.st-more .st-more-h { font-size: 15px; color: var(--brass); font-weight: 700; margin: 4px 0; }
 details.deep { margin-top: 6px; border-top: 1px solid rgba(201,164,106,.18); padding-top: 6px; }
 details.deep summary { font-size: 15px; color: var(--brass); cursor: pointer; list-style: none; padding: 4px 0; }
 details.deep summary::-webkit-details-marker { display: none; }
@@ -3134,7 +3137,7 @@ const TP = (() => {
         ${todo ? `<p class="dq-todo"><b>오늘 할 일</b> · ${esc(todo)}</p>` : ''}
         ${caution ? `<p class="dq-warn"><b>조심할 것</b> · ${esc(caution)}</p>` : ''}
         ${word ? `<p class="text-[12.5px] text-sky-200/90 mt-1">💡 오늘의 한마디: ${esc(word)}</p>` : ''}
-        ${(() => { const m = typeof STORYTELL !== 'undefined' ? STORYTELL.more(c, '오늘', { extra: reason && TL ? `<b>왜 이렇게 읽냐면</b>${esc(reason)}` : '' }) : ''; return m ? `<details class="deep st-more"><summary>더 알아보기</summary>${m}</details>` : ''; })()}
+        ${(() => { const m = typeof STORYTELL !== 'undefined' ? STORYTELL.more(c, '오늘', { extra: reason && TL ? `<b>왜 이렇게 읽냐면</b>${esc(reason)}` : '' }) : ''; return m ? `<div class="st-more"><p class="st-more-h">더 알아보기</p>${m}</div>` : ''; })()}
         ${others.length ? `<div class="dq-more"><p>같은 카드를 <b class="gold-text">다른 고민</b>으로 보면 어떨까요? <span class="dq-free">모두 무료</span></p>
           <div class="row">${others.map(([k, i, n]) => `<button type="button" data-dmore="${k}">${i} ${n}${ro(n)} 보기</button>`).join('')}</div></div>` : ''}`;
     loadingPanel(short ? '같은 카드를 다시 읽는 중...' : '카드를 뒤집는 중...');
@@ -3895,7 +3898,7 @@ const STORYTELL = (() => {
   function block(c, pos, opts) {
     const s = story(c, pos, opts), m = more(c, pos, opts);
     if (!s && !m) return '';
-    return `${s ? `<p class="rd-story">${s}</p>` : ''}${m ? `<details class="deep st-more"><summary>더 알아보기</summary>${m}</details>` : ''}`;
+    return `${s ? `<p class="rd-story">${s}</p>` : ''}${m ? `<div class="st-more"><p class="st-more-h">더 알아보기</p>${m}</div>` : ''}`;
   }
   return { story, more, block, seatOf };
 })();
