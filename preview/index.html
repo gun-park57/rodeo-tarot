@@ -3925,7 +3925,10 @@ function cardBubble(card, posIndex) {
       ${(() => {
         const cs = typeof READER !== 'undefined' ? READER.cardStory(card, posIndex) : '';
         let avoid = ''; try { avoid = String(typeof READER !== 'undefined' ? READER.quickBubble(card, posIndex) : '').split('<br>').pop(); } catch (e) {}
-        const blk = typeof STORYTELL !== 'undefined' ? STORYTELL.block(card, layout.positions[posIndex].short, { avoid, extra: cs ? `<b>카드 풀이</b>${cs}` : '' }) : '';
+        // 기존 '자세히' 내용에서 거꾸로 문구(더 알아보기에 이미 있음)와 끝 태그를 뺀 나머지만 덧붙임
+        const csBody = String(cs || '').replace(/<span class="rd-rev">[\s\S]*?<\/span>/g, '').replace(/\s*<span[^>]*>[^<]*<\/span>\s*$/, '').trim();
+        const csPlain = csBody.replace(/<[^>]+>/g, '').trim();
+        const blk = typeof STORYTELL !== 'undefined' ? STORYTELL.block(card, layout.positions[posIndex].short, { avoid, extra: csPlain.length > 6 ? `<b>카드 풀이</b>${csBody}` : '' }) : '';
         return blk || (cs ? `<details class="deep" open><summary>자세히</summary><p>${cs}</p></details>` : '');
       })()}
     </div>`;
