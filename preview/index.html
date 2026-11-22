@@ -4105,7 +4105,7 @@ const INFER = (() => {
       if (c.type === 'major') S.push(`이 카드는 <b>${MAJ[c.num]}</b> 느낌이라, ${food ? '그런 분위기의 메뉴가 잘 어울려요' : '그런 쪽으로 고르면 잘 맞아요'}.`);
       else if (COURT[c.rank]) S.push(food ? `${COURT[c.rank][0]} ${COURT[c.rank][1]}이라, ${COURT_FOOD[c.rank]}.` : `${COURT[c.rank][0]} <b>${COURT[c.rank][1]}</b>이에요.`);
       else if (n) S.push(food ? `숫자 ${n}${NUMJ[n]} ${NUMWHY[n]}라, ${NUM_FOOD[n]}.` : `숫자 ${n}${NUMJ[n]} ${NUMWHY[n]}라, 그중에서도 <b>${NUM_ANY[n]}</b>이 좋아요.`);
-      S.push(food ? `그래서 오늘은 <b>${e.food}</b> 쪽이 잘 맞아요.` : `그래서 ${d.label}${ro(d.label)}는 <b>${e[d.key]}</b> 쪽이 잘 맞아요.`);
+      S.push(food ? `그래서 ${/내일/.test(q || '') ? '내일은' : /주말/.test(q || '') ? '주말엔' : '오늘은'} <b>${e.food}</b> 쪽이 잘 맞아요.` : `그래서 ${d.label}${ro(d.label)}는 <b>${e[d.key]}</b> 쪽이 잘 맞아요.`);
       if (c.isReversed && !c.lucky) S.push(food ? '카드가 거꾸로 나왔으니 너무 많이 먹지는 말고요.' : '카드가 거꾸로 나왔으니 너무 과하지 않게 골라요.');
       return S.join(' ');
     }
