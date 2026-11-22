@@ -5110,7 +5110,7 @@ const QC = (() => {
     </div>`;
   }
   // 6장 비교는 항상 유료 상품 (2026-11-17 박건). 무료 질문 개수와 상관없음. 베타는 가격 없이 "무료"만 표시 (2026-11-21)
-  function QUOTA_TAG() { if (typeof COIN !== 'undefined') return COIN.tag(); return !(window.RODEO_CONFIG && window.RODEO_CONFIG.BETA === false) ? '무료' : '2,500원'; }
+  function QUOTA_TAG() { if (typeof COIN !== 'undefined') return COIN.tag(); return PRICE.label(); }
   // 비교 규칙 하나로: ① 정방향 > 거꾸로 ② 메이저 > 마이너 ③ 카드 점수
   function duel(a, b) {
     const up = c => !c.isReversed || c.lucky, sc = c => (typeof cardScore === 'function' ? cardScore(c) : 0);
@@ -5865,6 +5865,13 @@ const READER = (() => {
  *  - 무료를 다 쓰면 기존 결제창(2,500원, 베타는 0원)이 다시 나옴
  *  - 리포트 끝에 "이어서 물어볼까요?" 질문 버튼 2개 → 누르면 바로 새 점
  * ========================================================= */
+/* 가격 칸 (2026-11-23 박건: "0원 칸은 살리고 나중에 2,500원 넣자")
+ * config.js PRICE: 질문 1개 가격(원). 0이면 모든 가격 칸이 '0원', 정식 때 2500으로 바꾸면 질문은 2,500원·사주 상품은 원래 가격 */
+const PRICE = (() => {
+  const q = () => { const n = Number((window.RODEO_CONFIG || {}).PRICE); return Number.isFinite(n) && n >= 0 ? n : 2500; };
+  const won = n => Number(n).toLocaleString('ko-KR') + '원';
+  return { q, zero: () => q() === 0, label: n => won(q() === 0 ? 0 : (n == null ? q() : n)) };
+})();
 const QUOTA = (() => {
   const KEY = 'rodeo_quota_v1';
   // 2026-11-23 박건: 1단계 = 선착순 100명 베타 테스터, 질문 무제한 무료 / 2단계 = 하루 질문 3개 (config.js BETA_STAGE)
@@ -5919,8 +5926,8 @@ const HOOK = (() => {
     const note = n > 0
       ? `오늘 무료 질문이 <b>${n}번</b> 남았어요.`
       : C ? `오늘 무료 질문을 다 썼어요. 다음 질문은 <b>🪙 ${C.COST}코인</b>이에요. (보유 ${C.bal()}코인)`
-      : (price() ? `오늘 무료 질문을 다 썼어요. 베타 기간이라 다음 질문도 <b>무료</b>예요.` : '오늘 무료 질문을 다 썼어요. 다음 질문은 2,500원이에요.');
-    const tag = n > 0 ? '무료' : C ? `🪙${C.COST}` : (price() ? '무료' : '2,500원');
+      : (price() ? `오늘 무료 질문을 다 썼어요. 베타 기간이라 다음 질문도 <b>무료</b>예요.` : `오늘 무료 질문을 다 썼어요. 다음 질문은 ${PRICE.label()}이에요.`);
+    const tag = QUOTA.unlimited() ? PRICE.label() : n > 0 ? '무료' : C ? `🪙${C.COST}` : PRICE.label();
     return `<div class="hk">
       <p class="hk-h">이어서 물어볼까요?</p>
       <p class="hk-line">${line(v)}</p>
@@ -6116,7 +6123,7 @@ const STORY = (() => {
     const want = WANT[tk] || WANT.general;
     const months = S ? bestMonths(S, want) : [];
     STATE = { ctx, w, l, W, L, key, S, X, p, nm, months, want, tk };
-    const price = typeof COIN !== 'undefined' ? COIN.tag() : (window.RODEO_CONFIG && window.RODEO_CONFIG.BETA === false) ? '2,500원' : '무료';
+    const price = typeof COIN !== 'undefined' ? COIN.tag() : PRICE.label();
     const hook = (kind, label, txt, btn, solid) => `<div class="st-hook"><p class="hl">${label}</p><p>${txt}</p><button type="button" class="st-hbtn${solid ? '' : ' ol'}" data-sthook="${kind}"><span>${btn}</span><i>${price}</i></button></div>`;
     const h1 = hook('time', '시기', S && months.length ? `그런데 ${combo ? esc(combo[0]) + iga(combo[0]) : '이 흐름이'} <b class="gold">가장 세게 들어오는 달이 따로 있어요.</b> 그달에 시작하면 결과가 달라져요.` : `그런데 ${esc(w)} 쪽 카드에 <b class="gold">흐름이 확 바뀌는 시점이 따로 보여요.</b>`, `${esc(w)} 시작하기 좋은 달 보기`, true);
     const h2 = hook('flip', '뒤집기', `다만 ${esc(l)}${iga(l)} 다시 주인공이 되는 <b class="gold">조건이 하나 있어요.</b>`, `${esc(l)}${iga(l)} 뒤집히는 조건 보기`);
@@ -6734,7 +6741,7 @@ function renderPaywall() {
       </div>
       <p class="text-xs text-gray-300 leading-relaxed">잠긴 카드 ${layout.count - layout.free}장과 카드 사이 조합, ${layout.count}장 종합 해석을 볼 수 있어요.</p>
       <div class="flex gap-2 pt-1">
-        <button type="button" id="btn-pay" class="flex-1 bg-gradient-to-r from-amber-400 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-black text-xs font-bold py-3 rounded-xl shadow-lg transition transform active:scale-95 cursor-pointer">${!(window.RODEO_CONFIG && window.RODEO_CONFIG.BETA === false) ? '🎁 무료로 열기' : '⚡ 2,500원으로 열기'}</button>
+        <button type="button" id="btn-pay" class="flex-1 bg-gradient-to-r from-amber-400 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-black text-xs font-bold py-3 rounded-xl shadow-lg transition transform active:scale-95 cursor-pointer">⚡ ${PRICE.label()}으로 열기</button>
         ${MONETIZE.adEnabled || FREEBIE.available() ? `<button type="button" id="btn-ad" class="px-3.5 bg-[#1F153A] hover:bg-[#2A1D4E] border border-amber-400/30 text-xs py-3 rounded-xl text-purple-200 transition cursor-pointer whitespace-nowrap">${MONETIZE.adEnabled ? '📺 광고 보고 무료' : FREEBIE.label}</button>` : ''}
       </div>
       <p class="text-[10px] text-purple-300/50">베타 기간에는 모든 풀이가 무료예요.</p>
@@ -6871,9 +6878,9 @@ showChips('✨ 가장 깊이 고민하고 있는 주제를 골라주세요:');
     const b = PRICING.bundle, inBundle = b.keys.includes(key), other = b.keys.find(k => k !== key);
     return `<div class="lockbox"><div class="lk-teaser">${teaser}</div>
       <div class="lk-title">${PRICING[key].label}</div>
-      <div class="lk-btns"><button type="button" class="lk-pay" data-unlock="${key}">${IS_BETA() ? '🎁 무료로 열기' : `⚡ ${won(PRICING[key].price)} 열기`}</button>
+      <div class="lk-btns"><button type="button" class="lk-pay" data-unlock="${key}">⚡ ${PRICE.label(PRICING[key].price)} 열기</button>
         ${MONETIZE.adEnabled ? `<button type="button" class="lk-ad" data-ad="${key}">📺 광고 보고 무료</button>` : FREEBIE.available() ? `<button type="button" class="lk-ad" data-kakao="${key}">${FREEBIE.label}</button>` : ''}</div>
-      ${inBundle && !UNLOCK[other] && !IS_BETA() ? `<button type="button" class="lk-bundle" data-unlock="bundle">${b.label} ${won(b.price)}</button>` : ''}
+      ${inBundle && !UNLOCK[other] && !PRICE.zero() ? `<button type="button" class="lk-bundle" data-unlock="bundle">${b.label} ${PRICE.label(b.price)}</button>` : ''}
       <p class="muted" style="text-align:center;margin:6px 0 0">${FREEBIE.available() ? '채널 무료 열기는 한 번만 쓸 수 있어요. ' : ''}베타 기간에는 모든 풀이가 무료예요.</p></div>`;
   }
   function bindLocks(rerender, root = '#sj-result') {
@@ -7748,7 +7755,7 @@ const COIN = (() => {
   }
   function welcome() { const o = read(); if (o.welcome) return false; o.welcome = true; add(WELCOME, '첫 방문 선물'); return true; }
   const nextAtt = () => ATT[streakNow() % 7];
-  const tag = () => (typeof QUOTA !== 'undefined' && QUOTA.left() > 0 ? '무료' : `🪙${COST}`);
+  const tag = () => (typeof QUOTA !== 'undefined' && QUOTA.unlimited() ? PRICE.label() : typeof QUOTA !== 'undefined' && QUOTA.left() > 0 ? '무료' : `🪙${COST}`);
   const toast = m => { if (typeof BETA !== 'undefined') BETA.toast(m); };
 
   /* ---------- 머리 배지 ---------- */
