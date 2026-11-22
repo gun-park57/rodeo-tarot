@@ -3862,7 +3862,7 @@ const STORYTELL = (() => {
   }
   /* 2026-11-23 박건 "점성가가 사람이 말하는 것처럼": 카드별 정·역방향 상세(역학자료) + 역방향 4대 기제로
    * 그림 → 이 카드가 말하는 것 → (거꾸로면) 왜 거꾸로인지 → 질문에 대입 → 리더의 한마디 */
-  const POL = [['지저분해짐', '지저분해져요'], ['해짐', '해져요'], ['어짐', '어져요'], ['빠짐', '빠져요'], ['갇힘', '갇혀요'], ['붙잡음', '붙잡아요'], ['드러남', '드러나요'], ['버림', '버려요'], ['부름', '불러요'], ['바람', '바라요'], ['겪음', '겪어요'], ['못함', '못해요'], ['됨', '돼요'], ['함', '해요'], ['지속', '지속돼요']];
+  const POL = [['지저분해짐', '지저분해져요'], ['해짐', '해져요'], ['어짐', '어져요'], ['빠짐', '빠져요'], ['갇힘', '갇혀요'], ['붙잡음', '붙잡아요'], ['드러남', '드러나요'], ['드러냄', '드러내요'], ['남음', '남아요'], ['끊음', '끊어요'], ['버림', '버려요'], ['부름', '불러요'], ['바람', '바라요'], ['겪음', '겪어요'], ['못함', '못해요'], ['됨', '돼요'], ['함', '해요'], ['지속', '지속돼요']];
   const ieyo2 = w => (jg(w) ? '이에요' : '예요');
   function speak(t) { t = String(t || '').trim().replace(/[.]$/, ''); for (const [a, b] of POL) if (t.endsWith(a)) return t.slice(0, -a.length) + b + '.'; return t + ieyo2(t) + '.'; }
   const OPEN2 = { past: ['먼저 지나온 자리부터 볼게요. 그림을 보면 ', ' 있죠.'], now: ['지금 자리에는 ', ' 나왔어요.'], future: ['이제 앞으로의 자리예요. ', ' 그려져 있네요.'], today: ['오늘 뽑으신 카드에는 ', ' 그려져 있어요.'], answer: ['뽑으신 카드에는 ', ' 그려져 있어요.'], other: ['이 자리 카드에는 ', ' 있어요.'] };
@@ -3903,6 +3903,8 @@ const STORYTELL = (() => {
     }
     let tl = '';
     try { tl = tk && typeof topicLine === 'function' ? topicLine(c, tk) : ''; } catch (e) { tl = ''; }
+    // 행운의 거꾸로(달·악마 등): 주제 문장도 거꾸로 쪽(좋은 뜻)으로
+    try { if (tk && c.isReversed && c.lucky && c.type === 'major' && MAJOR_TOPIC[c.num] && MAJOR_TOPIC[c.num][tk]) tl = MAJOR_TOPIC[c.num][tk][1]; } catch (e) {}
     if (tl && avoid && norm(fs(tl)) === avoid) tl = String(tl).slice(fs(tl).length).trim();
     if (tl) out.push(`${TK_KO[tk] ? `${TK_KO[tk]} 놓고 보면,` : (ASK2[seat] || ASK2.other)} ${esc(end(tl))}`);
     out.push(voice(c, seat));
