@@ -4212,13 +4212,14 @@ const INFER = (() => {
       const lw = t.split(/\s+/).pop();
       if (/까$/.test(lw)) { const r = kkaStem(lw); if (r) t = t.slice(0, t.length - lw.length) + r.full; }
       t = t.replace(/(\S+?)(?:이라도|라도)(?=\s|$)/g, '$1').trim();
-      if (t.length > 20) t = t.split(/\s+/).slice(-3).join(' ');
+      if (t.length > 40) t = t.split(/\s+/).slice(-4).join(' ');
       return t;
     };
     let a = clean(m[1]), b = clean(m[2]);
-    if (a.length > 20 || /까$/.test(a)) a = shorten(a);
-    if (b.length > 20 || /까$/.test(b)) b = shorten(b);
-    return a && b && a !== b && a.length <= 24 && b.length <= 24 ? [a, b] : null;
+    // 2026-11-23 박건 "글자수를 늘릴 수는 없어?": 40자까지는 앞말을 자르지 않고 끝말(~할까→~하기)만 정리
+    if (a.length > 40 || /까$/.test(a)) a = shorten(a);
+    if (b.length > 40 || /까$/.test(b)) b = shorten(b);
+    return a && b && a !== b && a.length <= 40 && b.length <= 40 ? [a, b] : null;
   }
   return { one, links, domainOf, traits, EL, parseChoice };
 })();
