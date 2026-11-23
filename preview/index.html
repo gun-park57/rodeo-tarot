@@ -4198,6 +4198,7 @@ const INFER = (() => {
   function kkaStem(w) {
     let m = w.match(/^(.*)하까$/) || w.match(/^(.*)할까$/); if (m) return { full: m[1] + '하기', verb: '하기' };
     m = w.match(/^(.+)을까$/); if (m) return { full: m[1] + '기', verb: m[1] + '기' };
+    m = w.match(/^(.*)(팔|놀|들|열|걸|밀|돌|풀|벌|불|졸|울|털|빌|얼)까$/); if (m) { const v = m[1] + m[2] + '기'; return { full: v, verb: v }; } // ㄹ로 끝나는 말: 팔까→팔기, 만들까→만들기
     m = w.match(/^(.*)(.)까$/); if (m && jong(m[2]) === 8) { const v = m[1] + String.fromCharCode(m[2].charCodeAt(0) - 8) + '기'; return { full: v, verb: v }; }
     return null;
   }
