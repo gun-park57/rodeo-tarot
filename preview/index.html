@@ -4227,6 +4227,8 @@ const INFER = (() => {
     //  "~사야될까"→"~사기", "~기다릴까"→"~기다리기", "라도" 빼기, 그래도 길면 끝 3어절만
     const shorten = x => {
       let t = String(x).trim();
+      t = t.replace(/\s*(?:것이|게|것)\s?(?:더\s)?(?:나을까|좋을까|맞을까|괜찮을까|낫나|나아|좋아)$/, ' 쪽'); // "이사 가는 게 나을까" → "이사 가는 쪽"
+      if (/ 쪽$/.test(t)) return t.length > 40 ? t.split(/\s+/).slice(-4).join(' ') : t;
       t = t.replace(/(\S*?)(?:어야|아야|여야|야)\s?(?:될까|되나|돼|할까|하나|해)$/, (_, w) => w + '기');
       const lw = t.split(/\s+/).pop();
       if (/까$/.test(lw)) { const r = kkaStem(lw); if (r) t = t.slice(0, t.length - lw.length) + r.full; }
