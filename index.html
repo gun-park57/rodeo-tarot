@@ -4203,8 +4203,21 @@ const INFER = (() => {
     if (!m) { const k = s.match(/^(.+?(?:을까|[가-힣]까))\s+(.+?(?:을까|[가-힣]까))$/); if (k && !/말까$/.test(k[2])) return [k[1].trim(), k[2].trim()]; }
     if (!m) return null;
     const clean = x => x.replace(/선샹|선상(?=님)/g, '선생').replace(/\s*(할까|갈까|먹을까|살까|입을까|볼까|탈까|만날까|이야|야)$/, '').replace(/^(오늘|점심|저녁|이번에|그냥)\s+/, '').trim();
-    const a = clean(m[1]), b = clean(m[2]);
-    return a && b && a !== b && a.length <= 20 && b.length <= 20 ? [a, b] : null;
+    // 긴 선택지 줄이기 (2026-11-23 박건: "증시가 반전시그널이 나올때까지 기다릴까 아니면 로봇주라도 사야될까"가 막힘)
+    //  "~사야될까"→"~사기", "~기다릴까"→"~기다리기", "라도" 빼기, 그래도 길면 끝 3어절만
+    const shorten = x => {
+      let t = String(x).trim();
+      t = t.replace(/(\S*?)(?:어야|아야|여야|야)\s?(?:될까|되나|돼|할까|하나|해)$/, (_, w) => w + '기');
+      const lw = t.split(/\s+/).pop();
+      if (/까$/.test(lw)) { const r = kkaStem(lw); if (r) t = t.slice(0, t.length - lw.length) + r.full; }
+      t = t.replace(/(\S+?)(?:이라도|라도)(?=\s|$)/g, '$1').trim();
+      if (t.length > 20) t = t.split(/\s+/).slice(-3).join(' ');
+      return t;
+    };
+    let a = clean(m[1]), b = clean(m[2]);
+    if (a.length > 20 || /까$/.test(a)) a = shorten(a);
+    if (b.length > 20 || /까$/.test(b)) b = shorten(b);
+    return a && b && a !== b && a.length <= 24 && b.length <= 24 ? [a, b] : null;
   }
   return { one, links, domainOf, traits, EL, parseChoice };
 })();
