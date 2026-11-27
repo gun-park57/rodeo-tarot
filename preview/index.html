@@ -7832,7 +7832,11 @@ const BETA = (() => {
   /* 이벤트 기록 */
   if (typeof selectQuestion === 'function') {
     const _sq = selectQuestion;
-    selectQuestion = function (q) { track('question_asked', { topic: (typeof topicKey === 'function' && topicKey(q)) || 'general' }); return _sq.apply(this, arguments); };
+    // 질문 태그 (2026-11-28 박건 "태그를 못심어?"): 문장은 안 보내고, 정해 둔 단어 목록에서 찾은 키워드·질문 종류만 보냄 (개인정보 없음)
+    const QKW = ['재회', '연락', '속마음', '고백', '썸', '짝사랑', '결혼', '이별', '궁합', '연애', '이직', '취업', '퇴사', '승진', '면접', '사업', '창업', '매출', '주식', '코인', '투자', '로또', '부동산', '대출', '돈', '시험', '합격', '공부', '건강', '이사', '여행', '친구', '가족', '유튜브'];
+    const qkind = q => /(언제|며칠|몇\s?월|시기|타이밍)/.test(q) ? 'when' : /(아니면|vs|할까\s.+할까|말까)/.test(q) ? 'choice' : /(속마음|마음|생각|어떻게 생각)/.test(q) ? 'heart' : /(될까|있을까|할까|올까|붙을까|오를까)/.test(q) ? 'will' : /(어떻게|뭘|무엇|방법)/.test(q) ? 'how' : 'other';
+    const qtags = q => { q = String(q || ''); const k = QKW.filter(w => q.includes(w)).slice(0, 3); return { topic: (typeof topicKey === 'function' && topicKey(q)) || 'general', kw: k.join('·') || 'none', kind: qkind(q), qlen: q.length <= 10 ? 's' : q.length <= 25 ? 'm' : 'l' }; };
+    selectQuestion = function (q) { track('question_asked', qtags(q)); return _sq.apply(this, arguments); };
   }
   if (typeof unlockFinal === 'function') {
     const _uf = unlockFinal;
