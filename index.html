@@ -496,6 +496,15 @@ header.top .mb-me { margin-left: auto; }
 .rev-word { font-size: 12.5px; font-weight: 700; color: var(--ill); margin-left: 4px; }
 .plain-frame { font-size: 13.5px; color: var(--sub); margin: 0; }
 .plain-main { font-size: 16px; font-weight: 700; color: var(--text); line-height: 1.55; margin: 2px 0 4px; }
+.fbq p { margin: 0 0 6px; } .fbq .fbq-l { font-size: 13px; margin-top: 8px; } .fbq .fbq-l span, .fbq .fbq-note { opacity: .65; font-size: 12px; }
+.fbq-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.fbq-chips button { border: 1px solid rgba(201,164,106,.4); border-radius: 999px; padding: 5px 10px; font-size: 13px; background: transparent; color: inherit; cursor: pointer; }
+.fbq-chips button.on { background: #C9A46A; color: #1a1014; border-color: #C9A46A; font-weight: 700; }
+.fbq textarea { width: 100%; box-sizing: border-box; background: rgba(0,0,0,.3); border: 1px solid rgba(201,164,106,.3); border-radius: 10px; padding: 8px 10px; color: inherit; font-size: 14px; resize: none; }
+.fbq-btns { display: flex; gap: 8px; margin-top: 6px; } .fbq-btns button { flex: 1; padding: 9px; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; border: 1px solid rgba(201,164,106,.4); background: transparent; color: inherit; }
+.fbq-btns [data-fbsend] { background: linear-gradient(90deg, #E2C48F, #C9A46A); color: #1a1014; border: 0; }
+.fbq-done { font-weight: 700; }
+.fbq-q { display: flex; align-items: center; gap: 6px; font-size: 13px; margin: 6px 0 2px; cursor: pointer; } .fbq-q span { opacity: .65; font-size: 12px; } .fbq-q input { width: 16px; height: 16px; accent-color: #C9A46A; }
 .rd-story { font-size: 15px; line-height: 1.75; color: var(--text); margin: 8px 0 2px; }
 .rd-story b { color: var(--brass); font-weight: 700; }
 .st-more { margin-top: 8px; border-top: 1px solid rgba(201,164,106,.18); padding-top: 6px; }
@@ -7754,10 +7763,61 @@ const BETA = (() => {
     if (CFG.EN_URL) list.insertAdjacentHTML('beforeend', `<a class="mb-row" href="${CFG.EN_URL}" data-track="open_en"><b>English · Korean Saju</b><span>외국인 친구에게 공유하기 좋은 영어 사주 페이지</span></a>`);
   }
 
+  /* 앱 안 의견 → 구글 폼 응답 (2026-11-28)
+   *  평가(와닿아요 5 / 반반 3 / 안 맞아요 1) + 선택: 유료 가격, 한 줄 의견 → 한 사람 한 줄로 폼에 저장
+   *  보내기·건너뛰기를 누르거나, 45초가 지나거나, 화면을 떠나면 한 번만 보냄 */
+  const FB = (() => {
+    const E = { kind: 'entry.1364032119', score: 'entry.833251192', text: 'entry.1503747982', price: 'entry.670707148' };
+    const PRICES = ['무료만 쓸래요', '1,000원', '3,000원', '5,000원 이상'];
+    let cur = null, n = 0;
+    const url = () => String(CFG.FEEDBACK_URL).replace(/\/viewform.*$/, '/formResponse');
+    function send() {
+      if (!cur || cur.sent) return; cur.sent = true;
+      const box = document.getElementById(cur.id), t = box ? (box.querySelector('textarea') || {}).value || '' : '';
+      const body = new URLSearchParams();
+      body.append(E.kind, '타로'); body.append(E.score, String([5, 3, 1][cur.feel] || 3));
+      const qOn = box && box.querySelector('[data-fbq]') && box.querySelector('[data-fbq]').checked;
+      const qq = qOn && typeof userContext !== 'undefined' ? String(userContext.customQuery || '').trim() : '';
+      const full = [qq ? `[질문] ${qq}` : '', t.trim()].filter(Boolean).join('\n');
+      if (full) body.append(E.text, full.slice(0, 500));
+      if (cur.price) body.append(E.price, cur.price);
+      try { fetch(url(), { method: 'POST', mode: 'no-cors', body }); } catch (e) { /* 실패해도 앱은 계속 */ }
+      track('feedback_sent', { feel: ['hit', 'half', 'miss'][cur.feel], text: t.trim() ? 'yes' : 'no', price: cur.price || 'none', with_q: qq ? 'yes' : 'no' });
+      if (box) box.innerHTML = '<p class="fbq-done">고마워요! 보내 주신 의견은 바로 반영할게요 🌙</p>';
+      clearTimeout(cur.timer); cur = null;
+    }
+    function start(feel, msg) {
+      if (cur) send();
+      const id = 'fbq-' + (++n);
+      cur = { id, feel, price: '', sent: false, timer: setTimeout(send, 45000) };
+      setTimeout(() => {
+        botMsg(`<div class="fbq" id="${id}"><p>${esc(msg)}</p>
+          <p class="fbq-l">유료가 되면 얼마까지 낼 만해요? <span>(선택)</span></p>
+          <div class="fbq-chips">${PRICES.map(x => `<button type="button" data-fbp="${esc(x)}">${esc(x)}</button>`).join('')}</div>
+          <textarea maxlength="500" rows="2" placeholder="한 줄 의견 (선택) · 어색한 문장, 딱 맞았던 부분 다 좋아요"></textarea>
+          <label class="fbq-q"><input type="checkbox" data-fbq> 내 질문도 같이 보내기 <span>(풀이를 다듬는 데만 써요)</span></label>
+          <p class="fbq-note">이름·연락처는 적지 말아 주세요.</p>
+          <div class="fbq-btns"><button type="button" data-fbsend>보내기</button><button type="button" data-fbskip>건너뛰기</button></div></div>`);
+        const box = document.getElementById(id); if (!box) return;
+        box.querySelectorAll('[data-fbp]').forEach(b => b.addEventListener('click', () => { if (!cur || cur.id !== id) return; cur.price = b.dataset.fbp; box.querySelectorAll('[data-fbp]').forEach(x => x.classList.toggle('on', x === b)); clearTimeout(cur.timer); cur.timer = setTimeout(send, 45000); }));
+        const ta = box.querySelector('textarea'); if (ta) ta.addEventListener('input', () => { if (cur && cur.id === id) { clearTimeout(cur.timer); cur.timer = setTimeout(send, 45000); } });
+        box.querySelector('[data-fbsend]').addEventListener('click', () => { if (cur && cur.id === id) send(); });
+        box.querySelector('[data-fbskip]').addEventListener('click', () => { if (cur && cur.id === id) { const t = box.querySelector('textarea'); if (t) t.value = ''; cur.price = ''; send(); } });
+      }, 300);
+    }
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') send(); });
+    window.addEventListener('pagehide', send);
+    return { start, send };
+  })();
+
   /* 이벤트 기록 */
   if (typeof selectQuestion === 'function') {
     const _sq = selectQuestion;
-    selectQuestion = function (q) { track('question_asked', { topic: (typeof topicKey === 'function' && topicKey(q)) || 'general' }); return _sq.apply(this, arguments); };
+    // 질문 태그 (2026-11-28 박건 "태그를 못심어?"): 문장은 안 보내고, 정해 둔 단어 목록에서 찾은 키워드·질문 종류만 보냄 (개인정보 없음)
+    const QKW = ['재회', '연락', '속마음', '고백', '썸', '짝사랑', '결혼', '이별', '궁합', '연애', '이직', '취업', '퇴사', '승진', '면접', '사업', '창업', '매출', '주식', '코인', '투자', '로또', '부동산', '대출', '돈', '시험', '합격', '공부', '건강', '이사', '여행', '친구', '가족', '유튜브'];
+    const qkind = q => /(언제|며칠|몇\s?월|시기|타이밍)/.test(q) ? 'when' : /(아니면|vs|할까\s.+할까|말까)/.test(q) ? 'choice' : /(속마음|마음|생각|어떻게 생각)/.test(q) ? 'heart' : /(될까|있을까|할까|올까|붙을까|오를까)/.test(q) ? 'will' : /(어떻게|뭘|무엇|방법)/.test(q) ? 'how' : 'other';
+    const qtags = q => { q = String(q || ''); const k = QKW.filter(w => q.includes(w)).slice(0, 3); return { topic: (typeof topicKey === 'function' && topicKey(q)) || 'general', kw: k.join('·') || 'none', kind: qkind(q), qlen: q.length <= 10 ? 's' : q.length <= 25 ? 'm' : 'l' }; };
+    selectQuestion = function (q) { track('question_asked', qtags(q)); return _sq.apply(this, arguments); };
   }
   if (typeof unlockFinal === 'function') {
     const _uf = unlockFinal;
@@ -7774,8 +7834,10 @@ const BETA = (() => {
     const f = e.target.closest('[data-feel]');
     if (f) {
       track('feedback_feel', { feel: ['hit', 'half', 'miss'][Number(f.dataset.feel)] });
-      const FEEL_MSG = ['와, 다행이에요! 어디가 딱 맞았는지 위 버튼으로 알려주시면 큰 힘이 돼요.', '어디가 맞고 어디가 아니었는지 알려주시면 바로 다듬을게요.', '아쉬웠던 점을 알려주시면 베타에 바로 반영할게요.'];
-      if (CFG.FEEDBACK_URL) setTimeout(() => botMsg(`${FEEL_MSG[Number(f.dataset.feel)] || FEEL_MSG[2]} <a class="mb-link" href="${CFG.FEEDBACK_URL}" target="_blank" rel="noopener" data-track="feedback_feel_link">의견 보내기</a>`), 300);
+      const FEEL_MSG = ['와, 다행이에요! 어디가 딱 맞았는지 아래에 한 줄만 남겨 주시면 큰 힘이 돼요.', '어디가 맞고 어디가 아니었는지 아래에 남겨 주시면 바로 다듬을게요.', '아쉬웠던 점을 아래에 남겨 주시면 베타에 바로 반영할게요.'];
+      // 2026-11-28 박건 "데이터가 나와야 반영을 하지": 평가 한 번이면 구글 폼 응답으로 바로 들어가게 (폼 따로 안 열어도 됨)
+      if (CFG.FEEDBACK_URL && /\/viewform/.test(CFG.FEEDBACK_URL)) FB.start(Number(f.dataset.feel), FEEL_MSG[Number(f.dataset.feel)] || FEEL_MSG[2]);
+      else if (CFG.FEEDBACK_URL) setTimeout(() => botMsg(`${FEEL_MSG[Number(f.dataset.feel)] || FEEL_MSG[2]} <a class="mb-link" href="${CFG.FEEDBACK_URL}" target="_blank" rel="noopener" data-track="feedback_feel_link">의견 보내기</a>`), 300);
     }
   }, true);
   ['vs-cam', 'vs-file'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('change', () => track('vision_photo')); });

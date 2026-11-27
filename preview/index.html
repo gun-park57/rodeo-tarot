@@ -7853,7 +7853,7 @@ const BETA = (() => {
     const f = e.target.closest('[data-feel]');
     if (f) {
       track('feedback_feel', { feel: ['hit', 'half', 'miss'][Number(f.dataset.feel)] });
-      const FEEL_MSG = ['와, 다행이에요! 어디가 딱 맞았는지 위 버튼으로 알려주시면 큰 힘이 돼요.', '어디가 맞고 어디가 아니었는지 알려주시면 바로 다듬을게요.', '아쉬웠던 점을 알려주시면 베타에 바로 반영할게요.'];
+      const FEEL_MSG = ['와, 다행이에요! 어디가 딱 맞았는지 아래에 한 줄만 남겨 주시면 큰 힘이 돼요.', '어디가 맞고 어디가 아니었는지 아래에 남겨 주시면 바로 다듬을게요.', '아쉬웠던 점을 아래에 남겨 주시면 베타에 바로 반영할게요.'];
       // 2026-11-28 박건 "데이터가 나와야 반영을 하지": 평가 한 번이면 구글 폼 응답으로 바로 들어가게 (폼 따로 안 열어도 됨)
       if (CFG.FEEDBACK_URL && /\/viewform/.test(CFG.FEEDBACK_URL)) FB.start(Number(f.dataset.feel), FEEL_MSG[Number(f.dataset.feel)] || FEEL_MSG[2]);
       else if (CFG.FEEDBACK_URL) setTimeout(() => botMsg(`${FEEL_MSG[Number(f.dataset.feel)] || FEEL_MSG[2]} <a class="mb-link" href="${CFG.FEEDBACK_URL}" target="_blank" rel="noopener" data-track="feedback_feel_link">의견 보내기</a>`), 300);
