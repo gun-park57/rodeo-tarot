@@ -523,6 +523,7 @@ header.top .mb-me { margin-left: auto; }
 .fbq-btns { display: flex; gap: 8px; margin-top: 6px; } .fbq-btns button { flex: 1; padding: 9px; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; border: 1px solid rgba(201,164,106,.4); background: transparent; color: inherit; }
 .fbq-btns [data-fbsend] { background: linear-gradient(90deg, #E2C48F, #C9A46A); color: #1a1014; border: 0; }
 .fbq-done { font-weight: 700; }
+.fbq-q { display: flex; align-items: center; gap: 6px; font-size: 13px; margin: 6px 0 2px; cursor: pointer; } .fbq-q span { opacity: .65; font-size: 12px; } .fbq-q input { width: 16px; height: 16px; accent-color: #C9A46A; }
 .rd-story { font-size: 15px; line-height: 1.75; color: var(--text); margin: 8px 0 2px; }
 .rd-story b { color: var(--brass); font-weight: 700; }
 .st-more { margin-top: 8px; border-top: 1px solid rgba(201,164,106,.18); padding-top: 6px; }
@@ -7794,10 +7795,13 @@ const BETA = (() => {
       const box = document.getElementById(cur.id), t = box ? (box.querySelector('textarea') || {}).value || '' : '';
       const body = new URLSearchParams();
       body.append(E.kind, '타로'); body.append(E.score, String([5, 3, 1][cur.feel] || 3));
-      if (t.trim()) body.append(E.text, t.trim().slice(0, 500));
+      const qOn = box && box.querySelector('[data-fbq]') && box.querySelector('[data-fbq]').checked;
+      const qq = qOn && typeof userContext !== 'undefined' ? String(userContext.customQuery || '').trim() : '';
+      const full = [qq ? `[질문] ${qq}` : '', t.trim()].filter(Boolean).join('\n');
+      if (full) body.append(E.text, full.slice(0, 500));
       if (cur.price) body.append(E.price, cur.price);
       try { fetch(url(), { method: 'POST', mode: 'no-cors', body }); } catch (e) { /* 실패해도 앱은 계속 */ }
-      track('feedback_sent', { feel: ['hit', 'half', 'miss'][cur.feel], text: t.trim() ? 'yes' : 'no', price: cur.price || 'none' });
+      track('feedback_sent', { feel: ['hit', 'half', 'miss'][cur.feel], text: t.trim() ? 'yes' : 'no', price: cur.price || 'none', with_q: qq ? 'yes' : 'no' });
       if (box) box.innerHTML = '<p class="fbq-done">고마워요! 보내 주신 의견은 바로 반영할게요 🌙</p>';
       clearTimeout(cur.timer); cur = null;
     }
@@ -7810,6 +7814,7 @@ const BETA = (() => {
           <p class="fbq-l">유료가 되면 얼마까지 낼 만해요? <span>(선택)</span></p>
           <div class="fbq-chips">${PRICES.map(x => `<button type="button" data-fbp="${esc(x)}">${esc(x)}</button>`).join('')}</div>
           <textarea maxlength="500" rows="2" placeholder="한 줄 의견 (선택) · 어색한 문장, 딱 맞았던 부분 다 좋아요"></textarea>
+          <label class="fbq-q"><input type="checkbox" data-fbq> 내 질문도 같이 보내기 <span>(풀이를 다듬는 데만 써요)</span></label>
           <p class="fbq-note">이름·연락처는 적지 말아 주세요.</p>
           <div class="fbq-btns"><button type="button" data-fbsend>보내기</button><button type="button" data-fbskip>건너뛰기</button></div></div>`);
         const box = document.getElementById(id); if (!box) return;
