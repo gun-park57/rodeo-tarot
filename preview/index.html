@@ -515,6 +515,9 @@ header.top .mb-me { margin-left: auto; }
 .rev-word { font-size: 12.5px; font-weight: 700; color: var(--ill); margin-left: 4px; }
 .plain-frame { font-size: 13.5px; color: var(--sub); margin: 0; }
 .plain-main { font-size: 16px; font-weight: 700; color: var(--text); line-height: 1.55; margin: 2px 0 4px; }
+.qs-box { margin: 10px 0 4px; } .qs-box > p { font-size: 13px; color: var(--brass); font-weight: 700; margin: 0 0 6px; }
+.qs-chips { display: flex; flex-direction: column; gap: 6px; } .qs-chips button { text-align: left; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(201,164,106,.35); background: rgba(201,164,106,.06); color: var(--text); font-size: 14px; cursor: pointer; }
+.qs-chips button::before { content: '👉 '; }
 .fbq p { margin: 0 0 6px; } .fbq .fbq-l { font-size: 13px; margin-top: 8px; } .fbq .fbq-l span, .fbq .fbq-note { opacity: .65; font-size: 12px; }
 .fbq-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
 .fbq-chips button { border: 1px solid rgba(201,164,106,.4); border-radius: 999px; padding: 5px 10px; font-size: 13px; background: transparent; color: inherit; cursor: pointer; }
@@ -3158,6 +3161,7 @@ const TP = (() => {
         <p class="text-xs gold-text font-bold mb-1">🌙 ${today().slice(5).replace('-', '월 ')}일 오늘의 카드</p>
         <p class="font-bold gold-text">${esc(plainName(c))}${dirTag}</p></div></div>
         ${body}
+        <p class="text-[13px] mt-2 mb-1">오늘 카드, 지금 내 상황과 맞나요?</p><div class="tp-feel">${['와닿아요', '반반이에요', '안 맞아요'].map((f, i) => `<button type="button" data-feel="${i}">${['💯', '🤔', '🙅'][i]} ${f}</button>`).join('')}</div>
         <p class="tp-streak">🔥 ${streak}일 연속 확인 중${streak >= 7 ? ' · 일주일 달성!' : streak >= 3 ? ' · 좋은 습관이에요' : ''}</p>
         <p class="text-[11px] text-purple-300/70 mt-1">오늘의 카드는 하루 동안 바뀌지 않아요. 고민을 바꿔도 같은 카드로 풀어요.</p>
         ${shareBtn(`[오늘의 카드 · ${DQ_NAME[tk]}] ${cardName(c)} ${dir(c)}\n${head}`, { title: '오늘의 카드', cards: [c], head, lines: todo ? ['오늘 할 일 · ' + todo] : [] })}`);
@@ -3198,6 +3202,7 @@ const TP = (() => {
         <div class="verdict"><span class="vtag ${A.cls}">${A.t}</span><p class="vhead">${esc(A.d)}</p></div>
         <p class="font-bold gold-text text-[13px]">${esc(plainName(c))}${c.isReversed ? ' <span class="rev-word">거꾸로</span>' : ''}</p></div></div>
         ${(() => { const blk = typeof STORYTELL !== 'undefined' ? STORYTELL.block(c, '답', { tk: topicKey(q) || '' }) : ''; return blk ? `<div class="mt-2">${blk}</div>` : `<p class="text-[13px] mt-2">${esc(meaning(c))}</p>${tl ? `<p class="text-[13px] mt-1"><b>${TOPIC_LABEL[topicKey(q)]}</b> · ${esc(tl)}</p>` : ''}`; })()}
+        <p class="text-[13px] mt-2 mb-1">이 답, 내 상황과 맞나요?</p><div class="tp-feel">${['와닿아요', '반반이에요', '안 맞아요'].map((f, i) => `<button type="button" data-feel="${i}">${['💯', '🤔', '🙅'][i]} ${f}</button>`).join('')}</div>
         <p class="text-[11px] text-purple-300/70 mt-1">원카드는 빠른 방향 확인용이에요. 자세히 보고 싶으면 3장 리딩으로 봐요.</p>
         ${shareBtn(`[예/아니오 타로] ${q}\n→ ${A.t} (${cardName(c)} ${dir(c)})`, { title: '예/아니오 타로', q, cards: [c], tag: A.t, tagKey: A.cls.slice(2), head: A.d,
           lines: [meaning(c)].concat(tl ? [tl] : []) })}`);
@@ -8172,6 +8177,25 @@ const PLAN = (() => {
       if (f.requestSubmit) f.requestSubmit(); else f.dispatchEvent(new Event('submit', { cancelable: true }));
       setTimeout(() => { if (pref && !document.getElementById('mb-hero').hidden) pref = null; }, 400); // 메뉴로 빠진 경우
     });
+    // 탭 한 번으로 바로 보기 (2026-11-28 박건 "새 유저들이 쉽게 참여해서 최대한 데이터를"): 영상별 맞춤 질문 칩
+    try {
+      const QS = {
+        money: ['💰 888Hz 듣고 오셨군요! 금전운부터 볼까요?', ['이번 달 안에 막혔던 돈이 풀릴까?', '올해 안에 돈이 모일까?', '지금 생각하는 투자, 해도 될까?']],
+        love: ['🌙 528Hz 듣고 오셨군요! 연락운부터 볼까요?', ['3개월 안에 그 사람에게 연락이 올까?', '그 사람은 지금 나를 어떻게 생각할까?', '우리 사이, 3개월 뒤엔 어떻게 될까?']],
+        general: ['탭 한 번으로 바로 보기', ['이번 달 안에 돈 들어올 일이 있을까?', '3개월 안에 그 사람에게 연락이 올까?', '올해 안에 좋은 일 제안이 올까?']]
+      };
+      const U = new URLSearchParams(location.search);
+      let from = U.get('start') || ({ '888hz': 'money', '528hz': 'love' })[U.get('utm_content') || ''] || '';
+      try { if (from) sessionStorage.setItem('rodeo_start', from); else from = sessionStorage.getItem('rodeo_start') || ''; } catch (e) {}
+      const key = QS[from] ? from : 'general', [hi, qs] = QS[key];
+      if (!document.getElementById('qs-box')) document.getElementById('sp-pick').insertAdjacentHTML('afterend', `<div class="qs-box" id="qs-box"><p>${esc(hi)}</p><div class="qs-chips">${qs.map(q => `<button type="button" data-qs="${esc(q)}">${esc(q)}</button>`).join('')}</div></div>`);
+      document.getElementById('qs-box').addEventListener('click', e => {
+        const b = e.target.closest('[data-qs]'); if (!b) return;
+        inp.value = b.dataset.qs; relabel();
+        if (typeof BETA !== 'undefined') BETA.track('quick_start', { topic: key, from: from || 'none' });
+        const three = document.querySelector('#sp-pick [data-sp="three"]'); if (three) three.click();
+      });
+    } catch (e) { /* 칩이 없어도 앱은 그대로 */ }
   }
 
   /* ---------- 3·5장 풀이 양념: 사주(빨강) · 별자리(파랑) + 한눈에 정리 ---------- */
